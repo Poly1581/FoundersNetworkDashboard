@@ -1,25 +1,384 @@
-import logo from './logo.svg';
-import './App.css';
+/*
+  src/App.js
+*/
+import React, { useState } from 'react';
+import {
+  Container,
+  Typography,
+  Box,
+  Button,
+  ToggleButton,
+  ToggleButtonGroup,
+  Grid,
+  Card,
+  CardContent,
+  Chip,
+  List,
+  ListItem,
+  ListItemText,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Switch,
+  Divider,
+  TextField,
+  IconButton
+} from '@mui/material';
+import {
+  Refresh as RefreshIcon,
+  Settings as SettingsIcon,
+  Warning as WarningIcon,
+  Error as ErrorIcon,
+  NotificationImportant as NotifyIcon
+} from '@mui/icons-material';
 
-function App() {
+// --- Text Variables (replaceable via API) ---
+const textContent = {
+  header: {
+    title: 'Platform Status',
+    subtitle: "Is the platform working? What's broken?",
+    simpleView: 'Simple View',
+    technicalView: 'Technical View',
+    checkNow: 'Check Now'
+  },
+  nonCritical: {
+    heading: 'Non-Critical Services Down',
+    monitoredSuffix: 'integrations monitored',
+    memberImpact: 'Member Impact:',
+    criticalServices: 'Critical Services:'
+  },
+  activeIssues: {
+    heading: 'Active Issues Requiring Attention',
+    fixIssue: 'Fix Issue',
+    suggestedActions: 'Suggested Actions:',
+    recentErrors: 'Recent Errors:'
+  },
+  integrationDetails: {
+    heading: 'Integration Details',
+    columns: {
+      service: 'Service',
+      category: 'Category',
+      status: 'Status',
+      responseTime: 'Response Time',
+      lastSuccess: 'Last Success',
+      uptime: 'Uptime',
+      issue: 'Issue'
+    },
+    viewDetails: 'View Details'
+  },
+  recentAlerts: {
+    heading: 'Recent Alerts',
+    filter: 'Filter',
+    viewAll: 'View All',
+    acknowledge: 'Acknowledge',
+    details: 'Details'
+  },
+  quickActions: {
+    heading: 'Quick Actions',
+    emergencyMode: 'Emergency Mode',
+    maintenanceMode: 'Maintenance Mode',
+    notifyMembers: 'Notify Members',
+    runHealthCheck: 'Run Health Check'
+  },
+  systemHealth: {
+    heading: 'System Health',
+    overallUptime: 'Overall Uptime (30d):',
+    activeAlerts: 'Active Alerts:',
+    celeryQueue: 'Celery Queue:',
+    lastFullCheck: 'Last Full Check:',
+    recentErrors: 'Recent Errors: View All'
+  },
+  memberCommunication: {
+    heading: 'Member Communication',
+    criticalFeatures: 'Critical Features',
+    allWorking: 'All Working',
+    memberFacingIssues: 'Member-Facing Issues',
+    affectedSuffix: 'Affected',
+    memberNotification: 'Member Notification',
+    recommended: 'Recommended',
+    outageMessage: 'Critical services are down. Consider notifying members about the outage.',
+    composeLabel: 'Compose Notification Message',
+    composePlaceholder: 'Write your message…',
+    generateMessage: 'Generate Message',
+    severityInfo: 'Severity: Info'
+  },
+  automationSettings: {
+    heading: 'Automation Settings',
+    autoSlack: 'Auto Slack Notifications',
+    autoSlackSecondary: 'Send alerts to team Slack channels',
+    autoStatusPage: 'Auto StatusPage Updates',
+    autoStatusPageSecondary: 'Create incidents on status page automatically',
+    sentryIntegration: 'Sentry Integration',
+    sentryIntegrationSecondary: 'Sync error data with Sentry'
+  },
+  quickLinksFooter: {
+    statusPage: 'StatusPage.io',
+    sentry: 'Sentry',
+    slack: 'Slack',
+    footerText: 'Observability Dashboard · Services Down · Admin User · Last check: 7 days ago · AU 196'
+  }
+};
+
+// --- Placeholder Data (replace via API) ---
+const nonCritical = { total: 4, healthy: 2, degraded: 1, down: 1 };
+const memberImpact = ['Member data sync paused', 'Payment processing delays'];
+const criticalServices = ['Stripe', 'Mailgun'];
+const activeIssues = [ /* ... */ ];
+const integrations = [ /* ... */ ];
+const recentAlerts = [ /* ... */ ];
+
+// --- Section Components ---
+function Header({ view, onViewChange }) {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={4}>
+        <Box>
+          <Typography variant="h4">{textContent.header.title}</Typography>
+          <Typography color="text.secondary">{textContent.header.subtitle}</Typography>
+        </Box>
+        <Box>
+          <ToggleButtonGroup
+              value={view}
+              size="small"
+              exclusive
+              onChange={(_, v) => v && onViewChange(v)}
+              sx={{ mr: 2 }}
+          >
+            <ToggleButton value="simple">{textContent.header.simpleView}</ToggleButton>
+            <ToggleButton value="tech">{textContent.header.technicalView}</ToggleButton>
+          </ToggleButtonGroup>
+          <Button variant="outlined" startIcon={<RefreshIcon />} sx={{ mr: 1 }}>
+            {textContent.header.checkNow}
+          </Button>
+          <IconButton><SettingsIcon /></IconButton>
+        </Box>
+      </Box>
   );
 }
 
-export default App;
+function NonCriticalSection() {
+  return (
+      <Card sx={{ mb: 4 }}>
+        <CardContent>
+          <Typography variant="h6">{textContent.nonCritical.heading}</Typography>
+          <Typography>{nonCritical.total} {textContent.nonCritical.monitoredSuffix}</Typography>
+          <Box display="flex" gap={2} my={2}>
+            <Chip label={`${nonCritical.healthy} Healthy`} color="success" />
+            <Chip label={`${nonCritical.degraded} Degraded`} color="warning" />
+            <Chip label={`${nonCritical.down} Down`} color="error" />
+          </Box>
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <Typography variant="subtitle2">{textContent.nonCritical.memberImpact}</Typography>
+              <List dense>{memberImpact.map((m,i)=><ListItem key={i}><ListItemText primary={m} /></ListItem>)}</List>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="subtitle2">{textContent.nonCritical.criticalServices}</Typography>
+              <Box display="flex" gap={1} flexWrap="wrap">
+                {criticalServices.map(s=><Chip key={s} label={s} color="error" />)}
+              </Box>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+  );
+}
+
+function ActiveIssuesSection() {
+  return (
+      <>
+        <Typography variant="h6" gutterBottom>{textContent.activeIssues.heading}</Typography>
+        <Grid container spacing={2} mb={4}>
+          {activeIssues.map(issue => (
+              <Grid item xs={12} md={6} key={issue.name}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography variant="subtitle1">
+                        {issue.name} <Chip label={issue.priority} size="small" />
+                      </Typography>
+                      <Button size="small">{textContent.activeIssues.fixIssue}</Button>
+                    </Box>
+                    <List dense>
+                      <ListItem><ListItemText primary="Status" secondary={issue.status} /></ListItem>
+                      <ListItem><ListItemText primary="Down Since" secondary={issue.downSince} /></ListItem>
+                      <ListItem><ListItemText primary="Error Count" secondary={issue.errorCount} /></ListItem>
+                      {issue.rootCause && <ListItem><ListItemText primary="Root Cause" secondary={issue.rootCause} /></ListItem>}
+                    </List>
+                    <Typography variant="subtitle2">{textContent.activeIssues.suggestedActions}</Typography>
+                    <List dense>{issue.suggested.map((a,i)=><ListItem key={i}><ListItemText primary={a} /></ListItem>)}</List>
+                    {issue.recentErrors && <>
+                      <Typography variant="subtitle2">{textContent.activeIssues.recentErrors}</Typography>
+                      <List dense>{issue.recentErrors.map((e,i)=><ListItem key={i}><ListItemText primary={e} /></ListItem>)}</List>
+                    </>}
+                  </CardContent>
+                </Card>
+              </Grid>
+          ))}
+        </Grid>
+      </>
+  );
+}
+
+function IntegrationDetailsSection() {
+  return (
+      <>
+        <Typography variant="h6" gutterBottom>{textContent.integrationDetails.heading}</Typography>
+        <Table sx={{ mb: 4 }}>
+          <TableHead>
+            <TableRow>
+              {Object.values(textContent.integrationDetails.columns).map(col => <TableCell key={col}>{col}</TableCell>)}
+              <TableCell align="right"></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {integrations.map(i => (
+                <TableRow key={i.name}>
+                  <TableCell>{i.name}</TableCell>
+                  <TableCell>{i.category}</TableCell>
+                  <TableCell><Chip label={i.status} color={i.status==='Healthy'?'success':i.status==='Degraded'?'warning':'error'} size="small" /></TableCell>
+                  <TableCell>{i.response}</TableCell>
+                  <TableCell>{i.last}</TableCell>
+                  <TableCell>{i.uptime}</TableCell>
+                  <TableCell>{i.issue||'—'}</TableCell>
+                  <TableCell align="right"><Button size="small">{textContent.integrationDetails.viewDetails}</Button></TableCell>
+                </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </>
+  );
+}
+
+function RecentAlertsSection() {
+  return (
+      <Box mb={4}>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6">{textContent.recentAlerts.heading}</Typography>
+          <Box>
+            <Button size="small">{textContent.recentAlerts.filter}</Button>
+            <Button size="small">{textContent.recentAlerts.viewAll}</Button>
+          </Box>
+        </Box>
+        <List>{recentAlerts.map((a,i)=>(
+            <ListItem key={i} secondaryAction={<Box>
+              <Button size="small">{textContent.recentAlerts.acknowledge}</Button>
+              <Button size="small">{textContent.recentAlerts.details}</Button>
+            </Box>}>
+              {a.severity==='Warning'?<WarningIcon color="warning" sx={{mr:1}}/>:<ErrorIcon color="error" sx={{mr:1}}/>}
+              <ListItemText primary={a.message} secondary={`${a.time} — ${a.details}`} />
+            </ListItem>
+        ))}</List>
+      </Box>
+  );
+}
+
+function QuickActionsSection() {
+  return (
+      <Card sx={{ mb: 4 }}><CardContent>
+        <Typography variant="h6">{textContent.quickActions.heading}</Typography>
+        <Box display="flex" gap={2} flexWrap="wrap" mt={2}>
+          <Button variant="contained" color="error">{textContent.quickActions.emergencyMode}</Button>
+          <Button variant="contained">{textContent.quickActions.maintenanceMode}</Button>
+          <Button variant="outlined" startIcon={<NotifyIcon/>}>{textContent.quickActions.notifyMembers}</Button>
+          <Button variant="outlined" startIcon={<RefreshIcon/>}>{textContent.quickActions.runHealthCheck}</Button>
+        </Box>
+      </CardContent></Card>
+  );
+}
+
+function SystemHealthSection() {
+  return (
+      <Card sx={{ mb: 4 }}><CardContent>
+        <Typography variant="h6">{textContent.systemHealth.heading}</Typography>
+        <Grid container spacing={2} mt={1}>
+          <Grid item><Typography>{textContent.systemHealth.overallUptime} <strong>50.0%</strong></Typography></Grid>
+          <Grid item><Typography>{textContent.systemHealth.activeAlerts} <strong>196</strong></Typography></Grid>
+          <Grid item><Typography>{textContent.systemHealth.celeryQueue} <strong>988 jobs</strong></Typography></Grid>
+          <Grid item><Typography>{textContent.systemHealth.lastFullCheck} <strong>7 days ago</strong></Typography></Grid>
+          <Grid item><Button size="small">{textContent.systemHealth.recentErrors}</Button></Grid>
+        </Grid>
+      </CardContent></Card>
+  );
+}
+
+function MemberCommunicationSection() {
+  return (
+      <Card sx={{ mb: 4 }}><CardContent>
+        <Typography variant="h6">{textContent.memberCommunication.heading}</Typography>
+        <List dense>
+          <ListItem><ListItemText primary={textContent.memberCommunication.criticalFeatures} secondary={textContent.memberCommunication.allWorking}/></ListItem>
+          <ListItem><ListItemText primary={textContent.memberCommunication.memberFacingIssues} secondary={`1 ${textContent.memberCommunication.affectedSuffix}`}/></ListItem>
+          <ListItem><ListItemText primary={textContent.memberCommunication.memberNotification} secondary={textContent.memberCommunication.recommended}/></ListItem>
+        </List>
+        <Typography color="error" paragraph>{textContent.memberCommunication.outageMessage}</Typography>
+        <TextField fullWidth multiline rows={3} label={textContent.memberCommunication.composeLabel} placeholder={textContent.memberCommunication.composePlaceholder}/>
+        <Box mt={2}><Button variant="contained">{textContent.memberCommunication.generateMessage}</Button><Chip label={textContent.memberCommunication.severityInfo} sx={{ ml: 2 }}/></Box>
+      </CardContent></Card>
+  );
+}
+
+function AutomationSettingsSection({ slackAuto, toggleSlack, statusAuto, toggleStatus, sentryAuto, toggleSentry }) {
+  return (
+      <Card sx={{ mb: 4 }}><CardContent>
+        <Typography variant="h6">{textContent.automationSettings.heading}</Typography>
+        <List>
+          <ListItem>
+            <ListItemText primary={textContent.automationSettings.autoSlack} secondary={textContent.automationSettings.autoSlackSecondary}/>
+            <Switch checked={slackAuto} onChange={toggleSlack} />
+          </ListItem>
+          <Divider />
+          <ListItem>
+            <ListItemText primary={textContent.automationSettings.autoStatusPage} secondary={textContent.automationSettings.autoStatusPageSecondary}/>
+            <Switch checked={statusAuto} onChange={toggleStatus} />
+          </ListItem>
+          <Divider />
+          <ListItem>
+            <ListItemText primary={textContent.automationSettings.sentryIntegration} secondary={textContent.automationSettings.sentryIntegrationSecondary}/>
+            <Switch checked={sentryAuto} onChange={toggleSentry} />
+          </ListItem>
+        </List>
+      </CardContent></Card>
+  );
+}
+
+function QuickLinksFooter() {
+  return (
+      <Box display="flex" justifyContent="space-between" alignItems="center" mt={2} pb={4}>
+        <Box display="flex" gap={2}>
+          <Button size="small">{textContent.quickLinksFooter.statusPage}</Button>
+          <Button size="small">{textContent.quickLinksFooter.sentry}</Button>
+          <Button size="small">{textContent.quickLinksFooter.slack}</Button>
+        </Box>
+        <Typography variant="caption" color="text.secondary">{textContent.quickLinksFooter.footerText}</Typography>
+      </Box>
+  );
+}
+
+// --- Main Component ---
+export default function App() {
+  const [view, setView] = useState('simple');
+  const [slackAuto, setSlackAuto] = useState(true);
+  const [statusAuto, setStatusAuto] = useState(false);
+  const [sentryAuto, setSentryAuto] = useState(true);
+
+  return (
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Header view={view} onViewChange={setView} />
+        <NonCriticalSection />
+        <ActiveIssuesSection />
+        <IntegrationDetailsSection />
+        <RecentAlertsSection />
+        <QuickActionsSection />
+        <SystemHealthSection />
+        <MemberCommunicationSection />
+        <AutomationSettingsSection
+            slackAuto={slackAuto} toggleSlack={()=>setSlackAuto(!slackAuto)}
+            statusAuto={statusAuto} toggleStatus={()=>setStatusAuto(!statusAuto)}
+            sentryAuto={sentryAuto} toggleSentry={()=>setSentryAuto(!sentryAuto)}
+        />
+        <QuickLinksFooter />
+      </Container>
+  );
+}
