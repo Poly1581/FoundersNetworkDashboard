@@ -1,38 +1,181 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+body,
+html,
+#root {
+  background: #f4f6fa;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  color: #23272f;
 }
 
-.App-link {
-  color: #61dafb;
+/* App container tweaks */
+.MuiContainer-root {
+  background: transparent;
+  padding-bottom: 48px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Dashboard Cards */
+.MuiCard-root {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px 0 rgba(24, 36, 54, 0.05), 0 1.5px 4px 0 rgba(24, 36, 54, 0.05);
+  margin-bottom: 16px;
+  border: 1px solid #e5e7ed;
+}
+
+.MuiCardContent-root {
+  padding: 24px 24px 16px 24px;
+}
+
+/* Typography */
+.MuiTypography-h4 {
+  font-weight: 700;
+  font-size: 2.3rem;
+  letter-spacing: -0.01em;
+}
+
+.MuiTypography-h6 {
+  font-weight: 600;
+  font-size: 1.18rem;
+}
+
+.MuiTypography-caption {
+  color: #7c8692;
+}
+
+/* Section/Row Spacing */
+.MuiGrid-container {
+  margin-top: 8px;
+  margin-bottom: 0px;
+}
+
+.MuiBox-root {
+  /* Don't override global box style, only extend for dashboard */
+}
+
+/* Chips for statuses */
+.MuiChip-root {
+  font-weight: 500;
+  border-radius: 6px;
+  letter-spacing: 0.01em;
+  font-size: 0.92rem;
+  padding: 2px 0;
+}
+.MuiChip-colorSuccess {
+  background-color: #e3faed !important;
+  color: #127448 !important;
+}
+.MuiChip-colorWarning {
+  background-color: #fff4e3 !important;
+  color: #945b08 !important;
+}
+.MuiChip-colorError {
+  background-color: #ffe8e6 !important;
+  color: #b02727 !important;
+}
+
+/* Buttons */
+.MuiButton-containedPrimary,
+.MuiButton-contained {
+  background-color: #2b74da;
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.MuiButton-containedPrimary:hover,
+.MuiButton-contained:hover {
+  background-color: #1a4e9e;
+}
+.MuiButton-outlined {
+  border-color: #b7c4da;
+  color: #2852a2;
+  background: #f6faff;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.MuiButton-outlined:hover {
+  border-color: #2852a2;
+  background: #eaf2fa;
+}
+
+/* Toggle Buttons */
+.MuiToggleButton-root {
+  font-weight: 600;
+  color: #2852a2;
+  background: #f6faff;
+  border-radius: 8px !important;
+  border: 1.5px solid #b7c4da;
+  margin-left: 3px;
+  margin-right: 3px;
+  padding: 4px 16px;
+  transition: all 0.18s;
+}
+.MuiToggleButton-root.Mui-selected {
+  background: #2852a2 !important;
+  color: #fff !important;
+  border-color: #2852a2 !important;
+}
+
+/* Table tweaks */
+.MuiTableCell-root {
+  font-size: 1rem;
+}
+.MuiTableCell-head {
+  color: #6b7892;
+  font-weight: 600;
+  background: #f3f5f7;
+  border-bottom: 2px solid #e2e6ed;
+}
+.MuiTableRow-root:last-child td {
+  border-bottom: none;
+}
+
+/* Lists */
+.MuiListItem-root {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+/* TextFields */
+.MuiTextField-root {
+  margin-top: 14px;
+  background: #f6f8fc;
+  border-radius: 7px;
+}
+.MuiInputBase-inputMultiline {
+  font-size: 1.04rem;
+  color: #242a31;
+}
+
+/* Switches */
+.MuiSwitch-root {
+  margin-left: 6px;
+}
+
+/* IconButton */
+.MuiIconButton-root {
+  color: #2852a2;
+  margin-left: 4px;
+}
+
+/* Footer */
+.footer,
+.MuiTypography-caption {
+  margin-top: 32px;
+  padding-top: 8px;
+  padding-bottom: 4px;
+  border-top: 1px solid #e0e6ef;
+  text-align: right;
+  color: #8993a4;
+  font-size: 0.98rem;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  background: #f4f6fa;
+}
+::-webkit-scrollbar-thumb {
+  background: #e5e7ed;
+  border-radius: 6px;
 }
