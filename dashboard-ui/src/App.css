@@ -1,12 +1,19 @@
+/* Global & Root */
 body,
 html,
 #root {
-  background: #f4f6fa;
+  background: linear-gradient(
+          135deg,
+          rgba(244, 246, 250, 0.8),
+          rgba(234, 239, 245, 0.8)
+  );
   font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
   margin: 0;
   padding: 0;
   min-height: 100vh;
   color: #23272f;
+  /* ensure any glass background shows through */
+  background-attachment: fixed;
 }
 
 /* App container tweaks */
@@ -15,15 +22,20 @@ html,
   padding-bottom: 48px;
 }
 
-/* Dashboard Cards */
+/* Glassmorphic Dashboard Cards */
 .MuiCard-root {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.3);      /* slight white tint */
+  backdrop-filter: blur(12px);                /* soft blur behind */
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 16px;
-  box-shadow: 0 2px 12px 0 rgba(24, 36, 54, 0.05), 0 1.5px 4px 0 rgba(24, 36, 54, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.5); /* subtle highlight border */
+  box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.1),            /* deeper shadow for lift */
+          inset 0 0 0 1px rgba(255, 255, 255, 0.2);  /* inner bevel effect */
   margin-bottom: 16px;
-  border: 1px solid #e5e7ed;
 }
 
+/* Card content spacing remains */
 .MuiCardContent-root {
   padding: 24px 24px 16px 24px;
 }
@@ -50,10 +62,6 @@ html,
   margin-bottom: 0px;
 }
 
-.MuiBox-root {
-  /* Don't override global box style, only extend for dashboard */
-}
-
 /* Chips for statuses */
 .MuiChip-root {
   font-weight: 500;
@@ -61,60 +69,66 @@ html,
   letter-spacing: 0.01em;
   font-size: 0.92rem;
   padding: 2px 0;
+  background: rgba(255,255,255,0.4);          /* translucent backdrop */
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 .MuiChip-colorSuccess {
-  background-color: #e3faed !important;
+  background-color: rgba(227, 250, 237, 0.6) !important;
   color: #127448 !important;
 }
 .MuiChip-colorWarning {
-  background-color: #fff4e3 !important;
+  background-color: rgba(255, 244, 227, 0.6) !important;
   color: #945b08 !important;
 }
 .MuiChip-colorError {
-  background-color: #ffe8e6 !important;
+  background-color: rgba(255, 232, 230, 0.6) !important;
   color: #b02727 !important;
 }
 
 /* Buttons */
 .MuiButton-containedPrimary,
 .MuiButton-contained {
-  background-color: #2b74da;
+  background: rgba(43, 116, 218, 0.8);
   color: #fff;
   border-radius: 8px;
   font-weight: 600;
+  backdrop-filter: blur(6px);
 }
 .MuiButton-containedPrimary:hover,
 .MuiButton-contained:hover {
-  background-color: #1a4e9e;
+  background: rgba(26, 78, 158, 0.8);
 }
 .MuiButton-outlined {
-  border-color: #b7c4da;
+  border-color: rgba(183, 196, 218, 0.6);
   color: #2852a2;
-  background: #f6faff;
+  background: rgba(246, 250, 255, 0.5);
+  backdrop-filter: blur(6px);
   border-radius: 8px;
   font-weight: 600;
 }
 .MuiButton-outlined:hover {
   border-color: #2852a2;
-  background: #eaf2fa;
+  background: rgba(234, 242, 250, 0.6);
 }
 
 /* Toggle Buttons */
 .MuiToggleButton-root {
   font-weight: 600;
   color: #2852a2;
-  background: #f6faff;
+  background: rgba(246, 250, 255, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border-radius: 8px !important;
-  border: 1.5px solid #b7c4da;
-  margin-left: 3px;
-  margin-right: 3px;
+  border: 1.5px solid rgba(183, 196, 218, 0.6);
+  margin: 0 3px;
   padding: 4px 16px;
   transition: all 0.18s;
 }
 .MuiToggleButton-root.Mui-selected {
-  background: #2852a2 !important;
+  background: rgba(40, 82, 162, 0.8) !important;
   color: #fff !important;
-  border-color: #2852a2 !important;
+  border-color: rgba(40, 82, 162, 0.8) !important;
 }
 
 /* Table tweaks */
@@ -124,8 +138,9 @@ html,
 .MuiTableCell-head {
   color: #6b7892;
   font-weight: 600;
-  background: #f3f5f7;
-  border-bottom: 2px solid #e2e6ed;
+  background: rgba(243, 245, 247, 0.6);
+  backdrop-filter: blur(4px);
+  border-bottom: 2px solid rgba(226, 230, 237, 0.6);
 }
 .MuiTableRow-root:last-child td {
   border-bottom: none;
@@ -140,7 +155,9 @@ html,
 /* TextFields */
 .MuiTextField-root {
   margin-top: 14px;
-  background: #f6f8fc;
+  background: rgba(246, 248, 252, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border-radius: 7px;
 }
 .MuiInputBase-inputMultiline {
@@ -165,17 +182,18 @@ html,
   margin-top: 32px;
   padding-top: 8px;
   padding-bottom: 4px;
-  border-top: 1px solid #e0e6ef;
+  border-top: 1px solid rgba(224, 230, 239, 0.6);
   text-align: right;
   color: #8993a4;
   font-size: 0.98rem;
 }
 
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
-  background: #f4f6fa;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #e5e7ed;
+  background: rgba(229, 231, 237, 0.6);
   border-radius: 6px;
 }
