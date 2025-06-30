@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './App.css';  // ← import the new glassmorphic styles
 import {
     Container,
     Typography,
