@@ -403,7 +403,7 @@ export default function App() {
     // Example: modular fetch function (replace with your real APIs)
     async function fetchDashboardData() {
         // Simulate fetching (replace with actual API calls)
-        const data = await Promise.resolve({
+        const data = {
             nonCritical: {
                 total: 4, healthy: 2, degraded: 1, down: 1,
                 memberImpact: ['Member data sync paused', 'Payment processing delays'],
@@ -425,18 +425,44 @@ export default function App() {
                 }
             ],
             integrations: [
-                { name: 'Stripe', category: 'Payments', status: 'Healthy', responseTime: '120ms', lastSuccess: '5m ago', uptime: '99.9%', issue: '' },
-                { name: 'Mailgun', category: 'Email', status: 'Degraded', responseTime: '250ms', lastSuccess: '2m ago', uptime: '98.7%', issue: 'Delayed responses' }
+                {
+                    name: 'Stripe',
+                    category: 'Payments',
+                    status: 'Healthy',
+                    responseTime: '120ms',
+                    lastSuccess: '5m ago',
+                    uptime: '99.9%',
+                    issue: ''
+                },
+                {
+                    name: 'Mailgun',
+                    category: 'Email',
+                    status: 'Degraded',
+                    responseTime: '250ms',
+                    lastSuccess: '2m ago',
+                    uptime: '98.7%',
+                    issue: 'Delayed responses'
+                }
             ],
             recentAlerts: [
-                { severity: 'Warning', message: 'High memory usage detected', time: '10m ago', details: 'Node 3 memory at 85%' },
-                { severity: 'Error', message: 'Failed health check on API', time: '30m ago', details: '500 Internal Server Error' }
+                {
+                    severity: 'Warning',
+                    message: 'High memory usage detected',
+                    time: '10m ago',
+                    details: 'Node 3 memory at 85%'
+                },
+                {
+                    severity: 'Error',
+                    message: 'Failed health check on API',
+                    time: '30m ago',
+                    details: '500 Internal Server Error'
+                }
             ],
             memberCommunication: {
                 criticalFeatures: 'All Working',
                 memberFacingIssues: 1,
             }
-        });
+        };
         setDashboardData(data);
     }
 
