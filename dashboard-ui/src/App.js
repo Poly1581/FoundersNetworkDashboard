@@ -1,12 +1,5 @@
-/*
-* REACT_APP_SENTRY_AUTH_TOKEN=your_api_token
-* REACT_APP_SENTRY_ORG_SLUG=your_org_slug
-* REACT_APP_SENTRY_PROJECT_SLUG=your_project_slug
-*/
-
-import React, { useState } from 'react';
-import './App.css';  // ← your glassmorphic styles
-import { mockSettings, mockDashboardData } from './mockData';
+import React, { useState, useEffect } from 'react';
+import './App.css';
 import {
     Container,
     Typography,
@@ -42,6 +35,61 @@ import {
     KeyboardArrowRight as ArrowRightIcon
 } from '@mui/icons-material';
 
+// --- Sentry API Client ---
+// This section handles all communication with the Sentry API.
+// Ensure your .env file has your credentials.
+
+const SENTRY_AUTH_TOKEN = process.env.REACT_APP_SENTRY_AUTH_TOKEN;
+const ORG_SLUG = process.env.REACT_APP_SENTRY_ORG_SLUG;
+const PROJECT_SLUG = process.env.REACT_APP_SENTRY_PROJECT_SLUG;
+const BASE_URL = 'https://sentry.io/api/0';
+
+/**
+ * A helper function to make authenticated requests to the Sentry API.
+ * It automatically adds the required Authorization header.
+ * @param {string} endpoint The API endpoint to call (e.g., /projects/...).
+ * @param {object} options Standard fetch options (method, body, etc.).
+ * @returns {Promise<any>} The JSON response from the API.
+ */
+const sentryFetch = async (endpoint, options = {}) => {
+    const url = `${BASE_URL}${endpoint}`;
+    const headers = {
+        ...options.headers,
+        'Authorization': `Bearer ${SENTRY_AUTH_TOKEN}`,
+        'Content-Type': 'application/json',
+    };
+
+    const response = await fetch(url, { ...options, headers });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Sentry API Error: ${response.status} - ${JSON.stringify(errorData)}`);
+    }
+    return response.json();
+};
+
+/**
+ * Fetches a list of unresolved issues for your project.
+ * @returns {Promise<Array>} A promise that resolves to an array of issue objects.
+ */
+const fetchIssues = () => {
+    // We are specifically querying for issues that are not yet resolved.
+    return sentryFetch(`/projects/${ORG_SLUG}/${PROJECT_SLUG}/issues/?query=is:unresolved`);
+};
+
+/**
+ * Updates an issue's status (e.g., to "resolved").
+ * @param {string} issueId The ID of the issue to update.
+ * @param {string} status The new status, e.g., "resolved" or "ignored".
+ * @returns {Promise<Object>} A promise that resolves to the updated issue object.
+ */
+const updateIssueStatus = (issueId, status) => {
+    return sentryFetch(`/issues/${issueId}/`, {
+        method: 'PUT',
+        body: JSON.stringify({ status }),
+    });
+};
+
 // --- Text Variables (Sentry-only) ---
 const textContent = {
     header: {
@@ -66,7 +114,7 @@ const textContent = {
     },
     activeIssues: {
         heading: 'Active Issues',
-        fixIssue: 'Fix Issue',
+        resolveIssue: 'Resolve Issue',
         viewDetails: 'View Details',
         suggestedActions: 'Suggested Actions:',
         recentErrors: 'Recent Errors:'
@@ -166,7 +214,7 @@ function CollapsibleSection({ title, children, defaultOpen = true }) {
 }
 
 // --- Simple View ---
-function SimpleView({ issues, events, onViewDetails }) {
+function SimpleView({ issues, events, onViewDetails, onResolveIssue }) {
     return (
         <>
             <CollapsibleSection title={textContent.activeIssues.heading}>
@@ -188,6 +236,11 @@ function SimpleView({ issues, events, onViewDetails }) {
                                 </TableCell>
                                 <TableCell>{issue.count}</TableCell>
                                 <TableCell align="right">
+                                    {issue.status === 'unresolved' && (
+                                        <Button size="small" onClick={() => onResolveIssue(issue.id)}>
+                                            {textContent.activeIssues.resolveIssue}
+                                        </Button>
+                                    )}
                                     <Button size="small" startIcon={<InfoIcon />} onClick={() => onViewDetails(issue.id)}>
                                         {textContent.activeIssues.viewDetails}
                                     </Button>
@@ -198,7 +251,8 @@ function SimpleView({ issues, events, onViewDetails }) {
                 </Table>
             </CollapsibleSection>
             <CollapsibleSection title={textContent.recentAlerts.heading}>
-                {events.map(evt => (
+                {/* Note: 'events' state is currently empty. You would create a fetchEvents function to populate this. */}
+                {events.length === 0 ? <Typography>No recent events to display.</Typography> : events.map(evt => (
                     <Box key={evt.id} mb={2}>
                         <Typography>{evt.message}</Typography>
                         <Typography variant="caption">{evt.timestamp}</Typography>
@@ -210,16 +264,20 @@ function SimpleView({ issues, events, onViewDetails }) {
 }
 
 // --- Technical View ---
-function TechnicalView({ data, onViewDetails, slackAuto, toggleSlack, statusAuto, toggleStatus, sentryAuto, toggleSentry }) {
+// This view still uses some placeholder data. You can adapt it to use live data.
+function TechnicalView({ issues, onViewDetails, slackAuto, toggleSlack, statusAuto, toggleStatus, sentryAuto, toggleSentry }) {
     return (
         <>
-            <NonCriticalSection data={data.nonCritical} />
-            <SystemHealthSection data={data.systemHealth} />
-            <ActiveIssuesSection issues={data.activeIssues} onViewDetails={onViewDetails} />
-            <IntegrationDetailsSection integrations={data.integrations} />
-            <RecentAlertsSection alerts={data.recentAlerts} />
+            {/* These components can be adapted to use live data from new API calls */}
+            <NonCriticalSection data={{ total: 0, healthy: 0, degraded: 0, down: 0, memberImpact: [], criticalServices: [] }} />
+            <SystemHealthSection data={{ overallUptime: 'N/A', activeAlerts: issues.length, celeryQueue: 'N/A', lastFullCheck: 'N/A' }} />
+
+            <ActiveIssuesSection issues={issues} onViewDetails={onViewDetails} />
+
+            <IntegrationDetailsSection integrations={[]} />
+            <RecentAlertsSection alerts={[]} />
             <QuickActionsSection />
-            <MemberCommunicationSection data={data.memberCommunication} />
+            <MemberCommunicationSection data={{ criticalFeatures: 'N/A', memberFacingIssues: 0 }} />
             <AutomationSettingsSection
                 slackAuto={slackAuto} toggleSlack={toggleSlack}
                 statusAuto={statusAuto} toggleStatus={toggleStatus}
@@ -230,7 +288,7 @@ function TechnicalView({ data, onViewDetails, slackAuto, toggleSlack, statusAuto
     );
 }
 
-// --- Section Components ---
+// --- Section Components (largely unchanged) ---
 function NonCriticalSection({ data }) {
     if (!data) return null;
     return (
@@ -284,33 +342,15 @@ function ActiveIssuesSection({ issues, onViewDetails }) {
                                         {issue.title} {issue.priority && <Chip label={issue.priority} size="small" />}
                                     </Typography>
                                     <Button size="small" onClick={() => onViewDetails(issue.id)}>
-                                        {textContent.activeIssues.fixIssue}
+                                        {textContent.activeIssues.viewDetails}
                                     </Button>
                                 </Box>
                                 <List dense>
                                     <ListItem><ListItemText primary="Status" secondary={issue.status} /></ListItem>
-                                    <ListItem><ListItemText primary="Down Since" secondary={issue.downSince} /></ListItem>
-                                    <ListItem><ListItemText primary="Error Count" secondary={issue.errorCount} /></ListItem>
-                                    {issue.rootCause && (
-                                        <ListItem><ListItemText primary="Root Cause" secondary={issue.rootCause} /></ListItem>
-                                    )}
+                                    <ListItem><ListItemText primary="First Seen" secondary={new Date(issue.firstSeen).toLocaleString()} /></ListItem>
+                                    <ListItem><ListItemText primary="Event Count" secondary={issue.count} /></ListItem>
+                                    <ListItem><ListItemText primary="Assignee" secondary={issue.assignedTo ? issue.assignedTo.name : 'Unassigned'} /></ListItem>
                                 </List>
-                                <Typography variant="subtitle2">{textContent.activeIssues.suggestedActions}</Typography>
-                                <List dense>
-                                    {(issue.suggested || []).map((a, i) => (
-                                        <ListItem key={i}><ListItemText primary={a} /></ListItem>
-                                    ))}
-                                </List>
-                                {issue.recentErrors && (
-                                    <>
-                                        <Typography variant="subtitle2">{textContent.activeIssues.recentErrors}</Typography>
-                                        <List dense>
-                                            {issue.recentErrors.map((e, i) => (
-                                                <ListItem key={i}><ListItemText primary={e} /></ListItem>
-                                            ))}
-                                        </List>
-                                    </>
-                                )}
                             </CardContent>
                         </Card>
                     </Grid>
@@ -324,38 +364,39 @@ function IntegrationDetailsSection({ integrations }) {
     if (!integrations) return null;
     return (
         <CollapsibleSection title={textContent.integrationDetails.heading}>
-            <Table sx={{ mb: 4 }}>
-                <TableHead>
-                    <TableRow>
-                        {Object.values(textContent.integrationDetails.columns).map(col => (
-                            <TableCell key={col}>{col}</TableCell>
-                        ))}
-                        <TableCell align="right"></TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {integrations.map(i => (
-                        <TableRow key={i.name}>
-                            <TableCell>{i.name}</TableCell>
-                            <TableCell>{i.category}</TableCell>
-                            <TableCell>
-                                <Chip
-                                    label={i.status}
-                                    color={i.status === 'Healthy' ? 'success' : i.status === 'Degraded' ? 'warning' : 'error'}
-                                    size="small"
-                                />
-                            </TableCell>
-                            <TableCell>{i.responseTime}</TableCell>
-                            <TableCell>{i.lastSuccess}</TableCell>
-                            <TableCell>{i.uptime}</TableCell>
-                            <TableCell>{i.issue || '—'}</TableCell>
-                            <TableCell align="right">
-                                <Button size="small">{textContent.integrationDetails.viewDetails}</Button>
-                            </TableCell>
+            {integrations.length === 0 ? <Typography>No integration data.</Typography> :
+                <Table sx={{ mb: 4 }}>
+                    <TableHead>
+                        <TableRow>
+                            {Object.values(textContent.integrationDetails.columns).map(col => (
+                                <TableCell key={col}>{col}</TableCell>
+                            ))}
+                            <TableCell align="right"></TableCell>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    </TableHead>
+                    <TableBody>
+                        {integrations.map(i => (
+                            <TableRow key={i.name}>
+                                <TableCell>{i.name}</TableCell>
+                                <TableCell>{i.category}</TableCell>
+                                <TableCell>
+                                    <Chip
+                                        label={i.status}
+                                        color={i.status === 'Healthy' ? 'success' : i.status === 'Degraded' ? 'warning' : 'error'}
+                                        size="small"
+                                    />
+                                </TableCell>
+                                <TableCell>{i.responseTime}</TableCell>
+                                <TableCell>{i.lastSuccess}</TableCell>
+                                <TableCell>{i.uptime}</TableCell>
+                                <TableCell>{i.issue || '—'}</TableCell>
+                                <TableCell align="right">
+                                    <Button size="small">{textContent.integrationDetails.viewDetails}</Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>}
         </CollapsibleSection>
     );
 }
@@ -368,28 +409,29 @@ function RecentAlertsSection({ alerts }) {
                 <Button size="small">{textContent.recentAlerts.filter}</Button>
                 <Button size="small">{textContent.recentAlerts.viewAll}</Button>
             </Box>
-            <List>
-                {alerts.map((a, i) => (
-                    <ListItem
-                        key={i}
-                        secondaryAction={
-                            <Box>
-                                <Button size="small">{textContent.recentAlerts.acknowledge}</Button>
-                                <Button size="small">{textContent.recentAlerts.details}</Button>
-                            </Box>
-                        }
-                    >
-                        {a.severity === 'Warning'
-                            ? <WarningIcon color="warning" sx={{ mr: 1 }} />
-                            : <ErrorIcon color="error" sx={{ mr: 1 }} />
-                        }
-                        <ListItemText
-                            primary={a.message}
-                            secondary={`${a.time} — ${a.details}`}
-                        />
-                    </ListItem>
-                ))}
-            </List>
+            {alerts.length === 0 ? <Typography>No recent alerts.</Typography> :
+                <List>
+                    {alerts.map((a, i) => (
+                        <ListItem
+                            key={i}
+                            secondaryAction={
+                                <Box>
+                                    <Button size="small">{textContent.recentAlerts.acknowledge}</Button>
+                                    <Button size="small">{textContent.recentAlerts.details}</Button>
+                                </Box>
+                            }
+                        >
+                            {a.severity === 'Warning'
+                                ? <WarningIcon color="warning" sx={{ mr: 1 }} />
+                                : <ErrorIcon color="error" sx={{ mr: 1 }} />
+                            }
+                            <ListItemText
+                                primary={a.message}
+                                secondary={`${a.time} — ${a.details}`}
+                            />
+                        </ListItem>
+                    ))}
+                </List>}
         </CollapsibleSection>
     );
 }
@@ -508,37 +550,87 @@ function QuickLinksFooter() {
 // --- MAIN APP COMPONENT ---
 export default function App() {
     const [view, setView] = useState('simple');
-    const [slackAuto, setSlackAuto] = useState(mockSettings.slackAuto);
-    const [statusAuto, setStatusAuto] = useState(mockSettings.statusAuto);
-    const [sentryAuto, setSentryAuto] = useState(mockSettings.sentryAuto);
 
-    // Use mock data. Replace with API fetch logic if needed
-    const [dashboardData] = useState(mockDashboardData);
+    // State for automation toggles
+    const [slackAuto, setSlackAuto] = useState(true);
+    const [statusAuto, setStatusAuto] = useState(false);
+    const [sentryAuto, setSentryAuto] = useState(true);
 
-    const issues = dashboardData.activeIssues;
-    const events = dashboardData.recentAlerts;
+    // State for live Sentry data, loading, and errors
+    const [issues, setIssues] = useState([]);
+    const [events, setEvents] = useState([]); // Currently unused, but ready for expansion
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Function to fetch data from Sentry
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const fetchedIssues = await fetchIssues();
+            setIssues(fetchedIssues);
+            setError(null);
+        } catch (err) {
+            setError(err.message);
+            console.error("Failed to fetch Sentry issues:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch data when the component first mounts
+    useEffect(() => {
+        loadData();
+    }, []); // Empty dependency array ensures this runs only once
 
     const handleViewDetails = (issueId) => {
-        // TODO: implement side-panel for issue details
-        console.log('view details for', issueId);
+        // You could open a modal and fetch more detailed event data here
+        console.log('View details for issue:', issueId);
+        // e.g., window.open(`https://{ORG_SLUG}.sentry.io/issues/${issueId}/`, '_blank');
     };
+
+    // Handler to resolve an issue using the API
+    const handleResolveIssue = async (issueId) => {
+        try {
+            // Immediately update the UI for a better user experience (optimistic update)
+            setIssues(prevIssues => prevIssues.filter(issue => issue.id !== issueId));
+
+            // Make the API call to resolve the issue
+            await updateIssueStatus(issueId, 'resolved');
+
+        } catch (err) {
+            console.error("Failed to resolve issue:", err);
+            // If the API call fails, we should revert the UI change by refetching the data
+            loadData();
+            alert(`Failed to resolve issue: ${err.message}`);
+        }
+    };
+
+    // Render loading or error states
+    if (loading) {
+        return <Container sx={{ py: 4 }}><Typography variant="h5">Loading Sentry Data...</Typography></Container>;
+    }
+
+    if (error) {
+        return <Container sx={{ py: 4 }}><Typography color="error">Error fetching data: {error}</Typography></Container>;
+    }
 
     return (
         <Container maxWidth="xl" sx={{ py: 4 }}>
             <Header
                 view={view}
                 onViewChange={setView}
-                onRefresh={() => window.location.reload()} // Or fetchDashboardData
+                onRefresh={loadData} // The refresh button now refetches data
             />
             {view === 'simple' ? (
                 <SimpleView
                     issues={issues}
-                    events={events}
+                    events={events} // Pass empty events array for now
                     onViewDetails={handleViewDetails}
+                    onResolveIssue={handleResolveIssue}
                 />
             ) : (
                 <TechnicalView
-                    data={dashboardData}
+                    issues={issues}
                     onViewDetails={handleViewDetails}
                     slackAuto={slackAuto}
                     toggleSlack={() => setSlackAuto(!slackAuto)}
