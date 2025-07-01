@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './App.css';  // ← import the new glassmorphic styles
+import './App.css';
 import {
     Container,
     Typography,
@@ -19,15 +19,15 @@ import {
     TableRow,
     TableCell,
     TableBody,
+    IconButton,
+    Collapse,
     Switch,
     Divider,
-    TextField,
-    IconButton,
-    Collapse
+    TextField
 } from '@mui/material';
 import {
     Refresh as RefreshIcon,
-    Settings as SettingsIcon,
+    Info as InfoIcon,
     Warning as WarningIcon,
     Error as ErrorIcon,
     NotificationImportant as NotifyIcon,
@@ -35,29 +35,92 @@ import {
     KeyboardArrowRight as ArrowRightIcon
 } from '@mui/icons-material';
 
-// --- Text Variables (replaceable via API) ---
+// --- Sentry API Client ---
+// This section handles all communication with the Sentry API.
+// Ensure your .env file has your credentials.
+
+const SENTRY_AUTH_TOKEN = process.env.REACT_APP_SENTRY_AUTH_TOKEN;
+const ORG_SLUG = process.env.REACT_APP_SENTRY_ORG_SLUG;
+const PROJECT_SLUG = process.env.REACT_APP_SENTRY_PROJECT_SLUG;
+const BASE_URL = 'https://sentry.io/api/0';
+
+/**
+ * A helper function to make authenticated requests to the Sentry API.
+ * It automatically adds the required Authorization header.
+ * @param {string} endpoint The API endpoint to call (e.g., /projects/...).
+ * @param {object} options Standard fetch options (method, body, etc.).
+ * @returns {Promise<any>} The JSON response from the API.
+ */
+const sentryFetch = async (endpoint, options = {}) => {
+    const url = `${BASE_URL}${endpoint}`;
+    const headers = {
+        ...options.headers,
+        'Authorization': `Bearer ${SENTRY_AUTH_TOKEN}`,
+        'Content-Type': 'application/json',
+    };
+
+    const response = await fetch(url, { ...options, headers });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Sentry API Error: ${response.status} - ${JSON.stringify(errorData)}`);
+    }
+    return response.json();
+};
+
+/**
+ * Fetches a list of unresolved issues for your project.
+ * @returns {Promise<Array>} A promise that resolves to an array of issue objects.
+ */
+const fetchIssues = () => {
+    // We are specifically querying for issues that are not yet resolved.
+    return sentryFetch(`/projects/${ORG_SLUG}/${PROJECT_SLUG}/issues/?query=is:unresolved`);
+};
+
+/**
+ * Updates an issue's status (e.g., to "resolved").
+ * @param {string} issueId The ID of the issue to update.
+ * @param {string} status The new status, e.g., "resolved" or "ignored".
+ * @returns {Promise<Object>} A promise that resolves to the updated issue object.
+ */
+const updateIssueStatus = (issueId, status) => {
+    return sentryFetch(`/issues/${issueId}/`, {
+        method: 'PUT',
+        body: JSON.stringify({ status }),
+    });
+};
+
+// --- Text Variables (Sentry-only) ---
 const textContent = {
     header: {
-        title: 'Platform Status',
-        subtitle: "Is the platform working? What's broken?",
+        title: 'Sentry Dashboard',
         simpleView: 'Simple View',
         technicalView: 'Technical View',
         checkNow: 'Check Now'
     },
     nonCritical: {
         heading: 'Non-Critical Services Down',
-        monitoredSuffix: 'integrations monitored',
+        monitoredSuffix: 'Sentry integrations monitored',
         memberImpact: 'Member Impact:',
-        criticalServices: 'Critical Services:'
+        criticalServices: 'Critical Sentry-Tracked Services:'
+    },
+    systemHealth: {
+        heading: 'System Health',
+        overallUptime: 'Overall Uptime (30d):',
+        activeAlerts: 'Active Sentry Alerts:',
+        celeryQueue: 'Celery Queue:',
+        lastFullCheck: 'Last Full Check:',
+        recentErrors: 'Recent Errors: View All'
     },
     activeIssues: {
-        heading: 'Active Issues Requiring Attention',
-        fixIssue: 'Fix Issue',
+        heading: 'Active Issues',
+        resolveIssue: 'Resolve Issue',
+        viewDetails: 'View Details',
         suggestedActions: 'Suggested Actions:',
         recentErrors: 'Recent Errors:'
     },
     integrationDetails: {
-        heading: 'Integration Details',
+        heading: 'Sentry Integration Details',
         columns: {
             service: 'Service',
             category: 'Category',
@@ -70,7 +133,7 @@ const textContent = {
         viewDetails: 'View Details'
     },
     recentAlerts: {
-        heading: 'Recent Alerts',
+        heading: 'Recent Sentry Alerts',
         filter: 'Filter',
         viewAll: 'View All',
         acknowledge: 'Acknowledge',
@@ -82,14 +145,6 @@ const textContent = {
         maintenanceMode: 'Maintenance Mode',
         notifyMembers: 'Notify Members',
         runHealthCheck: 'Run Health Check'
-    },
-    systemHealth: {
-        heading: 'System Health',
-        overallUptime: 'Overall Uptime (30d):',
-        activeAlerts: 'Active Alerts:',
-        celeryQueue: 'Celery Queue:',
-        lastFullCheck: 'Last Full Check:',
-        recentErrors: 'Recent Errors: View All'
     },
     memberCommunication: {
         heading: 'Member Communication',
@@ -108,9 +163,9 @@ const textContent = {
     automationSettings: {
         heading: 'Automation Settings',
         autoSlack: 'Auto Slack Notifications',
-        autoSlackSecondary: 'Send alerts to team Slack channels',
+        autoSlackSecondary: 'Send alerts to Slack channels from Sentry',
         autoStatusPage: 'Auto StatusPage Updates',
-        autoStatusPageSecondary: 'Create incidents on status page automatically',
+        autoStatusPageSecondary: 'Create incidents from Sentry errors automatically',
         sentryIntegration: 'Sentry Integration',
         sentryIntegrationSecondary: 'Sync error data with Sentry'
     },
@@ -118,153 +173,111 @@ const textContent = {
         statusPage: 'StatusPage.io',
         sentry: 'Sentry',
         slack: 'Slack',
-        footerText: 'Observability Dashboard · Services Down · Admin User · Last check: 7 days ago · AU 196'
+        footerText: 'Sentry Dashboard · All data from Sentry · Last check: 7 days ago · AU 196'
     }
 };
 
-// --- Header Bar (NOT collapsible) ---
-function Header({ view, onViewChange }) {
+// --- Header Bar ---
+function Header({ view, onViewChange, onRefresh }) {
     return (
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={4}>
+            <Typography variant="h4">{textContent.header.title}</Typography>
             <Box>
-                <Typography variant="h4">{textContent.header.title}</Typography>
-                <Typography color="text.secondary">{textContent.header.subtitle}</Typography>
-            </Box>
-            <Box>
-                <ToggleButtonGroup
-                    value={view}
-                    size="small"
-                    exclusive
-                    onChange={(_, v) => v && onViewChange(v)}
-                    sx={{ mr: 2 }}
-                >
+                <ToggleButtonGroup value={view} size="small" exclusive onChange={(_, v) => v && onViewChange(v)} sx={{ mr: 2 }}>
                     <ToggleButton value="simple">{textContent.header.simpleView}</ToggleButton>
                     <ToggleButton value="tech">{textContent.header.technicalView}</ToggleButton>
                 </ToggleButtonGroup>
-                <Button variant="outlined" startIcon={<RefreshIcon />} sx={{ mr: 1 }}>
+                <Button variant="outlined" startIcon={<RefreshIcon />} onClick={onRefresh} sx={{ mr: 1 }}>
                     {textContent.header.checkNow}
                 </Button>
-                <IconButton><SettingsIcon /></IconButton>
             </Box>
         </Box>
     );
 }
 
-// --- Collapsible Card Wrapper ---
-function CollapsibleCard({ title, children, defaultOpen = true, sx = {}, noCard = false }) {
+// --- Collapsible Wrapper ---
+function CollapsibleSection({ title, children, defaultOpen = true }) {
     const [open, setOpen] = useState(defaultOpen);
-    const CardWrap = noCard ? React.Fragment : Card;
     return (
-        <CardWrap {...(noCard ? {} : { sx: { mb: 4, ...sx } })}>
-            <Box display="flex" alignItems="center" justifyContent="space-between"
-                 sx={noCard ? { mb: 1 } : { p: 2, pb: 0 }}>
+        <Card sx={{ mb: 4 }}>
+            <Box display="flex" alignItems="center" justifyContent="space-between" p={2} pb={0}>
                 <Typography variant="h6">{title}</Typography>
-                <IconButton
-                    onClick={() => setOpen(o => !o)}
-                    size="small"
-                    aria-label={open ? "Collapse section" : "Expand section"}
-                >
+                <IconButton onClick={() => setOpen(o => !o)} size="small">
                     {open ? <ArrowDownIcon /> : <ArrowRightIcon />}
                 </IconButton>
             </Box>
             <Collapse in={open} timeout="auto" unmountOnExit>
-                {noCard ? children : <CardContent>{children}</CardContent>}
+                <CardContent>{children}</CardContent>
             </Collapse>
-        </CardWrap>
+        </Card>
     );
 }
 
-// --- Simple View Component ---
-function SimpleView({ data, slackAuto, toggleSlack, statusAuto, toggleStatus, sentryAuto, toggleSentry }) {
-    const { nonCritical, integrations, memberCommunication } = data;
-
+// --- Simple View ---
+function SimpleView({ issues, events, onViewDetails, onResolveIssue }) {
     return (
         <>
-            {/* Overview */}
-            <CollapsibleCard title="Overview">
-                <Typography>Some systems are down</Typography>
-                <Typography>Some features may not work</Typography>
-                <Box mt={2}>
-                    <Button variant="contained" startIcon={<NotifyIcon />}>
-                        Notify Members
-                    </Button>
-                </Box>
-                <Typography mt={2}>Expected fix time: 1-4 hours (non-critical)</Typography>
-            </CollapsibleCard>
-
-            {/* What Members Are Experiencing */}
-            <CollapsibleCard title="What Members Are Experiencing">
-                <List dense>
-                    {nonCritical?.memberImpact?.map((m, i) => (
-                        <ListItem key={i}>
-                            <ListItemText primary={m} />
-                        </ListItem>
-                    ))}
-                </List>
-            </CollapsibleCard>
-
-            {/* System Status (Simple) */}
-            <CollapsibleCard title="System Status (Simple View)">
+            <CollapsibleSection title={textContent.activeIssues.heading}>
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>Service</TableCell>
+                            <TableCell>Title</TableCell>
                             <TableCell>Status</TableCell>
-                            <TableCell>Details</TableCell>
+                            <TableCell>Count</TableCell>
+                            <TableCell align="right"></TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {integrations.map(i => (
-                            <TableRow key={i.name}>
-                                <TableCell>{i.name}</TableCell>
+                        {issues.map(issue => (
+                            <TableRow key={issue.id}>
+                                <TableCell>{issue.title}</TableCell>
                                 <TableCell>
-                                    <Chip
-                                        label={i.status}
-                                        size="small"
-                                        color={
-                                            i.status === 'Healthy'
-                                                ? 'success'
-                                                : i.status === 'Degraded'
-                                                    ? 'warning'
-                                                    : 'error'
-                                        }
-                                    />
+                                    <Chip label={issue.status} size="small" color={issue.status === 'unresolved' ? 'error' : 'success'} />
                                 </TableCell>
-                                <TableCell>
-                                    {i.status !== 'Healthy' && (
-                                        <>
-                                            Issue started: <strong>{i.lastSuccess}</strong>
-                                        </>
+                                <TableCell>{issue.count}</TableCell>
+                                <TableCell align="right">
+                                    {issue.status === 'unresolved' && (
+                                        <Button size="small" onClick={() => onResolveIssue(issue.id)}>
+                                            {textContent.activeIssues.resolveIssue}
+                                        </Button>
                                     )}
+                                    <Button size="small" startIcon={<InfoIcon />} onClick={() => onViewDetails(issue.id)}>
+                                        {textContent.activeIssues.viewDetails}
+                                    </Button>
                                 </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
-            </CollapsibleCard>
+            </CollapsibleSection>
+            <CollapsibleSection title={textContent.recentAlerts.heading}>
+                {/* Note: 'events' state is currently empty. You would create a fetchEvents function to populate this. */}
+                {events.length === 0 ? <Typography>No recent events to display.</Typography> : events.map(evt => (
+                    <Box key={evt.id} mb={2}>
+                        <Typography>{evt.message}</Typography>
+                        <Typography variant="caption">{evt.timestamp}</Typography>
+                    </Box>
+                ))}
+            </CollapsibleSection>
+        </>
+    );
+}
 
-            {/* What To Do */}
-            <CollapsibleCard title="What To Do">
-                <List dense>
-                    <ListItem>
-                        <ListItemText
-                            primary="Contact Developer"
-                            secondary="For urgent technical issues"
-                        />
-                    </ListItem>
-                    <ListItem>
-                        <ListItemText
-                            primary="Notify Members"
-                            secondary="Send update about service issues"
-                        />
-                    </ListItem>
-                </List>
-            </CollapsibleCard>
+// --- Technical View ---
+// This view still uses some placeholder data. You can adapt it to use live data.
+function TechnicalView({ issues, onViewDetails, slackAuto, toggleSlack, statusAuto, toggleStatus, sentryAuto, toggleSentry }) {
+    return (
+        <>
+            {/* These components can be adapted to use live data from new API calls */}
+            <NonCriticalSection data={{ total: 0, healthy: 0, degraded: 0, down: 0, memberImpact: [], criticalServices: [] }} />
+            <SystemHealthSection data={{ overallUptime: 'N/A', activeAlerts: issues.length, celeryQueue: 'N/A', lastFullCheck: 'N/A' }} />
 
-            {/* Member Communication */}
-            <MemberCommunicationSection data={memberCommunication} />
+            <ActiveIssuesSection issues={issues} onViewDetails={onViewDetails} />
 
-            {/* Automation & Quick Links */}
+            <IntegrationDetailsSection integrations={[]} />
+            <RecentAlertsSection alerts={[]} />
+            <QuickActionsSection />
+            <MemberCommunicationSection data={{ criticalFeatures: 'N/A', memberFacingIssues: 0 }} />
             <AutomationSettingsSection
                 slackAuto={slackAuto} toggleSlack={toggleSlack}
                 statusAuto={statusAuto} toggleStatus={toggleStatus}
@@ -275,14 +288,12 @@ function SimpleView({ data, slackAuto, toggleSlack, statusAuto, toggleStatus, se
     );
 }
 
-// --- Technical Sections ---
+// --- Section Components (largely unchanged) ---
 function NonCriticalSection({ data }) {
     if (!data) return null;
     return (
-        <CollapsibleCard title={textContent.nonCritical.heading}>
-            <Typography>
-                {data.total} {textContent.nonCritical.monitoredSuffix}
-            </Typography>
+        <CollapsibleSection title={textContent.nonCritical.heading}>
+            <Typography>{data.total} {textContent.nonCritical.monitoredSuffix}</Typography>
             <Box display="flex" gap={2} my={2}>
                 <Chip label={`${data.healthy} Healthy`} color="success" />
                 <Chip label={`${data.degraded} Degraded`} color="warning" />
@@ -290,262 +301,158 @@ function NonCriticalSection({ data }) {
             </Box>
             <Grid container spacing={2}>
                 <Grid item xs={6}>
-                    <Typography variant="subtitle2">
-                        {textContent.nonCritical.memberImpact}
-                    </Typography>
-                    <List dense>
-                        {(data.memberImpact || []).map((m, i) => (
-                            <ListItem key={i}>
-                                <ListItemText primary={m} />
-                            </ListItem>
-                        ))}
-                    </List>
+                    <Typography variant="subtitle2">{textContent.nonCritical.memberImpact}</Typography>
+                    <List dense>{data.memberImpact.map((m,i)=><ListItem key={i}><ListItemText primary={m} /></ListItem>)}</List>
                 </Grid>
                 <Grid item xs={6}>
-                    <Typography variant="subtitle2">
-                        {textContent.nonCritical.criticalServices}
-                    </Typography>
-                    <Box display="flex" gap={1} flexWrap="wrap">
-                        {(data.criticalServices || []).map(s => (
-                            <Chip key={s} label={s} color="error" />
-                        ))}
-                    </Box>
+                    <Typography variant="subtitle2">{textContent.nonCritical.criticalServices}</Typography>
+                    <Box display="flex" gap={1} flexWrap="wrap">{data.criticalServices.map((s,i)=><Chip key={i} label={s} color="error" />)}</Box>
                 </Grid>
             </Grid>
-        </CollapsibleCard>
+        </CollapsibleSection>
     );
 }
 
 function SystemHealthSection({ data }) {
     if (!data) return null;
     return (
-        <CollapsibleCard title={textContent.systemHealth.heading}>
+        <CollapsibleSection title={textContent.systemHealth.heading}>
             <Grid container spacing={2} mt={1}>
-                <Grid item>
-                    <Typography>
-                        {textContent.systemHealth.overallUptime}{' '}
-                        <strong>{data.overallUptime}</strong>
-                    </Typography>
-                </Grid>
-                <Grid item>
-                    <Typography>
-                        {textContent.systemHealth.activeAlerts}{' '}
-                        <strong>{data.activeAlerts}</strong>
-                    </Typography>
-                </Grid>
-                <Grid item>
-                    <Typography>
-                        {textContent.systemHealth.celeryQueue}{' '}
-                        <strong>{data.celeryQueue}</strong>
-                    </Typography>
-                </Grid>
-                <Grid item>
-                    <Typography>
-                        {textContent.systemHealth.lastFullCheck}{' '}
-                        <strong>{data.lastFullCheck}</strong>
-                    </Typography>
-                </Grid>
-                <Grid item>
-                    <Button size="small">
-                        {textContent.systemHealth.recentErrors}
-                    </Button>
-                </Grid>
+                <Grid item><Typography>{textContent.systemHealth.overallUptime} <strong>{data.overallUptime}</strong></Typography></Grid>
+                <Grid item><Typography>{textContent.systemHealth.activeAlerts} <strong>{data.activeAlerts}</strong></Typography></Grid>
+                <Grid item><Typography>{textContent.systemHealth.celeryQueue} <strong>{data.celeryQueue}</strong></Typography></Grid>
+                <Grid item><Typography>{textContent.systemHealth.lastFullCheck} <strong>{data.lastFullCheck}</strong></Typography></Grid>
+                <Grid item><Button size="small">{textContent.systemHealth.recentErrors}</Button></Grid>
             </Grid>
-        </CollapsibleCard>
+        </CollapsibleSection>
     );
 }
 
-function ActiveIssuesSection({ issues }) {
+function ActiveIssuesSection({ issues, onViewDetails }) {
     if (!issues) return null;
     return (
-        <CollapsibleCard title={textContent.activeIssues.heading}>
+        <CollapsibleSection title={textContent.activeIssues.heading}>
             <Grid container spacing={2} mb={4}>
                 {issues.map(issue => (
-                    <Grid item xs={12} md={6} key={issue.name}>
+                    <Grid item xs={12} md={6} key={issue.id}>
                         <Card variant="outlined">
                             <CardContent>
                                 <Box display="flex" justifyContent="space-between">
                                     <Typography variant="subtitle1">
-                                        {issue.name}{' '}
-                                        <Chip label={issue.priority} size="small" />
+                                        {issue.title} {issue.priority && <Chip label={issue.priority} size="small" />}
                                     </Typography>
-                                    <Button size="small">
-                                        {textContent.activeIssues.fixIssue}
+                                    <Button size="small" onClick={() => onViewDetails(issue.id)}>
+                                        {textContent.activeIssues.viewDetails}
                                     </Button>
                                 </Box>
                                 <List dense>
-                                    <ListItem>
-                                        <ListItemText
-                                            primary="Status"
-                                            secondary={issue.status}
-                                        />
-                                    </ListItem>
-                                    <ListItem>
-                                        <ListItemText
-                                            primary="Down Since"
-                                            secondary={issue.downSince}
-                                        />
-                                    </ListItem>
-                                    <ListItem>
-                                        <ListItemText
-                                            primary="Error Count"
-                                            secondary={issue.errorCount}
-                                        />
-                                    </ListItem>
-                                    {issue.rootCause && (
-                                        <ListItem>
-                                            <ListItemText
-                                                primary="Root Cause"
-                                                secondary={issue.rootCause}
-                                            />
-                                        </ListItem>
-                                    )}
+                                    <ListItem><ListItemText primary="Status" secondary={issue.status} /></ListItem>
+                                    <ListItem><ListItemText primary="First Seen" secondary={new Date(issue.firstSeen).toLocaleString()} /></ListItem>
+                                    <ListItem><ListItemText primary="Event Count" secondary={issue.count} /></ListItem>
+                                    <ListItem><ListItemText primary="Assignee" secondary={issue.assignedTo ? issue.assignedTo.name : 'Unassigned'} /></ListItem>
                                 </List>
-                                <Typography variant="subtitle2">
-                                    {textContent.activeIssues.suggestedActions}
-                                </Typography>
-                                <List dense>
-                                    {(issue.suggested || []).map((a, i) => (
-                                        <ListItem key={i}>
-                                            <ListItemText primary={a} />
-                                        </ListItem>
-                                    ))}
-                                </List>
-                                {issue.recentErrors && (
-                                    <>
-                                        <Typography variant="subtitle2">
-                                            {textContent.activeIssues.recentErrors}
-                                        </Typography>
-                                        <List dense>
-                                            {issue.recentErrors.map((e, i) => (
-                                                <ListItem key={i}>
-                                                    <ListItemText primary={e} />
-                                                </ListItem>
-                                            ))}
-                                        </List>
-                                    </>
-                                )}
                             </CardContent>
                         </Card>
                     </Grid>
                 ))}
             </Grid>
-        </CollapsibleCard>
+        </CollapsibleSection>
     );
 }
 
 function IntegrationDetailsSection({ integrations }) {
     if (!integrations) return null;
     return (
-        <CollapsibleCard title={textContent.integrationDetails.heading}>
-            <Table sx={{ mb: 4 }}>
-                <TableHead>
-                    <TableRow>
-                        {Object.values(textContent.integrationDetails.columns).map(col => (
-                            <TableCell key={col}>{col}</TableCell>
-                        ))}
-                        <TableCell align="right"></TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {integrations.map(i => (
-                        <TableRow key={i.name}>
-                            <TableCell>{i.name}</TableCell>
-                            <TableCell>{i.category}</TableCell>
-                            <TableCell>
-                                <Chip
-                                    label={i.status}
-                                    color={
-                                        i.status === 'Healthy'
-                                            ? 'success'
-                                            : i.status === 'Degraded'
-                                                ? 'warning'
-                                                : 'error'
-                                    }
-                                    size="small"
-                                />
-                            </TableCell>
-                            <TableCell>{i.responseTime}</TableCell>
-                            <TableCell>{i.lastSuccess}</TableCell>
-                            <TableCell>{i.uptime}</TableCell>
-                            <TableCell>{i.issue || '—'}</TableCell>
-                            <TableCell align="right">
-                                <Button size="small">
-                                    {textContent.integrationDetails.viewDetails}
-                                </Button>
-                            </TableCell>
+        <CollapsibleSection title={textContent.integrationDetails.heading}>
+            {integrations.length === 0 ? <Typography>No integration data.</Typography> :
+                <Table sx={{ mb: 4 }}>
+                    <TableHead>
+                        <TableRow>
+                            {Object.values(textContent.integrationDetails.columns).map(col => (
+                                <TableCell key={col}>{col}</TableCell>
+                            ))}
+                            <TableCell align="right"></TableCell>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </CollapsibleCard>
+                    </TableHead>
+                    <TableBody>
+                        {integrations.map(i => (
+                            <TableRow key={i.name}>
+                                <TableCell>{i.name}</TableCell>
+                                <TableCell>{i.category}</TableCell>
+                                <TableCell>
+                                    <Chip
+                                        label={i.status}
+                                        color={i.status === 'Healthy' ? 'success' : i.status === 'Degraded' ? 'warning' : 'error'}
+                                        size="small"
+                                    />
+                                </TableCell>
+                                <TableCell>{i.responseTime}</TableCell>
+                                <TableCell>{i.lastSuccess}</TableCell>
+                                <TableCell>{i.uptime}</TableCell>
+                                <TableCell>{i.issue || '—'}</TableCell>
+                                <TableCell align="right">
+                                    <Button size="small">{textContent.integrationDetails.viewDetails}</Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>}
+        </CollapsibleSection>
     );
 }
 
 function RecentAlertsSection({ alerts }) {
     if (!alerts) return null;
     return (
-        <CollapsibleCard title={textContent.recentAlerts.heading}>
+        <CollapsibleSection title={textContent.recentAlerts.heading}>
             <Box mb={2} display="flex" justifyContent="flex-end" alignItems="center">
                 <Button size="small">{textContent.recentAlerts.filter}</Button>
                 <Button size="small">{textContent.recentAlerts.viewAll}</Button>
             </Box>
-            <List>
-                {alerts.map((a, i) => (
-                    <ListItem
-                        key={i}
-                        secondaryAction={
-                            <Box>
-                                <Button size="small">
-                                    {textContent.recentAlerts.acknowledge}
-                                </Button>
-                                <Button size="small">
-                                    {textContent.recentAlerts.details}
-                                </Button>
-                            </Box>
-                        }
-                    >
-                        {a.severity === 'Warning' ? (
-                            <WarningIcon color="warning" sx={{ mr: 1 }} />
-                        ) : (
-                            <ErrorIcon color="error" sx={{ mr: 1 }} />
-                        )}
-                        <ListItemText
-                            primary={a.message}
-                            secondary={`${a.time} — ${a.details}`}
-                        />
-                    </ListItem>
-                ))}
-            </List>
-        </CollapsibleCard>
+            {alerts.length === 0 ? <Typography>No recent alerts.</Typography> :
+                <List>
+                    {alerts.map((a, i) => (
+                        <ListItem
+                            key={i}
+                            secondaryAction={
+                                <Box>
+                                    <Button size="small">{textContent.recentAlerts.acknowledge}</Button>
+                                    <Button size="small">{textContent.recentAlerts.details}</Button>
+                                </Box>
+                            }
+                        >
+                            {a.severity === 'Warning'
+                                ? <WarningIcon color="warning" sx={{ mr: 1 }} />
+                                : <ErrorIcon color="error" sx={{ mr: 1 }} />
+                            }
+                            <ListItemText
+                                primary={a.message}
+                                secondary={`${a.time} — ${a.details}`}
+                            />
+                        </ListItem>
+                    ))}
+                </List>}
+        </CollapsibleSection>
     );
 }
 
 function QuickActionsSection() {
     return (
-        <CollapsibleCard title={textContent.quickActions.heading}>
+        <CollapsibleSection title={textContent.quickActions.heading}>
             <Box display="flex" gap={2} flexWrap="wrap" mt={2}>
-                <Button variant="contained" color="error">
-                    {textContent.quickActions.emergencyMode}
-                </Button>
-                <Button variant="contained">
-                    {textContent.quickActions.maintenanceMode}
-                </Button>
-                <Button variant="outlined" startIcon={<NotifyIcon />}>
-                    {textContent.quickActions.notifyMembers}
-                </Button>
-                <Button variant="outlined" startIcon={<RefreshIcon />}>
-                    {textContent.quickActions.runHealthCheck}
-                </Button>
+                <Button variant="contained" color="error">{textContent.quickActions.emergencyMode}</Button>
+                <Button variant="contained">{textContent.quickActions.maintenanceMode}</Button>
+                <Button variant="outlined" startIcon={<NotifyIcon />}>{textContent.quickActions.notifyMembers}</Button>
+                <Button variant="outlined" startIcon={<RefreshIcon />}>{textContent.quickActions.runHealthCheck}</Button>
             </Box>
-        </CollapsibleCard>
+        </CollapsibleSection>
     );
 }
 
 function MemberCommunicationSection({ data }) {
     if (!data) return null;
     return (
-        <CollapsibleCard title={textContent.memberCommunication.heading}>
+        <CollapsibleSection title={textContent.memberCommunication.heading}>
             <List dense>
                 <ListItem>
                     <ListItemText
@@ -566,7 +473,7 @@ function MemberCommunicationSection({ data }) {
                     />
                 </ListItem>
             </List>
-            <Typography color="error" paragraph>
+            <Typography color="error" gutterBottom>
                 {textContent.memberCommunication.outageMessage}
             </Typography>
             <TextField
@@ -585,20 +492,17 @@ function MemberCommunicationSection({ data }) {
                     sx={{ ml: 2 }}
                 />
             </Box>
-        </CollapsibleCard>
+        </CollapsibleSection>
     );
 }
 
 function AutomationSettingsSection({
-                                       slackAuto,
-                                       toggleSlack,
-                                       statusAuto,
-                                       toggleStatus,
-                                       sentryAuto,
-                                       toggleSentry
+                                       slackAuto, toggleSlack,
+                                       statusAuto, toggleStatus,
+                                       sentryAuto, toggleSentry
                                    }) {
     return (
-        <CollapsibleCard title={textContent.automationSettings.heading}>
+        <CollapsibleSection title={textContent.automationSettings.heading}>
             <List>
                 <ListItem>
                     <ListItemText
@@ -624,7 +528,7 @@ function AutomationSettingsSection({
                     <Switch checked={sentryAuto} onChange={toggleSentry} />
                 </ListItem>
             </List>
-        </CollapsibleCard>
+        </CollapsibleSection>
     );
 }
 
@@ -643,105 +547,91 @@ function QuickLinksFooter() {
     );
 }
 
-// --- Main Component ---
+// --- MAIN APP COMPONENT ---
 export default function App() {
     const [view, setView] = useState('simple');
+
+    // State for automation toggles
     const [slackAuto, setSlackAuto] = useState(true);
     const [statusAuto, setStatusAuto] = useState(false);
     const [sentryAuto, setSentryAuto] = useState(true);
 
-    // Unified state for all dashboard data, initially empty
-    const [dashboardData, setDashboardData] = useState({
-        nonCritical: null,
-        systemHealth: null,
-        activeIssues: [],
-        integrations: [],
-        recentAlerts: [],
-        memberCommunication: null,
-    });
+    // State for live Sentry data, loading, and errors
+    const [issues, setIssues] = useState([]);
+    const [events, setEvents] = useState([]); // Currently unused, but ready for expansion
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Example: modular fetch function (replace with your real APIs)
-    async function fetchDashboardData() {
-        // Simulate fetching (replace with actual API calls)
-        const data = {
-            nonCritical: {
-                total: 4,
-                healthy: 2,
-                degraded: 1,
-                down: 1,
-                memberImpact: ['Member data sync paused', 'Payment processing delays'],
-                criticalServices: ['Stripe', 'Mailgun']
-            },
-            systemHealth: {
-                overallUptime: '50.0%',
-                activeAlerts: 196,
-                celeryQueue: '988 jobs',
-                lastFullCheck: '7 days ago'
-            },
-            activeIssues: [
-                {
-                    name: 'Database Latency',
-                    priority: 'High',
-                    status: 'Degraded',
-                    downSince: '2 hours ago',
-                    errorCount: 120,
-                    rootCause: 'Connection pool exhaustion',
-                    suggested: ['Increase pool size', 'Investigate recent deployments'],
-                    recentErrors: ['Timeout Error at 12:01', 'Connection refused at 11:58']
-                }
-            ],
-            integrations: [
-                {
-                    name: 'Stripe',
-                    category: 'Payments',
-                    status: 'Healthy',
-                    responseTime: '120ms',
-                    lastSuccess: '5m ago',
-                    uptime: '99.9%',
-                    issue: ''
-                },
-                {
-                    name: 'Mailgun',
-                    category: 'Email',
-                    status: 'Degraded',
-                    responseTime: '250ms',
-                    lastSuccess: '2m ago',
-                    uptime: '98.7%',
-                    issue: 'Delayed responses'
-                }
-            ],
-            recentAlerts: [
-                {
-                    severity: 'Warning',
-                    message: 'High memory usage detected',
-                    time: '10m ago',
-                    details: 'Node 3 memory at 85%'
-                },
-                {
-                    severity: 'Error',
-                    message: 'Failed health check on API',
-                    time: '30m ago',
-                    details: '500 Internal Server Error'
-                }
-            ],
-            memberCommunication: {
-                criticalFeatures: 'All Working',
-                memberFacingIssues: 1,
-            }
-        };
-        setDashboardData(data);
+    // Function to fetch data from Sentry
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const fetchedIssues = await fetchIssues();
+            setIssues(fetchedIssues);
+            setError(null);
+        } catch (err) {
+            setError(err.message);
+            console.error("Failed to fetch Sentry issues:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch data when the component first mounts
+    useEffect(() => {
+        loadData();
+    }, []); // Empty dependency array ensures this runs only once
+
+    const handleViewDetails = (issueId) => {
+        // You could open a modal and fetch more detailed event data here
+        console.log('View details for issue:', issueId);
+        // e.g., window.open(`https://{ORG_SLUG}.sentry.io/issues/${issueId}/`, '_blank');
+    };
+
+    // Handler to resolve an issue using the API
+    const handleResolveIssue = async (issueId) => {
+        try {
+            // Immediately update the UI for a better user experience (optimistic update)
+            setIssues(prevIssues => prevIssues.filter(issue => issue.id !== issueId));
+
+            // Make the API call to resolve the issue
+            await updateIssueStatus(issueId, 'resolved');
+
+        } catch (err) {
+            console.error("Failed to resolve issue:", err);
+            // If the API call fails, we should revert the UI change by refetching the data
+            loadData();
+            alert(`Failed to resolve issue: ${err.message}`);
+        }
+    };
+
+    // Render loading or error states
+    if (loading) {
+        return <Container sx={{ py: 4 }}><Typography variant="h5">Loading Sentry Data...</Typography></Container>;
     }
 
-    useEffect(() => {
-        fetchDashboardData();
-    }, []);
+    if (error) {
+        return <Container sx={{ py: 4 }}><Typography color="error">Error fetching data: {error}</Typography></Container>;
+    }
 
     return (
         <Container maxWidth="xl" sx={{ py: 4 }}>
-            <Header view={view} onViewChange={setView} />
+            <Header
+                view={view}
+                onViewChange={setView}
+                onRefresh={loadData} // The refresh button now refetches data
+            />
             {view === 'simple' ? (
                 <SimpleView
-                    data={dashboardData}
+                    issues={issues}
+                    events={events} // Pass empty events array for now
+                    onViewDetails={handleViewDetails}
+                    onResolveIssue={handleResolveIssue}
+                />
+            ) : (
+                <TechnicalView
+                    issues={issues}
+                    onViewDetails={handleViewDetails}
                     slackAuto={slackAuto}
                     toggleSlack={() => setSlackAuto(!slackAuto)}
                     statusAuto={statusAuto}
@@ -749,25 +639,6 @@ export default function App() {
                     sentryAuto={sentryAuto}
                     toggleSentry={() => setSentryAuto(!sentryAuto)}
                 />
-            ) : (
-                <>
-                    <NonCriticalSection data={dashboardData.nonCritical} />
-                    <SystemHealthSection data={dashboardData.systemHealth} />
-                    <ActiveIssuesSection issues={dashboardData.activeIssues} />
-                    <IntegrationDetailsSection integrations={dashboardData.integrations} />
-                    <RecentAlertsSection alerts={dashboardData.recentAlerts} />
-                    <QuickActionsSection />
-                    <MemberCommunicationSection data={dashboardData.memberCommunication} />
-                    <AutomationSettingsSection
-                        slackAuto={slackAuto}
-                        toggleSlack={() => setSlackAuto(!slackAuto)}
-                        statusAuto={statusAuto}
-                        toggleStatus={() => setStatusAuto(!statusAuto)}
-                        sentryAuto={sentryAuto}
-                        toggleSentry={() => setSentryAuto(!sentryAuto)}
-                    />
-                    <QuickLinksFooter />
-                </>
             )}
         </Container>
     );
