@@ -431,7 +431,7 @@ function MemberCommunicationSection({ data }) {
                     />
                 </ListItem>
             </List>
-            <Typography color="error" paragraph>
+            <Typography color="error" gutterBottom>
                 {textContent.memberCommunication.outageMessage}
             </Typography>
             <TextField
