@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './App.css';
 import {
     Container,
@@ -45,37 +46,44 @@ const PROJECT_SLUG = process.env.REACT_APP_SENTRY_PROJECT_SLUG;
 const BASE_URL = 'https://sentry.io/api/0';
 
 /**
- * A helper function to make authenticated requests to the Sentry API.
+ * An Axios instance to make authenticated requests to the Sentry API.
  * It automatically adds the required Authorization header.
- * @param {string} endpoint The API endpoint to call (e.g., /projects/...).
- * @param {object} options Standard fetch options (method, body, etc.).
- * @returns {Promise<any>} The JSON response from the API.
  */
-const sentryFetch = async (endpoint, options = {}) => {
-    const url = `${BASE_URL}${endpoint}`;
-    const headers = {
-        ...options.headers,
+const sentryApi = axios.create({
+    baseURL: BASE_URL,
+    headers: {
         'Authorization': `Bearer ${SENTRY_AUTH_TOKEN}`,
         'Content-Type': 'application/json',
-    };
+    },
+});
 
-    const response = await fetch(url, { ...options, headers });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Sentry API Error: ${response.status} - ${JSON.stringify(errorData)}`);
+/**
+ * A helper function to handle errors from the Sentry API.
+ * @param {object} error The error object from a failed Axios request.
+ * @returns {never} Throws a new error with a formatted message.
+ */
+const handleError = (error) => {
+    if (error.response) {
+        throw new Error(`Sentry API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+    } else {
+        throw new Error(`Sentry API Error: ${error.message}`);
     }
-    return response.json();
 };
+
 
 /**
  * Fetches a list of unresolved issues for your project.
  * @returns {Promise<Array>} A promise that resolves to an array of issue objects.
  */
-const fetchIssues = () => {
-    // We are specifically querying for issues that are not yet resolved.
-    return sentryFetch(`/projects/${ORG_SLUG}/${PROJECT_SLUG}/issues/?query=is:unresolved`);
+const fetchIssues = async () => {
+    try {
+        const response = await sentryApi.get(`/projects/${ORG_SLUG}/${PROJECT_SLUG}/issues/`);
+        return response.data;
+    } catch (error) {
+        handleError(error);
+    }
 };
+
 
 /**
  * Updates an issue's status (e.g., to "resolved").
@@ -83,11 +91,13 @@ const fetchIssues = () => {
  * @param {string} status The new status, e.g., "resolved" or "ignored".
  * @returns {Promise<Object>} A promise that resolves to the updated issue object.
  */
-const updateIssueStatus = (issueId, status) => {
-    return sentryFetch(`/issues/${issueId}/`, {
-        method: 'PUT',
-        body: JSON.stringify({ status }),
-    });
+const updateIssueStatus = async (issueId, status) => {
+    try {
+        const response = await sentryApi.put(`/issues/${issueId}/`, { status });
+        return response.data;
+    } catch (error) {
+        handleError(error);
+    }
 };
 
 // --- Text Variables (Sentry-only) ---
