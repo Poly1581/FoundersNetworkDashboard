@@ -25,9 +25,7 @@ Then, you should be all set and ready to go!
 - [Install pipenv](https://pipenv.pypa.io/en/latest/installation.html)
 - Navigate to the `/dashboardAPI` subdirectory
 - Generate the virtual environment with `pipenv install`
-- Activate the virtual environment with `pipenv shell`
-- Launch the server with `python manage.py runserver`
-
+- Launch the server with `pipenv run manage.py runserver`
 
 ## ✅ Todo
 
