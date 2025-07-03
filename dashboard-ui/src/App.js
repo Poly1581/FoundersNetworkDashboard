@@ -36,6 +36,61 @@ import {
     KeyboardArrowRight as ArrowRightIcon
 } from '@mui/icons-material';
 
+import {
+    Popover,
+    CircularProgress,
+    Link
+} from '@mui/material';
+
+// --- Event Detail Popover Component ---
+function EventDetailPopover({ issue, events, anchorEl, onClose }) {
+    const open = Boolean(anchorEl);
+
+    return (
+        <Popover
+            open={open}
+            anchorEl={anchorEl}
+            onClose={onClose}
+            anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'left',
+            }}
+        >
+            <Box sx={{ p: 2, maxWidth: 500 }}>
+                {issue && (
+                    <Typography variant="h6" gutterBottom>
+                        {issue.title}
+                    </Typography>
+                )}
+                {events.length > 0 ? (
+                    <List dense>
+                        {/* Display details of the latest event */}
+                        <ListItem>
+                            <ListItemText
+                                primary="Latest Event ID"
+                                secondary={
+                                    <Link href={`${issue.permalink}events/${events[0].id}/`} target="_blank" rel="noopener">
+                                        {events[0].id}
+                                    </Link>
+                                }
+                            />
+                        </ListItem>
+                        <ListItem>
+                            <ListItemText primary="Message" secondary={events[0].message} />
+                        </ListItem>
+                        <ListItem>
+                            <ListItemText primary="Timestamp" secondary={new Date(events[0].dateCreated).toLocaleString()} />
+                        </ListItem>
+                    </List>
+                ) : (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                        <CircularProgress size={24} />
+                    </Box>
+                )}
+            </Box>
+        </Popover>
+    );
+}
 // --- Sentry API Client ---
 // This section handles all communication with the Sentry API.
 // Ensure your .env file has your credentials.
@@ -224,7 +279,7 @@ function CollapsibleSection({ title, children, defaultOpen = true }) {
 }
 
 // --- Simple View ---
-function SimpleView({ issues, events, onViewDetails, onResolveIssue }) {
+function SimpleView({ issues, onViewDetails, onResolveIssue }) {
     return (
         <>
             <CollapsibleSection title={textContent.activeIssues.heading}>
@@ -251,7 +306,8 @@ function SimpleView({ issues, events, onViewDetails, onResolveIssue }) {
                                             {textContent.activeIssues.resolveIssue}
                                         </Button>
                                     )}
-                                    <Button size="small" startIcon={<InfoIcon />} onClick={() => onViewDetails(issue.id)}>
+                                    {/* Make sure this passes the event object 'e' */}
+                                    <Button size="small" startIcon={<InfoIcon />} onClick={(e) => onViewDetails(e, issue.id)}>
                                         {textContent.activeIssues.viewDetails}
                                     </Button>
                                 </TableCell>
@@ -259,15 +315,6 @@ function SimpleView({ issues, events, onViewDetails, onResolveIssue }) {
                         ))}
                     </TableBody>
                 </Table>
-            </CollapsibleSection>
-            <CollapsibleSection title={textContent.recentAlerts.heading}>
-                {/* Note: 'events' state is currently empty. You would create a fetchEvents function to populate this. */}
-                {events.length === 0 ? <Typography>No recent events to display.</Typography> : events.map(evt => (
-                    <Box key={evt.id} mb={2}>
-                        <Typography>{evt.message}</Typography>
-                        <Typography variant="caption">{evt.timestamp}</Typography>
-                    </Box>
-                ))}
             </CollapsibleSection>
         </>
     );
@@ -349,11 +396,13 @@ function ActiveIssuesSection({ issues, onViewDetails }) {
                             <CardContent>
                                 <Box display="flex" justifyContent="space-between">
                                     <Typography variant="subtitle1">
-                                        {issue.title} {issue.priority && <Chip label={issue.priority} size="small" />}
+                                        {issue.title} {issue.metadata.value && <Chip label={issue.metadata.value} size="small" />}
                                     </Typography>
-                                    <Button size="small" onClick={() => onViewDetails(issue.id)}>
+
+                                    <Button size="small" onClick={(e) => onViewDetails(e, issue.id)}>
                                         {textContent.activeIssues.viewDetails}
                                     </Button>
+
                                 </Box>
                                 <List dense>
                                     <ListItem><ListItemText primary="Status" secondary={issue.status} /></ListItem>
@@ -572,6 +621,10 @@ export default function App() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Inside the App component, add these lines
+    const [selectedIssue, setSelectedIssue] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     // Function to fetch data from Sentry
     const loadData = async () => {
         try {
@@ -592,10 +645,45 @@ export default function App() {
         loadData();
     }, []); // Empty dependency array ensures this runs only once
 
-    const handleViewDetails = (issueId) => {
-        // You could open a modal and fetch more detailed event data here
-        console.log('View details for issue:', issueId);
-        // e.g., window.open(`https://{ORG_SLUG}.sentry.io/issues/${issueId}/`, '_blank');
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [popoverData, setPopoverData] = useState({ issue: null, events: [] });
+
+    /**
+     * Fetches a list of individual events for a specific issue.
+     * @param {string} issueId The ID of the issue to fetch events for.
+     * @returns {Promise<Array>} A promise that resolves to an array of event objects.
+     */
+    const fetchEventsForIssue = async (issueId) => {
+        try {
+            const response = await sentryApi.get(`/issues/${issueId}/events/`);
+            return response.data;
+        } catch (error) {
+            handleError(error);
+        }
+    };
+
+    const handleViewDetails = async (event, issueId) => {
+        // 1. Set the anchor element to the button that was clicked
+        setAnchorEl(event.currentTarget);
+
+        const issue = issues.find(iss => iss.id === issueId);
+        // 2. Set initial data to show a loading state in the popover
+        setPopoverData({ issue, events: [] });
+
+        try {
+            // 3. Fetch the event data from the Sentry API
+            const fetchedEvents = await fetchEventsForIssue(issueId);
+            // 4. Update the popover with the complete data
+            setPopoverData({ issue, events: fetchedEvents });
+        } catch (err) {
+            console.error("Could not fetch events for issue:", err);
+            // You could set an error message in the popoverData state here
+        }
+    };
+
+    // Add a handler to close the popover
+    const handleClosePopover = () => {
+        setAnchorEl(null);
     };
 
     // Handler to resolve an issue using the API
@@ -629,12 +717,21 @@ export default function App() {
             <Header
                 view={view}
                 onViewChange={setView}
-                onRefresh={loadData} // The refresh button now refetches data
+                onRefresh={loadData}
             />
+
+            {/* 1. Render the Popover component here, passing in the necessary state */}
+            <EventDetailPopover
+                issue={popoverData.issue}
+                events={popoverData.events}
+                anchorEl={anchorEl}
+                onClose={handleClosePopover}
+            />
+
             {view === 'simple' ? (
                 <SimpleView
                     issues={issues}
-                    events={events} // Pass empty events array for now
+                    // 2. The 'events' prop is no longer needed here
                     onViewDetails={handleViewDetails}
                     onResolveIssue={handleResolveIssue}
                 />
