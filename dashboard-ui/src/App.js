@@ -288,7 +288,6 @@ function SimpleView({ issues, onViewDetails, onResolveIssue }) {
                         <TableRow>
                             <TableCell>Title</TableCell>
                             <TableCell>Status</TableCell>
-                            <TableCell>Count</TableCell>
                             <TableCell align="right"></TableCell>
                         </TableRow>
                     </TableHead>
@@ -299,7 +298,6 @@ function SimpleView({ issues, onViewDetails, onResolveIssue }) {
                                 <TableCell>
                                     <Chip label={issue.status} size="small" color={issue.status === 'unresolved' ? 'error' : 'success'} />
                                 </TableCell>
-                                <TableCell>{issue.count}</TableCell>
                                 <TableCell align="right">
                                     {issue.status === 'unresolved' && (
                                         <Button size="small" onClick={() => onResolveIssue(issue.id)}>
@@ -407,7 +405,6 @@ function ActiveIssuesSection({ issues, onViewDetails }) {
                                 <List dense>
                                     <ListItem><ListItemText primary="Status" secondary={issue.status} /></ListItem>
                                     <ListItem><ListItemText primary="First Seen" secondary={new Date(issue.firstSeen).toLocaleString()} /></ListItem>
-                                    <ListItem><ListItemText primary="Event Count" secondary={issue.count} /></ListItem>
                                     <ListItem><ListItemText primary="Assignee" secondary={issue.assignedTo ? issue.assignedTo.name : 'Unassigned'} /></ListItem>
                                 </List>
                             </CardContent>
