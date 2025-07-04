@@ -5,10 +5,10 @@ FROM python:3.14.0b3-slim
 RUN mkdir /dashboard-backend
 
 # Set workdir
-WORKDIR /dashboard-backend
+WORKDIR /app
 
-# Copy project files
-COPY . /dashboard-backend
+# Copy dependencies
+COPY ./requirements.txt .
 
 # Don't write pyc files to disk
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -18,6 +18,9 @@ ENV PYTHONUNBUFFERED=1
 
 # Indstall dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy project files
+COPY . .
 
 # Expose port
 EXPOSE 8000
