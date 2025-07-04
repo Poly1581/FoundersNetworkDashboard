@@ -4,25 +4,4 @@ A centralized platform observability dashboard for admins to look at in the foun
 
 ## 💻 Installation
 
-### Frontend
-First, you need to ensure that you have npm installed. To check the version:
-
-```npm version```
-
-If you don't have it installed, then type in the terminal:
-
-```npm install```
-
-After that, you want to install axios:
-
-```npm install axios```
-
-Then, you should be all set and ready to go!
-
-### Backend
-- [Install python](https://www.python.org/downloads/)
-- [Install pip](https://pip.pypa.io/en/stable/installation/)
-- [Install pipenv](https://pipenv.pypa.io/en/latest/installation.html)
-- Navigate to the `/dashboardAPI` subdirectory
-- Generate the virtual environment with `pipenv install`
-- Launch the server with `pipenv run python manage.py runserver`
+Both frontend and backend are launched via docker compose. To start both, execute `docker compose up -d` in the project directory.

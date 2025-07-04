@@ -1,0 +1,10 @@
+services:
+  frontend:
+    build: ./dashboard-ui
+    ports:
+      - "3000:3000"
+
+  backend:
+    build: ./dashboardAPI
+    ports:
+      - "8000:8000"
