@@ -97,23 +97,33 @@ function EventDetailPopover({ issue, events, anchorEl, onClose }) {
  * @param {object} error The error object from a failed Axios request.
  * @returns {never} Throws a new error with a formatted message.
  */
-const handleError = (error) => {
+const handleError = (type, error) => {
     if (error.response) {
-        throw new Error(`Sentry API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        throw new Error(`Error ${type}: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
     } else {
-        throw new Error(`Sentry API Error: ${error.message}`);
+        throw new Error(`Error ${type}: ${error.message}`);
     }
 };
 
+/**
+ * An Axios instance to make requests to the backend.
+ * Automatically reroutes to backend (:8000)
+ */
+const sentryApi = axios.create({
+    baseURL: "http://localhost:8000"
+})
 
 /**
  * Fetches a list of unresolved issues for your project.
  * @returns {Promise<Array>} A promise that resolves to an array of issue objects.
  */
 const fetchIssues = async () => {
-    axios.get("/issues")
-    .then((response) => response.data)
-    .catch((error) => handleError(error));
+    try {
+        const response = await sentryApi.get("/issues");
+        return response.data;
+    } catch (error) {
+        handleError("fetching issues", error);
+    }
 };
 
 /**
@@ -121,9 +131,12 @@ const fetchIssues = async () => {
  * @returns {Promise<Array>} A promise that resolves to an array of issue objects.
  */
 const fetchEvents = async () => {
-    axios.get("/events")
-    .then((response) => response.data)
-    .catch((error) => handleError(error));
+    try {
+        const response = await sentryApi.get("/events");
+        return response.data;
+    } catch (error) {
+        handleError("fetching events", error);
+    }
 };
 
 /**
@@ -133,15 +146,12 @@ const fetchEvents = async () => {
  * @returns {Promise<Object>} A promise that resolves to the updated issue object.
  */
 const updateIssueStatus = async (issueId, status) => {
-    axios.put(`/issues/${issueId}/`, {status})
-    .then((response) => response.data)
-    .catch((error) => handleError(error));
-    //try {
-        //const response = await sentryApi.put(`/issues/${issueId}/`, { status });
-        //return response.data;
-    //} catch (error) {
-        //handleError(error);
-    //}
+    try {
+        const response = await sentryApi.put(`/issues/${issueId}`, {status});
+        return response.data;
+    } catch (error) {
+        handleError("updating issue status", error);
+    }
 };
 
 // --- Text Variables (Sentry-only) ---
@@ -640,15 +650,12 @@ export default function App() {
      * @returns {Promise<Array>} A promise that resolves to an array of event objects.
      */
     const fetchEventsForIssue = async (issueId) => {
-        axios(`/issues/${issueId}/events/`)
+        axios(`http://localhost:8000/issues/${issueId}/events`)
         .then((response) => response.data)
-        .catch((error) => handleError(error));
-        //try {
-            //const response = await sentryApi.get(`/issues/${issueId}/events/`);
-            //return response.data;
-        //} catch (error) {
-            //handleError(error);
-        //}
+        .catch((error) => {
+            handleError("fetching events for issue", error);
+            return {};
+        });
     };
 
     const handleViewDetails = async (event, issueId) => {
