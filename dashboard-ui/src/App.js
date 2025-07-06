@@ -24,7 +24,8 @@ import {
     Collapse,
     Switch,
     Divider,
-    TextField
+    TextField,
+    MenuItem
 } from '@mui/material';
 import {
     Refresh as RefreshIcon,
@@ -320,7 +321,7 @@ function SimpleView({ issues, onViewDetails, onResolveIssue }) {
 
 // --- Technical View ---
 // This view still uses some placeholder data. You can adapt it to use live data.
-function TechnicalView({ issues, onViewDetails, slackAuto, toggleSlack, statusAuto, toggleStatus, sentryAuto, toggleSentry }) {
+function TechnicalView({ issues, filter, setFilter, showFilter, setShowFilter, onViewDetails, slackAuto, toggleSlack, statusAuto, toggleStatus, sentryAuto, toggleSentry }) {
     return (
         <>
             {/* These components can be adapted to use live data from new API calls */}
@@ -330,7 +331,7 @@ function TechnicalView({ issues, onViewDetails, slackAuto, toggleSlack, statusAu
             <ActiveIssuesSection issues={issues} onViewDetails={onViewDetails} />
 
             <IntegrationDetailsSection integrations={[]} />
-            <RecentAlertsSection alerts={[]} />
+            <RecentAlertsSection alerts={[]} showFilter={showFilter} toggleFilter={() => setShowFilter(prev => !prev)} filter={filter} onFilterChange={setFilter}/>
             <QuickActionsSection />
             <MemberCommunicationSection data={{ criticalFeatures: 'N/A', memberFacingIssues: 0 }} />
             <AutomationSettingsSection
@@ -457,15 +458,24 @@ function IntegrationDetailsSection({ integrations }) {
     );
 }
 
-function RecentAlertsSection({ alerts }) {
+function RecentAlertsSection({ alerts, showFilter, toggleFilter, filter, onFilterChange }) {
     if (!alerts) return null;
     return (
         <CollapsibleSection title={textContent.recentAlerts.heading}>
             <Box mb={2} display="flex" justifyContent="flex-end" alignItems="center">
-                <Button size="small">{textContent.recentAlerts.filter}</Button>
+                <Button size="small" onClick={toggleFilter}>{textContent.recentAlerts.filter}</Button>
                 <Button size="small">{textContent.recentAlerts.viewAll}</Button>
             </Box>
-            {alerts.length === 0 ? <Typography>No recent alerts.</Typography> :
+
+            {showFilter && (
+                <Box mb={2}>
+                    <FilterBar filter={filter} onFilterChange={onFilterChange} />
+                </Box>
+            )}
+
+            {alerts.length === 0 ? (
+                <Typography>No recent alerts.</Typography>
+            ) : (
                 <List>
                     {alerts.map((a, i) => (
                         <ListItem
@@ -479,15 +489,15 @@ function RecentAlertsSection({ alerts }) {
                         >
                             {a.severity === 'Warning'
                                 ? <WarningIcon color="warning" sx={{ mr: 1 }} />
-                                : <ErrorIcon color="error" sx={{ mr: 1 }} />
-                            }
+                                : <ErrorIcon color="error" sx={{ mr: 1 }} />}
                             <ListItemText
                                 primary={a.message}
                                 secondary={`${a.time} — ${a.details}`}
                             />
                         </ListItem>
                     ))}
-                </List>}
+                </List>
+            )}
         </CollapsibleSection>
     );
 }
@@ -603,6 +613,56 @@ function QuickLinksFooter() {
     );
 }
 
+function FilterBar({ filter, onFilterChange }) {
+    return (
+        <Box display="flex" gap={2} mb={2} flexWrap={"wrap"}>
+            <TextField
+                select
+                label="Status"
+                variant="outlined"
+                size="small"
+                sx={{ minWidth: 130 }}
+                value={filter.status}
+                onChange={(e) => onFilterChange({ ...filter, status: e.target.value })}
+            >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="unresolved">Unresolved</MenuItem>
+                <MenuItem value="resolved">Resolved</MenuItem>
+            </TextField>
+
+            <TextField
+                select
+                label="Level"
+                variant="outlined"
+                size="small"
+                sx={{ minWidth: 130 }}
+                value={filter.level}
+                onChange={(e) => onFilterChange({ ...filter, level: e.target.value })}
+            >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="error">Error</MenuItem>
+                <MenuItem value="warning">Warning</MenuItem>
+                <MenuItem value="info">Info</MenuItem>
+                <MenuItem value="debug">Debug</MenuItem>
+            </TextField>
+
+            <TextField
+                select
+                label="Date Range"
+                variant="outlined"
+                size="small"
+                sx={{ minWidth: 160 }}
+                value={filter.date}
+                onChange={(e) => onFilterChange({ ...filter, date: e.target.value })}
+            >
+                <MenuItem value="1d">Last 1 Day</MenuItem>
+                <MenuItem value="7d">Last 7 Days</MenuItem>
+                <MenuItem value="30d">Last 30 Days</MenuItem>
+            </TextField>
+        </Box>
+    );
+}
+
 // --- MAIN APP COMPONENT ---
 export default function App() {
     const [view, setView] = useState('simple');
@@ -612,11 +672,18 @@ export default function App() {
     const [statusAuto, setStatusAuto] = useState(false);
     const [sentryAuto, setSentryAuto] = useState(true);
 
-    // State for live Sentry data, loading, and errors
+    // State for live Sentry filter, data, loading, and errors
     const [issues, setIssues] = useState([]);
     const [events, setEvents] = useState([]); // Currently unused, but ready for expansion
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [filter, setFilter] = useState({
+        status: '',
+        level: '',
+        date: '',
+    });
+    const [showFilter, setShowFilter] = useState(false);
+
 
     // Inside the App component, add these lines
     const [selectedIssue, setSelectedIssue] = useState(null);
@@ -735,6 +802,10 @@ export default function App() {
             ) : (
                 <TechnicalView
                     issues={issues}
+                    filter={filter}
+                    setFilter={setFilter}
+                    showFilter={showFilter}
+                    setShowFilter={setShowFilter}
                     onViewDetails={handleViewDetails}
                     slackAuto={slackAuto}
                     toggleSlack={() => setSlackAuto(!slackAuto)}
