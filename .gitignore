@@ -1,1 +1,5 @@
+# No leaks
 .env
+
+# No notes
+*.md

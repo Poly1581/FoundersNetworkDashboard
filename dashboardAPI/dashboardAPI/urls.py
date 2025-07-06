@@ -21,6 +21,8 @@ from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("issues", views.issues , name="issues"),
-    path("events", views.events , name="events"),
+    path("issues", views.issues, name="issues"),
+    path("events", views.events, name="events"),
+    path("issues/", views.issues, name="issues/"),
+    path("events/", views.events, name="events/"),
 ]
