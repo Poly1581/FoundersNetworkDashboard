@@ -640,10 +640,9 @@ function FilterBar({ filter, onFilterChange }) {
                 onChange={(e) => onFilterChange({ ...filter, level: e.target.value })}
             >
                 <MenuItem value="">All</MenuItem>
-                <MenuItem value="error">Error</MenuItem>
-                <MenuItem value="warning">Warning</MenuItem>
-                <MenuItem value="info">Info</MenuItem>
-                <MenuItem value="debug">Debug</MenuItem>
+                <MenuItem value="healthy">Healthy</MenuItem>
+                <MenuItem value="degraded">Degraded</MenuItem>
+                <MenuItem value="down">Down</MenuItem>
             </TextField>
 
             <TextField
