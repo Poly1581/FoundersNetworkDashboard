@@ -1,10 +1,13 @@
+name: "dashboard"
 services:
   frontend:
+    container_name: frontend
     build: ./dashboard-ui
     ports:
       - "3000:3000"
 
   backend:
+    container_name: backend
     build: ./dashboardAPI
     ports:
       - "8000:8000"
