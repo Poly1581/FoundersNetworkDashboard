@@ -1,7 +1,9 @@
-from django.http import HttpResponse
-from django.http import HttpResponseBadRequest
-import requests
 import json
+import requests
+from django.http import HttpResponse
+from rest_framework.decorators import api_view
+from django.http import HttpResponseBadRequest
+from django.views.decorators.csrf import csrf_exempt
 
 # Environment variables
 import environ
@@ -14,7 +16,32 @@ HEADERS = {
     "Authorization": f"Bearer {env("SENTRY_BEARER_AUTH")}"
 }
 
-def issues(request):
+@api_view(["GET"])
+def get_issue_events(request, **kwargs):
+    URI = f"{SENTRY_URI}/organizations/{SENTRY_ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/events/"
+    try:
+        response = requests.get(URI, headers = HEADERS)
+        return HttpResponse(json.dumps(response.json()), content_type="application/json")
+    except Exception as error:
+        print(f"Error getting issues: {error}")
+        return HttpResponseBadRequest
+
+@csrf_exempt
+@api_view(["PUT"])
+def update_issue_status(request, **kwargs):
+    print(f"Headers: {request.headers}")
+    print(f"Data: {request.data}")
+    print(f"Status: {request.data.get("status")}")
+    URI = f"{SENTRY_URI}/organizations/{SENTRY_ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/"
+    try:
+        response = requests.put(URI, headers = HEADERS, data = request.data)
+        return HttpResponse(json.dumps(response.json()), content_type="application/json")
+    except Exception as error:
+        print(f"Error getting issues: {error}")
+        return HttpResponseBadRequest
+
+@api_view(["GET"])
+def get_issues(request, **kwargs):
     URI = f"{SENTRY_URI}/projects/{SENTRY_ORGANIZATION_SLUG}/{SENTRY_PROJECT_ID}/issues/"
     try:
         response = requests.get(URI, headers = HEADERS)
@@ -23,7 +50,8 @@ def issues(request):
         print(f"Error getting issues: {error}")
         return HttpResponseBadRequest
 
-def events(request):
+@api_view(["GET"])
+def get_events(request, **kwargs):
     URI = f"{SENTRY_URI}/projects/{SENTRY_ORGANIZATION_SLUG}/{SENTRY_PROJECT_ID}/events"
     try:
         response = requests.get(URI, headers = HEADERS)
@@ -31,5 +59,4 @@ def events(request):
     except Exception as error:
         print(f"Error getting issues: {error}")
         return HttpResponseBadRequest
-
 

@@ -111,7 +111,36 @@ const handleError = (type, error) => {
  */
 const sentryApi = axios.create({
     baseURL: "http://localhost:8000"
-})
+});
+
+/**
+ * Fetches a list of individual events for a specific issue.
+ * @param {string} issueId The ID of the issue to fetch events for.
+ * @returns {Promise<Array>} A promise that resolves to an array of event objects.
+ */
+const fetchEventsForIssue = async (issueId) => {
+    try {
+        const response = await sentryApi.get(`/issues/${issueId}/events`);
+        return response.data;
+    } catch (error) {
+        handleError("fetching issues", error);
+    }
+};
+
+/**
+ * Updates an issue's status (e.g., to "resolved").
+ * @param {string} issueId The ID of the issue to update.
+ * @param {string} status The new status, e.g., "resolved" or "ignored".
+ * @returns {Promise<Object>} A promise that resolves to the updated issue object.
+ */
+const updateIssueStatus = async (issueId, status) => {
+    try {
+        const response = await sentryApi.put(`/issues/${issueId}`, {status});
+        return response.data;
+    } catch (error) {
+        handleError("updating issue status", error);
+    }
+};
 
 /**
  * Fetches a list of unresolved issues for your project.
@@ -136,21 +165,6 @@ const fetchEvents = async () => {
         return response.data;
     } catch (error) {
         handleError("fetching events", error);
-    }
-};
-
-/**
- * Updates an issue's status (e.g., to "resolved").
- * @param {string} issueId The ID of the issue to update.
- * @param {string} status The new status, e.g., "resolved" or "ignored".
- * @returns {Promise<Object>} A promise that resolves to the updated issue object.
- */
-const updateIssueStatus = async (issueId, status) => {
-    try {
-        const response = await sentryApi.put(`/issues/${issueId}`, {status});
-        return response.data;
-    } catch (error) {
-        handleError("updating issue status", error);
     }
 };
 
@@ -644,19 +658,6 @@ export default function App() {
     const [anchorEl, setAnchorEl] = useState(null);
     const [popoverData, setPopoverData] = useState({ issue: null, events: [] });
 
-    /**
-     * Fetches a list of individual events for a specific issue.
-     * @param {string} issueId The ID of the issue to fetch events for.
-     * @returns {Promise<Array>} A promise that resolves to an array of event objects.
-     */
-    const fetchEventsForIssue = async (issueId) => {
-        axios(`http://localhost:8000/issues/${issueId}/events`)
-        .then((response) => response.data)
-        .catch((error) => {
-            handleError("fetching events for issue", error);
-            return {};
-        });
-    };
 
     const handleViewDetails = async (event, issueId) => {
         // 1. Set the anchor element to the button that was clicked
