@@ -29,12 +29,9 @@ def get_issue_events(request, **kwargs):
 @csrf_exempt
 @api_view(["PUT"])
 def update_issue_status(request, **kwargs):
-    print(f"Headers: {request.headers}")
-    print(f"Data: {request.data}")
-    print(f"Status: {request.data.get("status")}")
     URI = f"{SENTRY_URI}/organizations/{SENTRY_ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/"
     try:
-        response = requests.put(URI, headers = HEADERS, data = request.data)
+        response = requests.put(URI, headers = HEADERS, json = {"status": request.data.get("status")})
         return HttpResponse(json.dumps(response.json()), content_type="application/json")
     except Exception as error:
         print(f"Error getting issues: {error}")
