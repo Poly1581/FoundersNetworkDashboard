@@ -15,27 +15,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import re_path
 
 from . import views
 
-# def get_issue_events(request, issue_id):
-# URI = f"organizations/{SENTRY_ORGANIZATION_SLUG}/issues/{issue_id}/events"
-# const response = await sentryApi.get(`/issues/${issueId}/events`);
-# def get_issue_events(request, issue_id):
 urlpatterns = [
-    # Without trailing slash
-    path('admin', admin.site.urls),
-    path("issues/<int:issue_id>/events", views.get_issue_events, name="get issue events without slash"),
-    path("issues/<int:issue_id>", views.update_issue_status, name="update issue status without slash"),
-    path("issues", views.get_issues, name="get issues without slash"),
-    path("events", views.get_events, name="get events without slash"),
-
-
-    # With trailing slash
-    path('admin/', admin.site.urls),
-    path("issues/<int:issue_id>/events", views.get_issue_events, name="get issue events with slash"),
-    path("issues/<int:issue_id>", views.update_issue_status, name="update issue status with slash"),
-    path("issues", views.get_issues, name="get issues with slash"),
-    path("events", views.get_events, name="get events with slash"),
+    re_path(r"^admin/?", admin.site.urls, name="urls"),
+    re_path(r"issues/<int:issue_id>/events/?", views.get_issue_events, name="get_issue_events"),
+    re_path(r"issues/<int:issue_id>/?", views.update_issue_status, name="update_issue_status"),
+    re_path(r"issues/?", views.get_issues, name="get_issues"),
+    re_path(r"events/?", views.get_events, name="get_events"),
 ]
