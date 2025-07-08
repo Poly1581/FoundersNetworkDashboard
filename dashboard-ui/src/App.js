@@ -119,9 +119,9 @@ const sentryApi = axios.create({
  * @param {string} issueId The ID of the issue to fetch events for.
  * @returns {Promise<Array>} A promise that resolves to an array of event objects.
  */
-const fetchEventsForIssue = async (issueId) => {
+async function fetchEventsForIssue(issueId) {
     try {
-        const response = await sentryApi.get(`/issues/${issueId}/events`);
+        const response = await sentryApi.get(`/issues/${issueId}/events/`);
         return response.data;
     } catch (error) {
         handleError("fetching issues", error);
@@ -134,9 +134,9 @@ const fetchEventsForIssue = async (issueId) => {
  * @param {string} status The new status, e.g., "resolved" or "ignored".
  * @returns {Promise<Object>} A promise that resolves to the updated issue object.
  */
-const updateIssueStatus = async (issueId, status) => {
+async function updateIssueStatus(issueId, status) {
     try {
-        const response = await sentryApi.put(`/issues/${issueId}`, {status});
+        const response = await sentryApi.put(`/issues/${issueId}/`, {status});
         return response.data;
     } catch (error) {
         handleError("updating issue status", error);
@@ -147,9 +147,9 @@ const updateIssueStatus = async (issueId, status) => {
  * Fetches a list of unresolved issues for your project.
  * @returns {Promise<Array>} A promise that resolves to an array of issue objects.
  */
-const fetchIssues = async () => {
+async function fetchIssues() {
     try {
-        const response = await sentryApi.get("/issues");
+        const response = await sentryApi.get("/issues/");
         return response.data;
     } catch (error) {
         handleError("fetching issues", error);
@@ -160,9 +160,9 @@ const fetchIssues = async () => {
  * Fetches a list of unresolved issues for your project.
  * @returns {Promise<Array>} A promise that resolves to an array of issue objects.
  */
-const fetchEvents = async () => {
+async function fetchEvents() {
     try {
-        const response = await sentryApi.get("/events");
+        const response = await sentryApi.get("/events/");
         return response.data;
     } catch (error) {
         handleError("fetching events", error);
@@ -257,7 +257,7 @@ const textContent = {
 };
 
 // --- Header Bar ---
-function Header({ view, onViewChange, onRefresh }) {
+function Header({ view, updating, onViewChange, onRefresh }) {
     return (
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={4}>
             <Typography variant="h4">{textContent.header.title}</Typography>
@@ -266,7 +266,12 @@ function Header({ view, onViewChange, onRefresh }) {
                     <ToggleButton value="simple">{textContent.header.simpleView}</ToggleButton>
                     <ToggleButton value="tech">{textContent.header.technicalView}</ToggleButton>
                 </ToggleButtonGroup>
-                <Button variant="outlined" startIcon={<RefreshIcon />} onClick={onRefresh} sx={{ mr: 1 }}>
+                <Button variant="outlined" startIcon={
+                    updating ? (
+                        <CircularProgress size={20} disableShirink={true} thickness={5}/>
+                    ):(
+                        <RefreshIcon/>
+                    )} onClick={onRefresh} sx={{ mr: 1 }}>
                     {textContent.header.checkNow}
                 </Button>
             </Box>
@@ -688,6 +693,7 @@ export default function App() {
     const [issues, setIssues] = useState([]);
     const [events, setEvents] = useState([]); // Currently unused, but ready for expansion
     const [loading, setLoading] = useState(true);
+    const [updating, setUpdating] = useState(false);
     const [error, setError] = useState(null);
     const [filter, setFilter] = useState({
         status: '',
@@ -697,14 +703,14 @@ export default function App() {
     const [showFilter, setShowFilter] = useState(false);
 
 
-    // Inside the App component, add these lines
-    const [selectedIssue, setSelectedIssue] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
     // Function to fetch data from Sentry
-    const loadData = async () => {
+    async function loadData(firstLoad) {
         try {
-            setLoading(true);
+            if(!firstLoad) {
+                setLoading(true);
+            } else {
+                setUpdating(true);
+            }
             const fetchedIssues = await fetchIssues();
             setIssues(fetchedIssues);
             setError(null);
@@ -713,6 +719,7 @@ export default function App() {
             console.error("Failed to fetch Sentry issues:", err);
         } finally {
             setLoading(false);
+            setUpdating(false);
         }
     };
 
@@ -779,6 +786,7 @@ export default function App() {
         <Container maxWidth="xl" sx={{ py: 4 }}>
             <Header
                 view={view}
+                updating={updating}
                 onViewChange={setView}
                 onRefresh={loadData}
             />
