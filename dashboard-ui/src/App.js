@@ -27,6 +27,9 @@ import {
     Divider,
     Grid
 } from '@mui/material';
+
+import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, Tooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
+
 import {
     Refresh as RefreshIcon,
     Info as InfoIcon,
@@ -743,53 +746,100 @@ function FilterBar({ filter, onFilterChange }) {
         </Box>
     );
 }
+
+// Data for our new charts
+const barChartData = [
+    { name: 'TypeError', count: 12 },
+    { name: 'DB Timeout', count: 8 },
+    { name: 'API Error', count: 5 },
+    { name: 'Auth Error', count: 3 },
+    { name: 'Validation', count: 2 },
+];
+
+const pieChartData = [
+    { name: 'Error', value: 45 },
+    { name: 'Warning', value: 25 },
+    { name: 'Info', value: 30 },
+];
+
+const PIE_CHART_COLORS = ['#FF6384', '#FFCE56', '#36A2EB'];
+
+const overviewCards = [
+    {
+        title: 'Issue Types Over Time',
+        content: (
+            <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={barChartData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip wrapperStyle={{ zIndex: 1000 }} />
+                    <Bar dataKey="count" fill="#8884d8" />
+                </BarChart>
+            </ResponsiveContainer>
+        )
+    },
+    {
+        title: 'Issues by Error Type',
+        content: (
+            <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                    <Pie data={pieChartData} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" dataKey="value" label>
+                        {pieChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
+                        ))}
+                    </Pie>
+                    <Tooltip wrapperStyle={{ zIndex: 1000 }} />
+                    <Legend />
+                </PieChart>
+            </ResponsiveContainer>
+        )
+    },
+    {
+        title: 'System Health',
+        content: (
+            <Box sx={{ textAlign: 'left', width: '100%', mt: 2, p: 1 }}>
+                <Typography>Overall Uptime (30d): <Chip component="strong" label="99.8%" color="success" size="small" /></Typography>
+                <Typography sx={{ mt: 1 }}>Active Alerts: <Chip component="strong" label="3" color="error" size="small" /></Typography>
+                <Typography sx={{ mt: 1 }}>Last Full Check: <strong>a few seconds ago</strong></Typography>
+            </Box>
+        )
+    },
+    {
+        title: 'Integration Status',
+        content: (
+            <Box sx={{ mt: 2 }}>
+                <Typography>4 integrations monitored</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                    <Chip label="2 Healthy" color="success" />
+                    <Chip label="1 Degraded" color="warning" />
+                    <Chip label="1 Down" color="error" />
+                </Box>
+            </Box>
+        )
+    }
+];
 function Overview() {
     return (
-        <Box>
+        <Box sx={{ p: 3, height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
             <Typography variant="h4" gutterBottom>Overview</Typography>
-            <Grid container spacing={3}>
-                <Grid item xs={12} md={7}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>Issue Types Over Time</Typography>
-                            <img src="https://via.placeholder.com/600x200.png/E8F0F6/333333?text=Histogram+Placeholder" alt="Histogram" style={{ width: '100%', borderRadius: '8px' }} />
+            <Box sx={{
+                flexGrow: 1,
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+                gridTemplateRows: { xs: 'repeat(4, 1fr)', md: 'repeat(2, 1fr)' },
+                gap: 3,
+            }}>
+                {overviewCards.map((card, index) => (
+                    <Card key={index} sx={{ display: 'flex', flexDirection: 'column', p: 2 }}>
+                        <CardContent sx={{ display: 'flex', flexDirection: 'column', width: '100%', flexGrow: 1 }}>
+                            <Typography variant="h6" component="div" gutterBottom sx={{ textAlign: 'center' }}>
+                                {card.title}
+                            </Typography>
+                            {card.content}
                         </CardContent>
                     </Card>
-                </Grid>
-                <Grid item xs={12} md={5}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>Issues by Error Type</Typography>
-                            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                                <img src="https://via.placeholder.com/200x200.png/E8F0F6/333333?text=Pie+Chart" alt="Pie Chart" style={{ borderRadius: '50%' }} />
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>System Health</Typography>
-                            <Typography>Overall Uptime (30d): <Chip component="strong" label="99.8%" color="success" size="small" /></Typography>
-                            <Typography sx={{ mt: 1 }}>Active Alerts: <Chip component="strong" label="3" color="error" size="small" /></Typography>
-                            <Typography sx={{ mt: 1 }}>Last Full Check: <strong>a few seconds ago</strong></Typography>
-                        </CardContent>
-                    </Card>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>Integration Status</Typography>
-                            <Typography>4 integrations monitored</Typography>
-                            <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-                                <Chip label="2 Healthy" color="success" />
-                                <Chip label="1 Degraded" color="warning" />
-                                <Chip label="1 Down" color="error" />
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Grid>
-            </Grid>
+                ))}
+            </Box>
         </Box>
     );
 }
@@ -827,8 +877,7 @@ export default function App() {
             <Sidebar activePage={activePage} onPageChange={setActivePage} />
             <Box
                 component="main"
-                sx={{ flexGrow: 1, bgcolor: 'transparent', p: 3, ml: `${drawerWidth}px` }}
-            >
+                sx={{ flexGrow: 1, bgcolor: 'transparent', p: 3 }}>
                 <Container maxWidth="xl" sx={{ p: 0 }}>
                     {activePage === 'overview' && <Overview />}
                     {activePage === 'liveData' && (
@@ -840,7 +889,7 @@ export default function App() {
                     )}
                 </Container>
             </Box>
-        </Box>
+        </Box >
     );
 }
 
