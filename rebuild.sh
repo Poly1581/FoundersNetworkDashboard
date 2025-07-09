@@ -2,7 +2,7 @@ USAGE="Usage: ./rebuild.sh ?[OPTION]\nOPTION may be one of the following\n\t- fr
 if [ "$#" -eq 0 ]; then
     # Rebuild everything
     docker compose stop
-    docker compose build
+    docker compose build --no-cache
 elif [ "$#" -eq 1 ]; then
     if [ $1 = "frontend" ] || [ $1 = "f" ]; then
         # Only rebuild frontend
@@ -11,7 +11,7 @@ elif [ "$#" -eq 1 ]; then
     elif [ $1 = "backend" ] || [ $1 = "b" ]; then
         # Only rebuild backend
         docker stop backend
-        docker compose build backend
+        docker compose build --no-cache backend
     else
         echo -e $USAGE
         exit 0
