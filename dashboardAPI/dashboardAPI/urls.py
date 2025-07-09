@@ -19,10 +19,16 @@ from django.urls import path
 
 from . import views
 
+# def get_issue_events(request, issue_id):
+# URI = f"organizations/{SENTRY_ORGANIZATION_SLUG}/issues/{issue_id}/events"
+# const response = await sentryApi.get(`/issues/${issueId}/events`);
+# def get_issue_events(request, issue_id):
 urlpatterns = [
-    path("admin/", admin.site.urls, name="urls"),
-    path("issues/<int:issue_id>/events/", views.get_issue_events, name="get_issue_events"),
-    path("issues/<int:issue_id>/", views.update_issue_status, name="update_issue_status"),
-    path("issues/", views.get_issues, name="get_issues"),
-    path("events/", views.get_events, name="get_events"),
+    # Without trailing slash
+    path('admin/', admin.site.urls),
+    path("issues/<int:issue_id>/events/", views.get_issue_events, name="get issue events"),
+    path("issues/<int:issue_id>/", views.update_issue_status, name="update issue status"),
+    path("issues/", views.get_issues, name="get issues"),
+    path("events/", views.get_events, name="get events"),
+    path("sentry/integration-status/", views.get_sentry_integration_status, name="get sentry integration status"),
 ]
