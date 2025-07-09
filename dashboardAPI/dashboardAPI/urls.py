@@ -25,17 +25,10 @@ from . import views
 # def get_issue_events(request, issue_id):
 urlpatterns = [
     # Without trailing slash
-    path('admin', admin.site.urls),
-    path("issues/<int:issue_id>/events", views.get_issue_events, name="get issue events without slash"),
-    path("issues/<int:issue_id>", views.update_issue_status, name="update issue status without slash"),
-    path("issues", views.get_issues, name="get issues without slash"),
-    path("events", views.get_events, name="get events without slash"),
-
-
-    # With trailing slash
     path('admin/', admin.site.urls),
-    path("issues/<int:issue_id>/events", views.get_issue_events, name="get issue events with slash"),
-    path("issues/<int:issue_id>", views.update_issue_status, name="update issue status with slash"),
-    path("issues", views.get_issues, name="get issues with slash"),
-    path("events", views.get_events, name="get events with slash"),
+    path("issues/<int:issue_id>/events/", views.get_issue_events, name="get issue events"),
+    path("issues/<int:issue_id>/", views.update_issue_status, name="update issue status"),
+    path("issues/", views.get_issues, name="get issues"),
+    path("events/", views.get_events, name="get events"),
+    path("sentry/integration-status/", views.get_sentry_integration_status, name="get sentry integration status"),
 ]
