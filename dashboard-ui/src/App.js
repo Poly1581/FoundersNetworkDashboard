@@ -887,7 +887,7 @@ const overviewCards = [
         )
     },
 ];
-function Overview({ integrationStatus, integrationSystems, showCardAtTop }) {
+function Overview({ integrationStatus, integrationSystems }) {
     // Create dynamic Integration Status card content
     const createIntegrationStatusCard = () => {
         const groupedSystems = {
@@ -951,8 +951,10 @@ function Overview({ integrationStatus, integrationSystems, showCardAtTop }) {
 
     return (
         <Box sx={{ p: 3, height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-            {/* Show Integration Status card at top when degraded or down */}
-            {showCardAtTop && (
+            <Typography variant="h4" gutterBottom>Overview</Typography>
+
+            {/* Show Integration Status card below title but above other content */}
+            {(integrationStatus === 'degraded' || integrationStatus === 'down') && (
                 <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
                     <Box sx={{ width: { xs: '100%', sm: '400px', md: '500px' } }}>
                         <IntegrationStatusCard
@@ -963,7 +965,6 @@ function Overview({ integrationStatus, integrationSystems, showCardAtTop }) {
                 </Box>
             )}
 
-            <Typography variant="h4" gutterBottom>Overview</Typography>
             <Box sx={{
                 flexGrow: 1,
                 display: 'grid',
@@ -1046,14 +1047,12 @@ export default function App() {
     const handleExpandAll = () => {
         setAllExpanded(prev => !prev);
     };
-    const showCardAtTop = integrationStatus === 'degraded' || integrationStatus === 'down';
-
     return (
         <Box sx={{ display: 'flex' }}>
             <Sidebar activePage={activePage} onPageChange={setActivePage} />
             <Box component="main" sx={{ flexGrow: 1, bgcolor: 'transparent', p: 3 }}>
                 <Container maxWidth="xl" sx={{ p: 0 }}>
-                    {activePage === 'overview' && <Overview integrationStatus={integrationStatus} integrationSystems={integrationSystems} showCardAtTop={showCardAtTop} />}
+                    {activePage === 'overview' && <Overview integrationStatus={integrationStatus} integrationSystems={integrationSystems} />}
                     {activePage === 'liveData' && (
                         <LiveData
                             allExpanded={allExpanded}
