@@ -309,7 +309,7 @@ function SentrySection({ allExpanded }) {
             setExpandedAlertDetails([]);
             setExpandedIntegrations([]);
         }
-    }, [allExpanded, issues, sentryAlerts, sentryIntegrations]);
+    }, [allExpanded, issues.length, sentryAlerts.length, sentryIntegrations.length]);
 
     const fetchSentryIntegrationStatus = async () => {
         try {
@@ -587,6 +587,12 @@ function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails
                                                 </Typography>
                                                 <Typography variant="body2" color="text.secondary">
                                                     Service: {i.name} | Category: {i.category} | Status: {i.status} | Response Time: {i.responseTime} | Last Success: {i.lastSuccess} | Uptime: {i.uptime} | Issue: {i.issue || '—'}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                                    <strong>Member Impact:</strong>
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                                    <strong>Critical Services:</strong>
                                                 </Typography>
                                             </Box>
                                         </Collapse>
@@ -890,6 +896,12 @@ function IntegrationStatusCard({ systems, status }) {
                             </Tooltip>
                         )}
                     </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                        <strong>Member Impact:</strong>
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        <strong>Critical Services:</strong>
+                    </Typography>
                 </Box>
             </CardContent>
         </Card>
@@ -1031,6 +1043,12 @@ function Overview({ integrationStatus, integrationSystems }) {
                             </Tooltip>
                         )}
                     </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                        <strong>Member Impact:</strong>
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        <strong>Critical Services:</strong>
+                    </Typography>
                 </Box>
             )
         };
