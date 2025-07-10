@@ -25,7 +25,6 @@ import {
     ListItemButton,
     ListItemIcon,
     Divider,
-    Grid,
     Tooltip
 } from '@mui/material';
 
@@ -448,6 +447,20 @@ function SentrySection({ allExpanded }) {
 function HubSpotSection({ allExpanded }) {
     const [expandedIntegrations, setExpandedIntegrations] = useState([]);
 
+    const mockDeals = [
+        { id: 1, title: 'New Deal with Acme Corp', stage: 'Discovery', amount: '$50,000' },
+        { id: 2, title: 'Expansion with Globex Inc', stage: 'Proposal', amount: '$120,000' },
+    ];
+
+    const mockActivities = [
+        { id: 1, type: 'Email', summary: 'Follow-up with Jane Doe', time: '2 hours ago' },
+        { id: 2, type: 'Call', summary: 'Initial call with John Smith', time: 'Yesterday' },
+    ];
+
+    const mockIntegrations = [
+        { name: 'HubSpot API', category: 'CRM', status: 'Healthy', responseTime: '120ms', lastSuccess: 'Just now', uptime: '99.99%', issue: null },
+    ];
+
     useEffect(() => {
         if (allExpanded) {
             setExpandedIntegrations(mockIntegrations.map((_, index) => index));
@@ -462,20 +475,6 @@ function HubSpotSection({ allExpanded }) {
             : [...expandedIntegrations, index];
         setExpandedIntegrations(newExpandedIntegrations);
     };
-
-    const mockDeals = [
-        { id: 1, title: 'New Deal with Acme Corp', stage: 'Discovery', amount: '$50,000' },
-        { id: 2, title: 'Expansion with Globex Inc', stage: 'Proposal', amount: '$120,000' },
-    ];
-
-    const mockActivities = [
-        { id: 1, type: 'Email', summary: 'Follow-up with Jane Doe', time: '2 hours ago' },
-        { id: 2, type: 'Call', summary: 'Initial call with John Smith', time: 'Yesterday' },
-    ];
-
-    const mockIntegrations = [
-        { name: 'HubSpot API', category: 'CRM', status: 'Healthy', responseTime: '120ms', lastSuccess: 'Just now', uptime: '99.99%', issue: null },
-    ];
 
     return (
         <CollapsibleSection title={textContent.hubspot.title}>
@@ -765,12 +764,94 @@ const pieChartData = [
 
 const PIE_CHART_COLORS = ['#FF6384', '#FFCE56', '#36A2EB'];
 
+
+
+function IntegrationStatusCard({ systems, status }) {
+    console.log('IntegrationStatusCard - status:', status, 'systems:', systems);
+
+    const getStatusColor = () => {
+        switch (status) {
+            case 'down': return '#ffebee'; // light red background
+            case 'degraded': return '#fff3e0'; // light orange background
+            default: return '#e8f5e8'; // light green background
+        }
+    };
+
+    const getBorderColor = () => {
+        switch (status) {
+            case 'down': return '#f44336'; // red border
+            case 'degraded': return '#ff9800'; // orange border
+            default: return '#4caf50'; // green border
+        }
+    };
+
+    const groupedSystems = {
+        healthy: systems.filter(s => s.status === 'healthy'),
+        degraded: systems.filter(s => s.status === 'degraded'),
+        down: systems.filter(s => s.status === 'down')
+    };
+
+    return (
+        <Card sx={{
+            backgroundColor: getStatusColor(),
+            border: `2px solid ${getBorderColor()}`,
+            p: 2,
+            display: 'flex',
+            flexDirection: 'column'
+        }}>
+            <CardContent sx={{ display: 'flex', flexDirection: 'column', width: '100%', flexGrow: 1 }}>
+                <Typography variant="h6" component="div" gutterBottom sx={{ textAlign: 'center' }}>
+                    Integration Status: {status.charAt(0).toUpperCase() + status.slice(1)}
+                </Typography>
+                <Box sx={{ mt: 2 }}>
+                    <Typography>{systems.length} integrations monitored</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-around', mt: 2, flexWrap: 'wrap' }}>
+                        {groupedSystems.healthy.length > 0 && (
+                            <Tooltip title={
+                                <React.Fragment>
+                                    {groupedSystems.healthy.map(system => (
+                                        <Typography key={system.name} color="inherit">{system.name}</Typography>
+                                    ))}
+                                </React.Fragment>
+                            }>
+                                <Chip label={`${groupedSystems.healthy.length} Healthy`} color="success" />
+                            </Tooltip>
+                        )}
+                        {groupedSystems.degraded.length > 0 && (
+                            <Tooltip title={
+                                <React.Fragment>
+                                    {groupedSystems.degraded.map(system => (
+                                        <Typography key={system.name} color="inherit">{system.name}</Typography>
+                                    ))}
+                                </React.Fragment>
+                            }>
+                                <Chip label={`${groupedSystems.degraded.length} Degraded`} color="warning" />
+                            </Tooltip>
+                        )}
+                        {groupedSystems.down.length > 0 && (
+                            <Tooltip title={
+                                <React.Fragment>
+                                    {groupedSystems.down.map(system => (
+                                        <Typography key={system.name} color="inherit">{system.name}</Typography>
+                                    ))}
+                                </React.Fragment>
+                            }>
+                                <Chip label={`${groupedSystems.down.length} Down`} color="error" />
+                            </Tooltip>
+                        )}
+                    </Box>
+                </Box>
+            </CardContent>
+        </Card>
+    );
+}
+
 const overviewCards = [
     {
         title: 'Issue Types Over Time',
         content: (
-            <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={barChartData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
+            <ResponsiveContainer width="80%" height={285}>
+                <BarChart data={barChartData} margin={{ top: 20, right: 20, left: 40, bottom: 5 }}>
                     <XAxis dataKey="name" />
                     <YAxis />
                     <RechartsTooltip wrapperStyle={{ zIndex: 1000 }} />
@@ -805,60 +886,116 @@ const overviewCards = [
             </Box>
         )
     },
-    {
-        title: 'Integration Status',
-        content: (
-            <Box sx={{ mt: 2 }}>
-                <Typography>4 integrations monitored</Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-around', mt: 2, flexWrap: 'wrap' }}>
-                    <Tooltip title={
-                        <React.Fragment>
-                            <Typography color="inherit">Sentry</Typography>
-                            <Typography color="inherit">HubSpot</Typography>
-                        </React.Fragment>
-                    }>
-                        <Chip label="2 Healthy" color="success" />
-                    </Tooltip>
-                    <Tooltip title={
-                        <React.Fragment>
-                            <Typography color="inherit">Slack</Typography>
-                        </React.Fragment>
-                    }>
-                        <Chip label="1 Degraded" color="warning" />
-                    </Tooltip>
-                    <Tooltip title={
-                        <React.Fragment>
-                            <Typography color="inherit">StatusPage.io</Typography>
-                        </React.Fragment>
-                    }>
-                        <Chip label="1 Down" color="error" />
-                    </Tooltip>
-                </Box>
-            </Box>
-        )
-    }
 ];
-function Overview() {
+function Overview({ integrationStatus, integrationSystems, showCardAtTop }) {
+    // Create dynamic Integration Status card content
+    const createIntegrationStatusCard = () => {
+        const groupedSystems = {
+            healthy: integrationSystems.filter(s => s.status === 'healthy'),
+            degraded: integrationSystems.filter(s => s.status === 'degraded'),
+            down: integrationSystems.filter(s => s.status === 'down')
+        };
+
+        return {
+            title: `Integration Status: ${integrationStatus.charAt(0).toUpperCase() + integrationStatus.slice(1)}`,
+            content: (
+                <Box sx={{ mt: 2 }}>
+                    <Typography>{integrationSystems.length} integrations monitored</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-around', mt: 2, flexWrap: 'wrap' }}>
+                        {groupedSystems.healthy.length > 0 && (
+                            <Tooltip title={
+                                <React.Fragment>
+                                    {groupedSystems.healthy.map(system => (
+                                        <Typography key={system.name} color="inherit">{system.name}</Typography>
+                                    ))}
+                                </React.Fragment>
+                            }>
+                                <Chip label={`${groupedSystems.healthy.length} Healthy`} color="success" />
+                            </Tooltip>
+                        )}
+                        {groupedSystems.degraded.length > 0 && (
+                            <Tooltip title={
+                                <React.Fragment>
+                                    {groupedSystems.degraded.map(system => (
+                                        <Typography key={system.name} color="inherit">{system.name}</Typography>
+                                    ))}
+                                </React.Fragment>
+                            }>
+                                <Chip label={`${groupedSystems.degraded.length} Degraded`} color="warning" />
+                            </Tooltip>
+                        )}
+                        {groupedSystems.down.length > 0 && (
+                            <Tooltip title={
+                                <React.Fragment>
+                                    {groupedSystems.down.map(system => (
+                                        <Typography key={system.name} color="inherit">{system.name}</Typography>
+                                    ))}
+                                </React.Fragment>
+                            }>
+                                <Chip label={`${groupedSystems.down.length} Down`} color="error" />
+                            </Tooltip>
+                        )}
+                    </Box>
+                </Box>
+            )
+        };
+    };
+
+    // Filter cards based on integration status
+    const baseCards = overviewCards;
+
+    // Add Integration Status card only when healthy
+    const cardsToShow = integrationStatus === 'healthy'
+        ? [...baseCards, createIntegrationStatusCard()]
+        : baseCards;
+
     return (
         <Box sx={{ p: 3, height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
+            {/* Show Integration Status card at top when degraded or down */}
+            {showCardAtTop && (
+                <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+                    <Box sx={{ width: { xs: '100%', sm: '400px', md: '500px' } }}>
+                        <IntegrationStatusCard
+                            systems={integrationSystems}
+                            status={integrationStatus}
+                        />
+                    </Box>
+                </Box>
+            )}
+
             <Typography variant="h4" gutterBottom>Overview</Typography>
             <Box sx={{
                 flexGrow: 1,
                 display: 'grid',
                 gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
-                gridTemplateRows: { xs: 'repeat(4, 1fr)', md: 'repeat(2, 1fr)' },
                 gap: 3,
             }}>
-                {overviewCards.map((card, index) => (
-                    <Card key={index} sx={{ display: 'flex', flexDirection: 'column', p: 2 }}>
-                        <CardContent sx={{ display: 'flex', flexDirection: 'column', width: '100%', flexGrow: 1 }}>
-                            <Typography variant="h6" component="div" gutterBottom sx={{ textAlign: 'center' }}>
-                                {card.title}
-                            </Typography>
-                            {card.content}
-                        </CardContent>
-                    </Card>
-                ))}
+                {cardsToShow.map((card, index) => {
+                    // Apply green styling when Integration Status is healthy
+                    const isIntegrationCard = card.title === 'Integration Status';
+                    const cardSx = {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        p: 2,
+                        ...(index < 2 && { background: 'transparent', boxShadow: 'none', border: 'none' }),
+                        ...((index === 0 || index === 3) && { gridColumn: { md: 'span 2' } }),
+                        ...(isIntegrationCard && integrationStatus === 'healthy' && {
+                            backgroundColor: '#e8f5e8', // Light green background
+                            border: '2px solid #4caf50' // Green border
+                        })
+                    };
+
+                    return (
+                        <Card key={index} sx={cardSx}>
+                            <CardContent sx={{ display: 'flex', flexDirection: 'column', width: '100%', flexGrow: 1 }}>
+                                <Typography variant="h6" component="div" gutterBottom sx={{ textAlign: 'center' }}>
+                                    {card.title}
+                                </Typography>
+                                {card.content}
+                            </CardContent>
+                        </Card>
+                    );
+                })}
             </Box>
         </Box>
     );
@@ -883,6 +1020,23 @@ export default function App() {
     const [allExpanded, setAllExpanded] = useState(false);
     const [activePage, setActivePage] = useState('overview');
 
+    // Integration systems state
+    const [integrationSystems] = useState([
+        { name: 'Sentry', status: 'healthy' },
+        { name: 'HubSpot', status: 'healthy' },
+        { name: 'Slack', status: 'degraded' },
+        { name: 'StatusPage.io', status: 'down' }
+    ]);
+
+    // Integration status calculation function
+    const calculateIntegrationStatus = (systems) => {
+        if (systems.some(system => system.status === 'down')) return 'down';
+        if (systems.some(system => system.status === 'degraded')) return 'degraded';
+        return 'healthy';
+    };
+
+    const integrationStatus = calculateIntegrationStatus(integrationSystems);
+
     const handleRefreshAll = () => {
         // In a real app, you would trigger a refresh for all sections.
         // For now, this is a placeholder.
@@ -892,14 +1046,14 @@ export default function App() {
     const handleExpandAll = () => {
         setAllExpanded(prev => !prev);
     };
+    const showCardAtTop = integrationStatus === 'degraded' || integrationStatus === 'down';
+
     return (
         <Box sx={{ display: 'flex' }}>
             <Sidebar activePage={activePage} onPageChange={setActivePage} />
-            <Box
-                component="main"
-                sx={{ flexGrow: 1, bgcolor: 'transparent', p: 3 }}>
+            <Box component="main" sx={{ flexGrow: 1, bgcolor: 'transparent', p: 3 }}>
                 <Container maxWidth="xl" sx={{ p: 0 }}>
-                    {activePage === 'overview' && <Overview />}
+                    {activePage === 'overview' && <Overview integrationStatus={integrationStatus} integrationSystems={integrationSystems} showCardAtTop={showCardAtTop} />}
                     {activePage === 'liveData' && (
                         <LiveData
                             allExpanded={allExpanded}
@@ -909,7 +1063,7 @@ export default function App() {
                     )}
                 </Container>
             </Box>
-        </Box >
+        </Box>
     );
 }
 
