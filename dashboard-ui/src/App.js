@@ -25,10 +25,11 @@ import {
     ListItemButton,
     ListItemIcon,
     Divider,
-    Grid
+    Grid,
+    Tooltip
 } from '@mui/material';
 
-import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, Tooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, Tooltip as RechartsTooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
 
 import {
     Refresh as RefreshIcon,
@@ -772,7 +773,7 @@ const overviewCards = [
                 <BarChart data={barChartData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip wrapperStyle={{ zIndex: 1000 }} />
+                    <RechartsTooltip wrapperStyle={{ zIndex: 1000 }} />
                     <Bar dataKey="count" fill="#8884d8" />
                 </BarChart>
             </ResponsiveContainer>
@@ -788,7 +789,7 @@ const overviewCards = [
                             <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
                         ))}
                     </Pie>
-                    <Tooltip wrapperStyle={{ zIndex: 1000 }} />
+                    <RechartsTooltip wrapperStyle={{ zIndex: 1000 }} />
                     <Legend />
                 </PieChart>
             </ResponsiveContainer>
@@ -809,10 +810,29 @@ const overviewCards = [
         content: (
             <Box sx={{ mt: 2 }}>
                 <Typography>4 integrations monitored</Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                    <Chip label="2 Healthy" color="success" />
-                    <Chip label="1 Degraded" color="warning" />
-                    <Chip label="1 Down" color="error" />
+                <Box sx={{ display: 'flex', justifyContent: 'space-around', mt: 2, flexWrap: 'wrap' }}>
+                    <Tooltip title={
+                        <React.Fragment>
+                            <Typography color="inherit">Sentry</Typography>
+                            <Typography color="inherit">HubSpot</Typography>
+                        </React.Fragment>
+                    }>
+                        <Chip label="2 Healthy" color="success" />
+                    </Tooltip>
+                    <Tooltip title={
+                        <React.Fragment>
+                            <Typography color="inherit">Slack</Typography>
+                        </React.Fragment>
+                    }>
+                        <Chip label="1 Degraded" color="warning" />
+                    </Tooltip>
+                    <Tooltip title={
+                        <React.Fragment>
+                            <Typography color="inherit">StatusPage.io</Typography>
+                        </React.Fragment>
+                    }>
+                        <Chip label="1 Down" color="error" />
+                    </Tooltip>
                 </Box>
             </Box>
         )
@@ -861,7 +881,7 @@ function LiveData({ allExpanded, onRefresh, onExpandAll }) {
 // --- MAIN APP COMPONENT ---
 export default function App() {
     const [allExpanded, setAllExpanded] = useState(false);
-    const [activePage, setActivePage] = useState('liveData');
+    const [activePage, setActivePage] = useState('overview');
 
     const handleRefreshAll = () => {
         // In a real app, you would trigger a refresh for all sections.
