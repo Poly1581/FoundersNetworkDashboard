@@ -926,7 +926,17 @@ function SystemHealthCard() {
                     ))}
                 </Menu>
             </Box>
-            <Typography sx={{ mt: 1 }}>Last Full Check: <strong>a few seconds ago</strong></Typography>
+            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography>Last Full Check: <strong>a few seconds ago</strong></Typography>
+                <IconButton
+                    size="small"
+                    onClick={() => window.location.reload()}
+                    sx={{ ml: 1 }}
+                    title="Refresh Dashboard"
+                >
+                    <RefreshIcon fontSize="small" />
+                </IconButton>
+            </Box>
         </Box>
     );
 }
