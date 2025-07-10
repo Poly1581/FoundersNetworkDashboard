@@ -25,10 +25,11 @@ import {
     ListItemButton,
     ListItemIcon,
     Divider,
-    Tooltip
+    Tooltip,
+    Menu
 } from '@mui/material';
 
-import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, Tooltip as RechartsTooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, Tooltip as RechartsTooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
 
 import {
     Refresh as RefreshIcon,
@@ -39,7 +40,8 @@ import {
     KeyboardArrowRight as ArrowRightIcon,
     Dashboard as DashboardIcon,
     BarChart as BarChartIcon,
-    Link as LinkIcon
+    Link as LinkIcon,
+    ArrowDropDown as ArrowDropDownIcon
 } from '@mui/icons-material';
 
 import {
@@ -747,13 +749,15 @@ function FilterBar({ filter, onFilterChange }) {
     );
 }
 
-// Data for our new charts
-const barChartData = [
-    { name: 'TypeError', count: 12 },
-    { name: 'DB Timeout', count: 8 },
-    { name: 'API Error', count: 5 },
-    { name: 'Auth Error', count: 3 },
-    { name: 'Validation', count: 2 },
+// Data for our new charts - multi-line chart with different error types
+const histogramData = [
+    { time: 'Jan', typeErrors: 8, dbTimeouts: 4, apiErrors: 2, authErrors: 1 },
+    { time: 'Feb', typeErrors: 5, dbTimeouts: 2, apiErrors: 1, authErrors: 0 },
+    { time: 'Mar', typeErrors: 7, dbTimeouts: 3, apiErrors: 1, authErrors: 1 },
+    { time: 'Apr', typeErrors: 3, dbTimeouts: 2, apiErrors: 1, authErrors: 0 },
+    { time: 'May', typeErrors: 10, dbTimeouts: 5, apiErrors: 2, authErrors: 1 },
+    { time: 'Jun', typeErrors: 12, dbTimeouts: 6, apiErrors: 3, authErrors: 1 },
+    { time: 'Jul', typeErrors: 8, dbTimeouts: 4, apiErrors: 1, authErrors: 1 },
 ];
 
 const pieChartData = [
@@ -846,17 +850,86 @@ function IntegrationStatusCard({ systems, status }) {
     );
 }
 
+function SystemHealthCard() {
+    const [anchorEl, setAnchorEl] = useState(null);
+    const open = Boolean(anchorEl);
+
+    const activeAlerts = [
+        { id: 1, title: 'Database Connection Timeout', severity: 'High', time: '2 mins ago' },
+        { id: 2, title: 'API Rate Limit Exceeded', severity: 'Medium', time: '5 mins ago' },
+        { id: 3, title: 'Memory Usage Above 85%', severity: 'Low', time: '10 mins ago' }
+    ];
+
+    const handleClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    return (
+        <Box sx={{ textAlign: 'left', width: '100%', mt: 2, p: 1 }}>
+            <Typography>Overall Uptime (30d): <Chip component="strong" label="99.8%" color="success" size="small" /></Typography>
+            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography>Active Alerts:</Typography>
+                <Button
+                    onClick={handleClick}
+                    size="small"
+                    sx={{
+                        minWidth: 'auto',
+                        color: 'error.main',
+                        fontWeight: 'bold',
+                        textTransform: 'none',
+                        p: 0.5,
+                        fontSize: '1.2rem'
+                    }}
+                    endIcon={<ArrowDropDownIcon />}
+                >
+                    3
+                </Button>
+                <Menu
+                    anchorEl={anchorEl}
+                    open={open}
+                    onClose={handleClose}
+                    MenuListProps={{
+                        'aria-labelledby': 'basic-button',
+                    }}
+                >
+                    {activeAlerts.map((alert) => (
+                        <MenuItem key={alert.id} onClick={handleClose}>
+                            <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                    {alert.title}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    {alert.severity} • {alert.time}
+                                </Typography>
+                            </Box>
+                        </MenuItem>
+                    ))}
+                </Menu>
+            </Box>
+            <Typography sx={{ mt: 1 }}>Last Full Check: <strong>a few seconds ago</strong></Typography>
+        </Box>
+    );
+}
+
 const overviewCards = [
     {
-        title: 'Issue Types Over Time',
+        title: 'Issues Over Time',
         content: (
             <ResponsiveContainer width="80%" height={285}>
-                <BarChart data={barChartData} margin={{ top: 20, right: 20, left: 40, bottom: 5 }}>
-                    <XAxis dataKey="name" />
+                <LineChart data={histogramData} margin={{ top: 20, right: 20, left: 40, bottom: 40 }}>
+                    <XAxis dataKey="time" />
                     <YAxis />
                     <RechartsTooltip wrapperStyle={{ zIndex: 1000 }} />
-                    <Bar dataKey="count" fill="#8884d8" />
-                </BarChart>
+                    <Legend />
+                    <Line type="monotone" dataKey="typeErrors" stroke="#ff6b6b" strokeWidth={2} dot={{ fill: '#ff6b6b' }} name="Type Errors" />
+                    <Line type="monotone" dataKey="dbTimeouts" stroke="#4ecdc4" strokeWidth={2} dot={{ fill: '#4ecdc4' }} name="DB Timeouts" />
+                    <Line type="monotone" dataKey="apiErrors" stroke="#45b7d1" strokeWidth={2} dot={{ fill: '#45b7d1' }} name="API Errors" />
+                    <Line type="monotone" dataKey="authErrors" stroke="#f9ca24" strokeWidth={2} dot={{ fill: '#f9ca24' }} name="Auth Errors" />
+                </LineChart>
             </ResponsiveContainer>
         )
     },
@@ -879,11 +952,7 @@ const overviewCards = [
     {
         title: 'System Health',
         content: (
-            <Box sx={{ textAlign: 'left', width: '100%', mt: 2, p: 1 }}>
-                <Typography>Overall Uptime (30d): <Chip component="strong" label="99.8%" color="success" size="small" /></Typography>
-                <Typography sx={{ mt: 1 }}>Active Alerts: <Chip component="strong" label="3" color="error" size="small" /></Typography>
-                <Typography sx={{ mt: 1 }}>Last Full Check: <strong>a few seconds ago</strong></Typography>
-            </Box>
+            <SystemHealthCard />
         )
     },
 ];
