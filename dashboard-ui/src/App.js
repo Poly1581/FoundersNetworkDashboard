@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './App.css';
+import foundersNetworkLogo from './assets/foundersnetworklogo.png';
 import {
     Container,
     Typography,
@@ -220,7 +221,17 @@ function Sidebar({ activePage, onPageChange }) {
             variant="permanent"
             anchor="left"
         >
-            <Typography variant="h5" sx={{ p: 2, fontWeight: 600, textAlign: 'center' }}>FN Dashboard</Typography>
+            <Box sx={{ p: 2, textAlign: 'center' }}>
+                <img
+                    src={foundersNetworkLogo}
+                    alt="Founders Network Dashboard"
+                    style={{
+                        maxWidth: '100%',
+                        height: 'auto',
+                        maxHeight: '60px'
+                    }}
+                />
+            </Box>
             <Divider />
             <List>
                 <ListItemButton selected={activePage === 'overview'} onClick={() => onPageChange('overview')}>
@@ -869,7 +880,12 @@ function SystemHealthCard() {
     };
 
     return (
-        <Box sx={{ textAlign: 'left', width: '100%', mt: 2, p: 1 }}>
+        <Box sx={{
+            textAlign: 'left',
+            width: '100%',
+            mt: 2,
+            p: 2
+        }}>
             <Typography>Overall Uptime (30d): <Chip component="strong" label="99.8%" color="success" size="small" /></Typography>
             <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Typography>Active Alerts:</Typography>
@@ -1043,6 +1059,9 @@ function Overview({ integrationStatus, integrationSystems }) {
                 {cardsToShow.map((card, index) => {
                     // Apply green styling when Integration Status is healthy
                     const isIntegrationCard = card.title === 'Integration Status';
+                    const isSystemHealthCard = card.title === 'System Health';
+                    const isGraphCard = card.title === 'Issues Over Time';
+                    const isPieChartCard = card.title === 'Issues by Error Type';
                     const cardSx = {
                         display: 'flex',
                         flexDirection: 'column',
@@ -1052,6 +1071,24 @@ function Overview({ integrationStatus, integrationSystems }) {
                         ...(isIntegrationCard && integrationStatus === 'healthy' && {
                             backgroundColor: '#e8f5e8', // Light green background
                             border: '2px solid #4caf50' // Green border
+                        }),
+                        ...(isSystemHealthCard && {
+                            borderRadius: '16px', // Rounded corners for System Health card
+                            backgroundColor: '#fafafa', // Lighter gray background
+                            '& .MuiCardContent-root': {
+                                backgroundColor: 'transparent', // Remove background from content
+                                '& > .MuiTypography-h6': {
+                                    backgroundColor: '#1c938a',
+                                    color: 'white',
+                                    borderRadius: '8px',
+                                    padding: '8px 16px',
+                                    margin: '-8px -8px 16px -8px'
+                                }
+                            }
+                        }),
+                        ...((isGraphCard || isPieChartCard) && {
+                            borderRadius: '16px', // Rounded corners like System Health card
+                            backgroundColor: '#fafafa' // Lighter gray background
                         })
                     };
 
@@ -1119,7 +1156,7 @@ export default function App() {
     return (
         <Box sx={{ display: 'flex' }}>
             <Sidebar activePage={activePage} onPageChange={setActivePage} />
-            <Box component="main" sx={{ flexGrow: 1, bgcolor: 'transparent', p: 3 }}>
+            <Box component="main" sx={{ flexGrow: 1, bgcolor: 'white', p: 3 }}>
                 <Container maxWidth="xl" sx={{ p: 0 }}>
                     {activePage === 'overview' && <Overview integrationStatus={integrationStatus} integrationSystems={integrationSystems} />}
                     {activePage === 'liveData' && (
