@@ -760,16 +760,51 @@ function FilterBar({ filter, onFilterChange }) {
     );
 }
 
-// Data for our new charts - multi-line chart with different error types
-const histogramData = [
-    { time: 'Jan', typeErrors: 8, dbTimeouts: 4, apiErrors: 2, authErrors: 1 },
-    { time: 'Feb', typeErrors: 5, dbTimeouts: 2, apiErrors: 1, authErrors: 0 },
-    { time: 'Mar', typeErrors: 7, dbTimeouts: 3, apiErrors: 1, authErrors: 1 },
-    { time: 'Apr', typeErrors: 3, dbTimeouts: 2, apiErrors: 1, authErrors: 0 },
-    { time: 'May', typeErrors: 10, dbTimeouts: 5, apiErrors: 2, authErrors: 1 },
-    { time: 'Jun', typeErrors: 12, dbTimeouts: 6, apiErrors: 3, authErrors: 1 },
-    { time: 'Jul', typeErrors: 8, dbTimeouts: 4, apiErrors: 1, authErrors: 1 },
-];
+// Data for our new charts - multi-line chart with different error types by year
+const histogramDataByYear = {
+    '24-25': [
+        { time: 'Jul', typeErrors: 8, dbTimeouts: 4, apiErrors: 1, authErrors: 1 },
+        { time: 'Aug', typeErrors: 12, dbTimeouts: 6, apiErrors: 3, authErrors: 2 },
+        { time: 'Sep', typeErrors: 15, dbTimeouts: 8, apiErrors: 4, authErrors: 1 },
+        { time: 'Oct', typeErrors: 10, dbTimeouts: 5, apiErrors: 2, authErrors: 1 },
+        { time: 'Nov', typeErrors: 18, dbTimeouts: 9, apiErrors: 5, authErrors: 3 },
+        { time: 'Dec', typeErrors: 22, dbTimeouts: 11, apiErrors: 6, authErrors: 2 },
+        { time: 'Jan', typeErrors: 8, dbTimeouts: 4, apiErrors: 2, authErrors: 1 },
+        { time: 'Feb', typeErrors: 5, dbTimeouts: 2, apiErrors: 1, authErrors: 0 },
+        { time: 'Mar', typeErrors: 7, dbTimeouts: 3, apiErrors: 1, authErrors: 1 },
+        { time: 'Apr', typeErrors: 3, dbTimeouts: 2, apiErrors: 1, authErrors: 0 },
+        { time: 'May', typeErrors: 10, dbTimeouts: 5, apiErrors: 2, authErrors: 1 },
+        { time: 'Jun', typeErrors: 12, dbTimeouts: 6, apiErrors: 3, authErrors: 1 },
+    ],
+    '23-24': [
+        { time: 'Jul', typeErrors: 6, dbTimeouts: 3, apiErrors: 1, authErrors: 0 },
+        { time: 'Aug', typeErrors: 9, dbTimeouts: 4, apiErrors: 2, authErrors: 1 },
+        { time: 'Sep', typeErrors: 11, dbTimeouts: 6, apiErrors: 3, authErrors: 1 },
+        { time: 'Oct', typeErrors: 7, dbTimeouts: 3, apiErrors: 1, authErrors: 0 },
+        { time: 'Nov', typeErrors: 14, dbTimeouts: 7, apiErrors: 4, authErrors: 2 },
+        { time: 'Dec', typeErrors: 16, dbTimeouts: 8, apiErrors: 4, authErrors: 1 },
+        { time: 'Jan', typeErrors: 5, dbTimeouts: 2, apiErrors: 1, authErrors: 0 },
+        { time: 'Feb', typeErrors: 3, dbTimeouts: 1, apiErrors: 0, authErrors: 0 },
+        { time: 'Mar', typeErrors: 4, dbTimeouts: 2, apiErrors: 1, authErrors: 0 },
+        { time: 'Apr', typeErrors: 2, dbTimeouts: 1, apiErrors: 0, authErrors: 0 },
+        { time: 'May', typeErrors: 8, dbTimeouts: 4, apiErrors: 2, authErrors: 1 },
+        { time: 'Jun', typeErrors: 10, dbTimeouts: 5, apiErrors: 2, authErrors: 1 },
+    ],
+    '22-23': [
+        { time: 'Jul', typeErrors: 4, dbTimeouts: 2, apiErrors: 1, authErrors: 0 },
+        { time: 'Aug', typeErrors: 6, dbTimeouts: 3, apiErrors: 1, authErrors: 0 },
+        { time: 'Sep', typeErrors: 8, dbTimeouts: 4, apiErrors: 2, authErrors: 1 },
+        { time: 'Oct', typeErrors: 5, dbTimeouts: 2, apiErrors: 1, authErrors: 0 },
+        { time: 'Nov', typeErrors: 10, dbTimeouts: 5, apiErrors: 3, authErrors: 1 },
+        { time: 'Dec', typeErrors: 12, dbTimeouts: 6, apiErrors: 3, authErrors: 1 },
+        { time: 'Jan', typeErrors: 3, dbTimeouts: 1, apiErrors: 0, authErrors: 0 },
+        { time: 'Feb', typeErrors: 2, dbTimeouts: 1, apiErrors: 0, authErrors: 0 },
+        { time: 'Mar', typeErrors: 3, dbTimeouts: 1, apiErrors: 1, authErrors: 0 },
+        { time: 'Apr', typeErrors: 1, dbTimeouts: 0, apiErrors: 0, authErrors: 0 },
+        { time: 'May', typeErrors: 6, dbTimeouts: 3, apiErrors: 1, authErrors: 0 },
+        { time: 'Jun', typeErrors: 8, dbTimeouts: 4, apiErrors: 2, authErrors: 1 },
+    ]
+};
 
 const pieChartData = [
     { name: 'Error', value: 45 },
@@ -941,48 +976,13 @@ function SystemHealthCard() {
     );
 }
 
-const overviewCards = [
-    {
-        title: 'Issues Over Time',
-        content: (
-            <ResponsiveContainer width="80%" height={285}>
-                <LineChart data={histogramData} margin={{ top: 20, right: 20, left: 40, bottom: 40 }}>
-                    <XAxis dataKey="time" />
-                    <YAxis />
-                    <RechartsTooltip wrapperStyle={{ zIndex: 1000 }} />
-                    <Legend />
-                    <Line type="monotone" dataKey="typeErrors" stroke="#ff6b6b" strokeWidth={2} dot={{ fill: '#ff6b6b' }} name="Type Errors" />
-                    <Line type="monotone" dataKey="dbTimeouts" stroke="#4ecdc4" strokeWidth={2} dot={{ fill: '#4ecdc4' }} name="DB Timeouts" />
-                    <Line type="monotone" dataKey="apiErrors" stroke="#45b7d1" strokeWidth={2} dot={{ fill: '#45b7d1' }} name="API Errors" />
-                    <Line type="monotone" dataKey="authErrors" stroke="#f9ca24" strokeWidth={2} dot={{ fill: '#f9ca24' }} name="Auth Errors" />
-                </LineChart>
-            </ResponsiveContainer>
-        )
-    },
-    {
-        title: 'Issues by Error Type',
-        content: (
-            <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                    <Pie data={pieChartData} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" dataKey="value" label>
-                        {pieChartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
-                        ))}
-                    </Pie>
-                    <RechartsTooltip wrapperStyle={{ zIndex: 1000 }} />
-                    <Legend />
-                </PieChart>
-            </ResponsiveContainer>
-        )
-    },
-    {
-        title: 'System Health',
-        content: (
-            <SystemHealthCard />
-        )
-    },
-];
 function Overview({ integrationStatus, integrationSystems }) {
+    const [selectedYear, setSelectedYear] = useState('24-25');
+
+    const handleYearChange = (event) => {
+        setSelectedYear(event.target.value);
+    };
+
     // Create dynamic Integration Status card content
     const createIntegrationStatusCard = () => {
         const groupedSystems = {
@@ -1036,8 +1036,67 @@ function Overview({ integrationStatus, integrationSystems }) {
         };
     };
 
+    // Create cards with selected year data
+    const createOverviewCards = (year) => [
+        {
+            title: 'Issues Over Time',
+            content: (
+                <Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                        <TextField
+                            select
+                            label="Year"
+                            value={selectedYear}
+                            onChange={handleYearChange}
+                            size="small"
+                            sx={{ minWidth: 120 }}
+                        >
+                            <MenuItem value="24-25">24-25</MenuItem>
+                            <MenuItem value="23-24">23-24</MenuItem>
+                            <MenuItem value="22-23">22-23</MenuItem>
+                        </TextField>
+                    </Box>
+                    <ResponsiveContainer width="80%" height={285}>
+                        <LineChart data={histogramDataByYear[year]} margin={{ top: 20, right: 20, left: 40, bottom: 40 }}>
+                            <XAxis dataKey="time" />
+                            <YAxis />
+                            <RechartsTooltip wrapperStyle={{ zIndex: 1000 }} />
+                            <Legend />
+                            <Line type="monotone" dataKey="typeErrors" stroke="#ff6b6b" strokeWidth={2} dot={{ fill: '#ff6b6b' }} name="Type Errors" />
+                            <Line type="monotone" dataKey="dbTimeouts" stroke="#4ecdc4" strokeWidth={2} dot={{ fill: '#4ecdc4' }} name="DB Timeouts" />
+                            <Line type="monotone" dataKey="apiErrors" stroke="#45b7d1" strokeWidth={2} dot={{ fill: '#45b7d1' }} name="API Errors" />
+                            <Line type="monotone" dataKey="authErrors" stroke="#f9ca24" strokeWidth={2} dot={{ fill: '#f9ca24' }} name="Auth Errors" />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </Box>
+            )
+        },
+        {
+            title: 'Issues by Error Type',
+            content: (
+                <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                        <Pie data={pieChartData} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" dataKey="value" label>
+                            {pieChartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <RechartsTooltip wrapperStyle={{ zIndex: 1000 }} />
+                        <Legend />
+                    </PieChart>
+                </ResponsiveContainer>
+            )
+        },
+        {
+            title: 'System Health',
+            content: (
+                <SystemHealthCard />
+            )
+        },
+    ];
+
     // Filter cards based on integration status
-    const baseCards = overviewCards;
+    const baseCards = createOverviewCards(selectedYear);
 
     // Add Integration Status card only when healthy
     const cardsToShow = integrationStatus === 'healthy'
