@@ -498,183 +498,7 @@ function SentrySection({ allExpanded, isOpen, onToggle, onDataFetched }) {
     );
 }
 
-// --- HubSpot Section (Mock Data) ---
-function HubSpotSection({ allExpanded, isOpen, onToggle }) {
-    const [expandedIntegrations, setExpandedIntegrations] = useState([]);
-
-    const mockDeals = [
-        { id: 1, title: 'New Deal with Acme Corp', stage: 'Discovery', amount: '$50,000' },
-        { id: 2, title: 'Expansion with Globex Inc', stage: 'Proposal', amount: '$120,000' },
-    ];
-
-    const mockActivities = [
-        { id: 1, type: 'Email', summary: 'Follow-up with Jane Doe', time: '2 hours ago' },
-        { id: 2, type: 'Call', summary: 'Initial call with John Smith', time: 'Yesterday' },
-    ];
-
-    const mockIntegrations = [
-        { name: 'HubSpot API', category: 'CRM', status: 'Healthy', responseTime: '120ms', lastSuccess: 'Just now', uptime: '99.99%', issue: null },
-    ];
-
-    useEffect(() => {
-        if (allExpanded) {
-            setExpandedIntegrations(mockIntegrations.map((_, index) => index));
-        } else {
-            setExpandedIntegrations([]);
-        }
-    }, [allExpanded]);
-
-    const handleViewIntegrationDetails = (index) => {
-        const newExpandedIntegrations = expandedIntegrations.includes(index)
-            ? expandedIntegrations.filter(i => i !== index)
-            : [...expandedIntegrations, index];
-        setExpandedIntegrations(newExpandedIntegrations);
-    };
-
-    return (
-        <CollapsibleSection title={textContent.hubspot.title} isOpen={isOpen} onToggle={onToggle}>
-            <IntegrationDetailsSection integrations={mockIntegrations} textContent={textContent.hubspot.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
-            <ActiveDealsSection deals={mockDeals} textContent={textContent.hubspot.activeDeals} />
-            <RecentActivitiesSection activities={mockActivities} textContent={textContent.hubspot.recentActivities} />
-        </CollapsibleSection>
-    );
-}
-
-function ActiveDealsSection({ deals, textContent }) {
-    const [expandedDeals, setExpandedDeals] = useState([]);
-
-    const getRowColorForDeal = (stage) => {
-        switch (stage) {
-            case 'Discovery':
-                return '#e3f2fd'; // light blue
-            case 'Proposal':
-                return '#bbdefb'; // slightly darker light blue
-            default:
-                return 'inherit';
-        }
-    };
-
-    const handleViewDealDetails = (dealId) => {
-        const newExpandedDeals = expandedDeals.includes(dealId)
-            ? expandedDeals.filter(id => id !== dealId)
-            : [...expandedDeals, dealId];
-        setExpandedDeals(newExpandedDeals);
-    };
-
-    const handleExpandAll = () => {
-        const allDealIds = deals.map(deal => deal.id);
-        const anyExpanded = expandedDeals.length > 0;
-
-        if (anyExpanded) {
-            // If any are expanded, collapse all
-            setExpandedDeals([]);
-        } else {
-            // If none are expanded, expand all
-            setExpandedDeals(allDealIds);
-        }
-    };
-
-    return (
-        <CollapsibleSection title={textContent.heading}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Box />
-                <Button size="small" onClick={handleExpandAll}>
-                    {expandedDeals.length > 0 ? 'Collapse All' : 'Expand All'}
-                </Button>
-            </Box>
-            <Table>
-                <TableHead>
-                    <TableRow>
-                        <TableCell>Title</TableCell>
-                        <TableCell>Stage</TableCell>
-                        <TableCell>Amount</TableCell>
-                        <TableCell align="right"></TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {deals.map(deal => (
-                        <React.Fragment key={deal.id}>
-                            <TableRow sx={{ backgroundColor: getRowColorForDeal(deal.stage) }}>
-                                <TableCell>{deal.title}</TableCell>
-                                <TableCell>{deal.stage}</TableCell>
-                                <TableCell>{deal.amount}</TableCell>
-                                <TableCell align="right">
-                                    <Button size="small" onClick={() => handleViewDealDetails(deal.id)}>{textContent.viewDeal}</Button>
-                                </TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
-                                    <Collapse in={expandedDeals.includes(deal.id)} timeout="auto" unmountOnExit>
-                                        <Box sx={{ margin: 1 }}>
-                                            <Typography variant="h6" gutterBottom component="div">
-                                                Deal Details
-                                            </Typography>
-                                            <Typography variant="body2" color="text.secondary">
-                                                Deal ID: {deal.id} | Title: {deal.title} | Stage: {deal.stage} | Amount: {deal.amount}
-                                            </Typography>
-                                        </Box>
-                                    </Collapse>
-                                </TableCell>
-                            </TableRow>
-                        </React.Fragment>
-                    ))}
-                </TableBody>
-            </Table>
-        </CollapsibleSection>
-    );
-}
-
-function RecentActivitiesSection({ activities, textContent }) {
-    const [expandedActivities, setExpandedActivities] = useState([]);
-
-    const handleViewActivityDetails = (activityId) => {
-        const newExpandedActivities = expandedActivities.includes(activityId)
-            ? expandedActivities.filter(id => id !== activityId)
-            : [...expandedActivities, activityId];
-        setExpandedActivities(newExpandedActivities);
-    };
-
-    const handleExpandAll = () => {
-        const allActivityIds = activities.map(activity => activity.id);
-        const anyExpanded = expandedActivities.length > 0;
-
-        if (anyExpanded) {
-            // If any are expanded, collapse all
-            setExpandedActivities([]);
-        } else {
-            // If none are expanded, expand all
-            setExpandedActivities(allActivityIds);
-        }
-    };
-
-    return (
-        <CollapsibleSection title={textContent.heading}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Box />
-                <Button size="small" onClick={handleExpandAll}>
-                    {expandedActivities.length > 0 ? 'Collapse All' : 'Expand All'}
-                </Button>
-            </Box>
-            <List>
-                {activities.map(activity => (
-                    <React.Fragment key={activity.id}>
-                        <ListItem>
-                            <ListItemText primary={activity.summary} secondary={`${activity.type} - ${activity.time}`} />
-                            <Button size="small" onClick={() => handleViewActivityDetails(activity.id)}>{textContent.details}</Button>
-                        </ListItem>
-                        <Collapse in={expandedActivities.includes(activity.id)} timeout="auto" unmountOnExit>
-                            <Box sx={{ margin: 1, ml: 4 }}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Activity ID: {activity.id} | Type: {activity.type} | Summary: {activity.summary} | Time: {activity.time}
-                                </Typography>
-                            </Box>
-                        </Collapse>
-                    </React.Fragment>
-                ))}
-            </List>
-        </CollapsibleSection>
-    );
-}
+// HubSpot section temporarily removed to focus on Active Issues
 
 
 function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails, expandedIntegrations }) {
@@ -722,12 +546,49 @@ function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails
                                     <TableCell>{i.uptime}</TableCell>
                                     <TableCell>{i.issue || '—'}</TableCell>
                                     <TableCell align="right">
+                                        <Button size="small" startIcon={<InfoIcon />} onClick={() => onAndViewDetails(index)}>
+                                            {textContent.viewDetails}
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
                                         <Collapse in={expandedIntegrations.includes(index)} timeout="auto" unmountOnExit>
-                                            <Box sx={{ margin: 1 }}>
+                                            <Box sx={{ margin: 1, p: 2, backgroundColor: '#f5f5f5' }}>
+                                                <Typography variant="body2" sx={{ mb: 2 }}>
+                                                    Users or sessions most affected: {i.affectedUsers || 'Premium users (15%), Mobile app sessions (8%), API integrations (12%)'}
+                                                </Typography>
+
+                                                <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
+                                                    Most Frequent Exception Types:
+                                                </Typography>
+                                                <Box sx={{ ml: 2 }}>
+                                                    {i.exceptionTypes ? (
+                                                        i.exceptionTypes.map((exception, idx) => (
+                                                            <Typography key={idx} variant="body2" sx={{ mb: 0.5 }}>
+                                                                • {exception.type}: {exception.count} occurrences
+                                                            </Typography>
+                                                        ))
+                                                    ) : (
+                                                        <>
+                                                            <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                                • ValueError: 47 occurrences
+                                                            </Typography>
+                                                            <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                                • TimeoutError: 23 occurrences
+                                                            </Typography>
+                                                            <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                                • ConnectionError: 18 occurrences
+                                                            </Typography>
+                                                            <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                                • KeyError: 12 occurrences
+                                                            </Typography>
+                                                            <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                                • AttributeError: 8 occurrences
+                                                            </Typography>
+                                                        </>
+                                                    )}
+                                                </Box>
                                             </Box>
                                         </Collapse>
                                     </TableCell>
@@ -778,7 +639,7 @@ function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsD
                     <TableRow>
                         <TableCell>Title</TableCell>
                         <TableCell>Status</TableCell>
-                        <TableCell align="right"></TableCell>
+                        <TableCell align="right">Actions</TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -790,14 +651,16 @@ function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsD
                                     <Chip label={issue.status} size="small" color={issue.status === 'unresolved' ? 'error' : 'success'} />
                                 </TableCell>
                                 <TableCell align="right">
-                                    {issue.status === 'unresolved' && (
-                                        <Button size="small" onClick={() => onResolveIssue(issue.id)}>
-                                            {textContent.resolveIssue}
+                                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                                        {issue.status === 'unresolved' && (
+                                            <Button size="small" onClick={() => onResolveIssue(issue.id)}>
+                                                {textContent.resolveIssue}
+                                            </Button>
+                                        )}
+                                        <Button size="small" startIcon={<InfoIcon />} onClick={() => onViewDetails(issue.id)}>
+                                            {textContent.viewDetails}
                                         </Button>
-                                    )}
-                                    <Button size="small" startIcon={<InfoIcon />} onClick={() => onViewDetails(issue.id)}>
-                                        {textContent.viewDetails}
-                                    </Button>
+                                    </Box>
                                 </TableCell>
                             </TableRow>
                             <TableRow>
@@ -839,18 +702,17 @@ function InactiveIssuesSection({ issues, onViewDetails, allEventsData, expandedR
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableCell>Issue</TableCell>
+                        <TableCell>Title</TableCell>
                         <TableCell>Type</TableCell>
-                        <TableCell>Frequency</TableCell>
                         <TableCell>Last Seen</TableCell>
                         <TableCell>Status</TableCell>
-                        <TableCell>Actions</TableCell>
+                        <TableCell align="right">Actions</TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
                     {issues.map((issue) => (
                         <React.Fragment key={issue.id}>
-                            <TableRow>
+                            <TableRow sx={{ backgroundColor: '#f9f9f9' }}>
                                 <TableCell>{issue.title}</TableCell>
                                 <TableCell>
                                     <Chip
@@ -862,7 +724,6 @@ function InactiveIssuesSection({ issues, onViewDetails, allEventsData, expandedR
                                         }}
                                     />
                                 </TableCell>
-                                <TableCell>{issue.count || 'N/A'}</TableCell>
                                 <TableCell>{new Date(issue.lastSeen).toLocaleString()}</TableCell>
                                 <TableCell>
                                     <Chip
@@ -874,9 +735,10 @@ function InactiveIssuesSection({ issues, onViewDetails, allEventsData, expandedR
                                         }}
                                     />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell align="right">
                                     <Button
                                         size="small"
+                                        startIcon={<InfoIcon />}
                                         onClick={() => onViewDetails(issue.id)}
                                         sx={{ color: '#666' }}
                                     >
@@ -886,8 +748,8 @@ function InactiveIssuesSection({ issues, onViewDetails, allEventsData, expandedR
                             </TableRow>
                             {expandedRows.includes(issue.id) && (
                                 <TableRow>
-                                    <TableCell colSpan={6}>
-                                        <Box sx={{ p: 2, backgroundColor: '#f9f9f9' }}>
+                                    <TableCell colSpan={5}>
+                                        <Box sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
                                             <Typography variant="subtitle2" gutterBottom>
                                                 Issue Details:
                                             </Typography>
@@ -1541,7 +1403,7 @@ function LiveData({ allExpanded, onRefresh, onExpandAll, sentryOpen, hubspotOpen
                 lastFetchTime={lastFetchTime}
             />
             <SentrySection allExpanded={allExpanded} isOpen={sentryOpen} onToggle={onSentryToggle} onDataFetched={onDataFetched} />
-            <HubSpotSection allExpanded={allExpanded} isOpen={hubspotOpen} onToggle={onHubspotToggle} />
+            {/* <HubSpotSection allExpanded={allExpanded} isOpen={hubspotOpen} onToggle={onHubspotToggle} /> */}
             <QuickLinksFooter />
         </>
     );
