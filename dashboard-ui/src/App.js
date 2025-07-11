@@ -1394,6 +1394,17 @@ function Overview({ integrationStatus, integrationSystems }) {
 }
 
 function LiveData({ allExpanded, onRefresh, onExpandAll, sentryOpen, hubspotOpen, onSentryToggle, onHubspotToggle, lastFetchTime, onDataFetched }) {
+    const [notificationMessage, setNotificationMessage] = useState('');
+
+    const handleNotifyMembers = () => {
+        // Placeholder function for notify members functionality
+        if (notificationMessage.trim()) {
+            alert(`Notify Members with message: "${notificationMessage}"`);
+        } else {
+            alert('Please enter a notification message');
+        }
+    };
+
     return (
         <>
             <Header
@@ -1404,6 +1415,41 @@ function LiveData({ allExpanded, onRefresh, onExpandAll, sentryOpen, hubspotOpen
             />
             <SentrySection allExpanded={allExpanded} isOpen={sentryOpen} onToggle={onSentryToggle} onDataFetched={onDataFetched} />
             {/* <HubSpotSection allExpanded={allExpanded} isOpen={hubspotOpen} onToggle={onHubspotToggle} /> */}
+
+            {/* Notify Members Section */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 4, mb: 2, justifyContent: 'center' }}>
+                <Button
+                    variant="contained"
+                    size="large"
+                    onClick={handleNotifyMembers}
+                    sx={{
+                        px: 4,
+                        py: 1.5,
+                        fontSize: '1.1rem',
+                        fontWeight: 'bold',
+                        backgroundColor: '#1c938a',
+                        color: 'white',
+                        '&:hover': {
+                            backgroundColor: '#157a72'
+                        }
+                    }}
+                >
+                    Notify Members
+                </Button>
+                <TextField
+                    variant="outlined"
+                    placeholder="Enter notification message..."
+                    value={notificationMessage}
+                    onChange={(e) => setNotificationMessage(e.target.value)}
+                    sx={{
+                        minWidth: 300,
+                        '& .MuiOutlinedInput-root': {
+                            height: '56px' // Match button height
+                        }
+                    }}
+                />
+            </Box>
+
             <QuickLinksFooter />
         </>
     );
