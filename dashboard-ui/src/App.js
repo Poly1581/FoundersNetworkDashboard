@@ -123,7 +123,7 @@ const updateIssueStatus = async (issueId, status) => {
 const textContent = {
     sidebar: { overview: 'Overview', liveData: 'Live Data' },
     header: {
-        title: 'Founders Network Dashboard',
+        title: '',
         checkNow: 'Refresh All'
     },
     sentry: {
@@ -499,8 +499,34 @@ function HubSpotSection({ allExpanded }) {
 }
 
 function ActiveDealsSection({ deals, textContent }) {
+    const [expandedDeals, setExpandedDeals] = useState([]);
+
+    const handleViewDealDetails = (dealId) => {
+        const newExpandedDeals = expandedDeals.includes(dealId)
+            ? expandedDeals.filter(id => id !== dealId)
+            : [...expandedDeals, dealId];
+        setExpandedDeals(newExpandedDeals);
+    };
+
+    const handleExpandAll = () => {
+        const allDealIds = deals.map(deal => deal.id);
+        const allExpanded = allDealIds.every(id => expandedDeals.includes(id));
+
+        if (allExpanded) {
+            setExpandedDeals([]);
+        } else {
+            setExpandedDeals(allDealIds);
+        }
+    };
+
     return (
         <CollapsibleSection title={textContent.heading}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Box />
+                <Button size="small" onClick={handleExpandAll}>
+                    Expand All
+                </Button>
+            </Box>
             <Table>
                 <TableHead>
                     <TableRow>
@@ -512,14 +538,30 @@ function ActiveDealsSection({ deals, textContent }) {
                 </TableHead>
                 <TableBody>
                     {deals.map(deal => (
-                        <TableRow key={deal.id}>
-                            <TableCell>{deal.title}</TableCell>
-                            <TableCell>{deal.stage}</TableCell>
-                            <TableCell>{deal.amount}</TableCell>
-                            <TableCell align="right">
-                                <Button size="small">{textContent.viewDeal}</Button>
-                            </TableCell>
-                        </TableRow>
+                        <React.Fragment key={deal.id}>
+                            <TableRow>
+                                <TableCell>{deal.title}</TableCell>
+                                <TableCell>{deal.stage}</TableCell>
+                                <TableCell>{deal.amount}</TableCell>
+                                <TableCell align="right">
+                                    <Button size="small" onClick={() => handleViewDealDetails(deal.id)}>{textContent.viewDeal}</Button>
+                                </TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
+                                    <Collapse in={expandedDeals.includes(deal.id)} timeout="auto" unmountOnExit>
+                                        <Box sx={{ margin: 1 }}>
+                                            <Typography variant="h6" gutterBottom component="div">
+                                                Deal Details
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Deal ID: {deal.id} | Title: {deal.title} | Stage: {deal.stage} | Amount: {deal.amount}
+                                            </Typography>
+                                        </Box>
+                                    </Collapse>
+                                </TableCell>
+                            </TableRow>
+                        </React.Fragment>
                     ))}
                 </TableBody>
             </Table>
@@ -528,14 +570,49 @@ function ActiveDealsSection({ deals, textContent }) {
 }
 
 function RecentActivitiesSection({ activities, textContent }) {
+    const [expandedActivities, setExpandedActivities] = useState([]);
+
+    const handleViewActivityDetails = (activityId) => {
+        const newExpandedActivities = expandedActivities.includes(activityId)
+            ? expandedActivities.filter(id => id !== activityId)
+            : [...expandedActivities, activityId];
+        setExpandedActivities(newExpandedActivities);
+    };
+
+    const handleExpandAll = () => {
+        const allActivityIds = activities.map(activity => activity.id);
+        const allExpanded = allActivityIds.every(id => expandedActivities.includes(id));
+
+        if (allExpanded) {
+            setExpandedActivities([]);
+        } else {
+            setExpandedActivities(allActivityIds);
+        }
+    };
+
     return (
         <CollapsibleSection title={textContent.heading}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Box />
+                <Button size="small" onClick={handleExpandAll}>
+                    Expand All
+                </Button>
+            </Box>
             <List>
                 {activities.map(activity => (
-                    <ListItem key={activity.id}>
-                        <ListItemText primary={activity.summary} secondary={`${activity.type} - ${activity.time}`} />
-                        <Button size="small">{textContent.details}</Button>
-                    </ListItem>
+                    <React.Fragment key={activity.id}>
+                        <ListItem>
+                            <ListItemText primary={activity.summary} secondary={`${activity.type} - ${activity.time}`} />
+                            <Button size="small" onClick={() => handleViewActivityDetails(activity.id)}>{textContent.details}</Button>
+                        </ListItem>
+                        <Collapse in={expandedActivities.includes(activity.id)} timeout="auto" unmountOnExit>
+                            <Box sx={{ margin: 1, ml: 4 }}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Activity ID: {activity.id} | Type: {activity.type} | Summary: {activity.summary} | Time: {activity.time}
+                                </Typography>
+                            </Box>
+                        </Collapse>
+                    </React.Fragment>
                 ))}
             </List>
         </CollapsibleSection>
@@ -575,25 +652,12 @@ function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails
                                     <TableCell>{i.uptime}</TableCell>
                                     <TableCell>{i.issue || '—'}</TableCell>
                                     <TableCell align="right">
-                                        <Button size="small" onClick={() => onAndViewDetails(index)}>{textContent.viewDetails}</Button>
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
                                         <Collapse in={expandedIntegrations.includes(index)} timeout="auto" unmountOnExit>
                                             <Box sx={{ margin: 1 }}>
-                                                <Typography variant="h6" gutterBottom component="div">
-                                                    Integration Details
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Service: {i.name} | Category: {i.category} | Status: {i.status} | Response Time: {i.responseTime} | Last Success: {i.lastSuccess} | Uptime: {i.uptime} | Issue: {i.issue || '—'}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                                                    <strong>Member Impact:</strong>
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                                                    <strong>Critical Services:</strong>
-                                                </Typography>
                                             </Box>
                                         </Collapse>
                                     </TableCell>
@@ -607,8 +671,31 @@ function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails
 }
 
 function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, textContent }) {
+    const handleExpandAll = () => {
+        const allIssueIds = issues.map(issue => issue.id);
+        const allExpanded = allIssueIds.every(id => expandedRows.includes(id));
+
+        if (allExpanded) {
+            // Collapse all
+            allIssueIds.forEach(id => onViewDetails(id));
+        } else {
+            // Expand all that aren't already expanded
+            allIssueIds.forEach(id => {
+                if (!expandedRows.includes(id)) {
+                    onViewDetails(id);
+                }
+            });
+        }
+    };
+
     return (
         <CollapsibleSection title={textContent.heading}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Box />
+                <Button size="small" onClick={handleExpandAll}>
+                    Expand All
+                </Button>
+            </Box>
             <Table>
                 <TableHead>
                     <TableRow>
@@ -666,11 +753,34 @@ function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsD
 
 function RecentAlertsSection({ alerts, showFilter, toggleFilter, filter, onFilterChange, expandedAlertDetails, onViewAlertDetails, textContent }) {
     if (!alerts) return null;
+
+    const handleExpandAll = () => {
+        const allIndices = alerts.map((_, index) => index);
+        const allExpanded = allIndices.every(index => expandedAlertDetails.includes(index));
+
+        if (allExpanded) {
+            // Collapse all
+            allIndices.forEach(index => onViewAlertDetails(index));
+        } else {
+            // Expand all that aren't already expanded
+            allIndices.forEach(index => {
+                if (!expandedAlertDetails.includes(index)) {
+                    onViewAlertDetails(index);
+                }
+            });
+        }
+    };
+
     return (
         <CollapsibleSection title={textContent.heading}>
-            <Box mb={2} display="flex" justifyContent="flex-end" alignItems="center">
-                <Button size="small" onClick={toggleFilter}>{textContent.filter}</Button>
-                <Button size="small" onClick={() => onFilterChange({ status: '', level: '', date: '' })}>{textContent.viewAll}</Button>
+            <Box mb={2} display="flex" justifyContent="space-between" alignItems="center">
+                <Button size="small" onClick={handleExpandAll}>
+                    Expand All
+                </Button>
+                <Box display="flex" gap={1}>
+                    <Button size="small" onClick={toggleFilter}>{textContent.filter}</Button>
+                    <Button size="small" onClick={() => onFilterChange({ status: '', level: '', date: '' })}>{textContent.viewAll}</Button>
+                </Box>
             </Box>
 
             {showFilter && (
@@ -1123,7 +1233,11 @@ function Overview({ integrationStatus, integrationSystems }) {
 
     return (
         <Box sx={{ p: 3, height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h4" gutterBottom>Overview</Typography>
+            <Typography variant="h3" gutterBottom sx={{
+                fontFamily: "Lato, sans-serif",
+                fontStyle: "normal",
+                fontWeight: 700
+            }}>Overview</Typography>
 
             {/* Show Integration Status card below title but above other content */}
             {(integrationStatus === 'degraded' || integrationStatus === 'down') && (
@@ -1212,7 +1326,10 @@ function LiveData({ allExpanded, onRefresh, onExpandAll }) {
 // --- MAIN APP COMPONENT ---
 export default function App() {
     const [allExpanded, setAllExpanded] = useState(false);
-    const [activePage, setActivePage] = useState('overview');
+    const [activePage, setActivePage] = useState(() => {
+        // Get the saved page from localStorage, default to 'overview' if not found
+        return localStorage.getItem('activePage') || 'overview';
+    });
 
     // Integration systems state
     const [integrationSystems] = useState([
@@ -1240,9 +1357,15 @@ export default function App() {
     const handleExpandAll = () => {
         setAllExpanded(prev => !prev);
     };
+
+    const handlePageChange = (page) => {
+        setActivePage(page);
+        localStorage.setItem('activePage', page);
+    };
+
     return (
         <Box sx={{ display: 'flex' }}>
-            <Sidebar activePage={activePage} onPageChange={setActivePage} />
+            <Sidebar activePage={activePage} onPageChange={handlePageChange} />
             <Box component="main" sx={{ flexGrow: 1, bgcolor: 'white', p: 3 }}>
                 {/* User Profile Section */}
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
