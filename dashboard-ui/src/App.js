@@ -18,6 +18,8 @@ import {
     TableRow,
     TableCell,
     TableBody,
+    TableContainer,
+    Paper,
     IconButton,
     Collapse,
     TextField,
@@ -295,7 +297,7 @@ function CollapsibleSection({ title, children, defaultOpen = true, isOpen, onTog
 // --- Sentry Section ---
 function SentrySection({ allExpanded, isOpen, onToggle, onDataFetched }) {
     const [issues, setIssues] = useState([]);
-    const [hiddenIssueIDs, setHiddenIssueIDs] = useState([]);
+    const [resolvedIssues, setResolvedIssues] = useState([]);
     const [sentryAlerts, setSentryAlerts] = useState([]);
     const [sentryIntegrations, setSentryIntegrations] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -307,6 +309,7 @@ function SentrySection({ allExpanded, isOpen, onToggle, onDataFetched }) {
     });
     const [showFilter, setShowFilter] = useState(false);
     const [expandedRows, setExpandedRows] = useState([]);
+    const [expandedInactiveRows, setExpandedInactiveRows] = useState([]);
     const [allEventsData, setAllEventsData] = useState({});
     const [expandedAlertDetails, setExpandedAlertDetails] = useState([]);
     const [expandedIntegrations, setExpandedIntegrations] = useState([]);
@@ -320,14 +323,16 @@ function SentrySection({ allExpanded, isOpen, onToggle, onDataFetched }) {
     useEffect(() => {
         if (allExpanded) {
             setExpandedRows(issues.map(issue => issue.id));
+            setExpandedInactiveRows(resolvedIssues.map(issue => issue.id));
             setExpandedAlertDetails(sentryAlerts.map((_, index) => index));
             setExpandedIntegrations(sentryIntegrations.map((_, index) => index));
         } else {
             setExpandedRows([]);
+            setExpandedInactiveRows([]);
             setExpandedAlertDetails([]);
             setExpandedIntegrations([]);
         }
-    }, [allExpanded, issues.length, sentryAlerts.length, sentryIntegrations.length]);
+    }, [allExpanded, issues.length, resolvedIssues.length, sentryAlerts.length, sentryIntegrations.length]);
 
     const fetchSentryIntegrationStatus = async () => {
         try {
@@ -428,13 +433,21 @@ function SentrySection({ allExpanded, isOpen, onToggle, onDataFetched }) {
     }, [loadData]);
 
     const handleResolveIssue = async (issueId) => {
-        setHiddenIssueIDs(prev => [...prev, issueId]);
+        // Find the issue to resolve
+        const issueToResolve = issues.find(issue => issue.id === issueId);
+        if (!issueToResolve) return;
+
+        // Optimistically move issue to resolved list
+        setIssues(prev => prev.filter(issue => issue.id !== issueId));
+        setResolvedIssues(prev => [...prev, { ...issueToResolve, status: 'resolved' }]);
 
         try {
             await updateIssueStatus(issueId, 'resolved');
         } catch (err) {
             console.error("Failed to resolve issue:", err);
-            setHiddenIssueIDs(prev => prev.filter(id => id !== issueId));
+            // Revert the change if API call fails
+            setResolvedIssues(prev => prev.filter(issue => issue.id !== issueId));
+            setIssues(prev => [...prev, issueToResolve]);
             alert(`Failed to resolve issue: ${err.message}`);
         }
     };
@@ -453,6 +466,13 @@ function SentrySection({ allExpanded, isOpen, onToggle, onDataFetched }) {
         setExpandedAlertDetails(newExpandedAlertDetails);
     };
 
+    const handleViewInactiveDetails = (issueId) => {
+        const newExpandedInactiveRows = expandedInactiveRows.includes(issueId)
+            ? expandedInactiveRows.filter(id => id !== issueId)
+            : [...expandedInactiveRows, issueId];
+        setExpandedInactiveRows(newExpandedInactiveRows);
+    };
+
     const handleViewIntegrationDetails = (index) => {
         const newExpandedIntegrations = expandedIntegrations.includes(index)
             ? expandedIntegrations.filter(i => i !== index)
@@ -468,12 +488,11 @@ function SentrySection({ allExpanded, isOpen, onToggle, onDataFetched }) {
         return <CollapsibleSection title={textContent.sentry.title}><Typography color="error">Error fetching Sentry data: {error}</Typography></CollapsibleSection>;
     }
 
-    const visibleIssues = issues.filter(issue => !hiddenIssueIDs.includes(issue.id));
-
     return (
         <CollapsibleSection title={textContent.sentry.title} isOpen={isOpen} onToggle={onToggle}>
             <IntegrationDetailsSection integrations={sentryIntegrations} textContent={textContent.sentry.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
-            <ActiveIssuesSection issues={visibleIssues} onViewDetails={handleViewDetails} onResolveIssue={handleResolveIssue} allEventsData={allEventsData} expandedRows={expandedRows} setExpandedRows={setExpandedRows} textContent={textContent.sentry.activeIssues} />
+            <ActiveIssuesSection issues={issues} onViewDetails={handleViewDetails} onResolveIssue={handleResolveIssue} allEventsData={allEventsData} expandedRows={expandedRows} setExpandedRows={setExpandedRows} textContent={textContent.sentry.activeIssues} />
+            <InactiveIssuesSection issues={resolvedIssues} onViewDetails={handleViewInactiveDetails} allEventsData={allEventsData} expandedRows={expandedInactiveRows} setExpandedRows={setExpandedInactiveRows} />
             <RecentAlertsSection alerts={filteredAlerts} showFilter={showFilter} toggleFilter={() => setShowFilter(prev => !prev)} filter={filter} onFilterChange={setFilter} expandedAlertDetails={expandedAlertDetails} onViewAlertDetails={handleViewAlertDetails} setExpandedAlertDetails={setExpandedAlertDetails} textContent={textContent.sentry.recentAlerts} />
         </CollapsibleSection>
     );
@@ -801,6 +820,94 @@ function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsD
                                     </Collapse>
                                 </TableCell>
                             </TableRow>
+                        </React.Fragment>
+                    ))}
+                </TableBody>
+            </Table>
+        </CollapsibleSection>
+    );
+}
+
+// Inactive Issues Section Component
+function InactiveIssuesSection({ issues, onViewDetails, allEventsData, expandedRows, setExpandedRows }) {
+    if (issues.length === 0) {
+        return null;
+    }
+
+    return (
+        <CollapsibleSection title="Inactive Issues">
+            <Table>
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Issue</TableCell>
+                        <TableCell>Type</TableCell>
+                        <TableCell>Frequency</TableCell>
+                        <TableCell>Last Seen</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Actions</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {issues.map((issue) => (
+                        <React.Fragment key={issue.id}>
+                            <TableRow>
+                                <TableCell>{issue.title}</TableCell>
+                                <TableCell>
+                                    <Chip
+                                        label={issue.level || 'error'}
+                                        size="small"
+                                        sx={{
+                                            backgroundColor: '#e0e0e0',
+                                            color: '#666'
+                                        }}
+                                    />
+                                </TableCell>
+                                <TableCell>{issue.count || 'N/A'}</TableCell>
+                                <TableCell>{new Date(issue.lastSeen).toLocaleString()}</TableCell>
+                                <TableCell>
+                                    <Chip
+                                        label="Resolved"
+                                        size="small"
+                                        sx={{
+                                            backgroundColor: '#e8f5e8',
+                                            color: '#2e7d32'
+                                        }}
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <Button
+                                        size="small"
+                                        onClick={() => onViewDetails(issue.id)}
+                                        sx={{ color: '#666' }}
+                                    >
+                                        View Details
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                            {expandedRows.includes(issue.id) && (
+                                <TableRow>
+                                    <TableCell colSpan={6}>
+                                        <Box sx={{ p: 2, backgroundColor: '#f9f9f9' }}>
+                                            <Typography variant="subtitle2" gutterBottom>
+                                                Issue Details:
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ mb: 2 }}>
+                                                {issue.culprit || 'No additional details available'}
+                                            </Typography>
+                                            <Typography variant="subtitle2" gutterBottom>
+                                                Recent Events:
+                                            </Typography>
+                                            {allEventsData[issue.id] && (
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Latest Event ID: {allEventsData[issue.id][0]?.id} |
+                                                    Message: {allEventsData[issue.id][0]?.message} |
+                                                    Timestamp: {new Date(allEventsData[issue.id][0]?.dateCreated).toLocaleString()}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                </TableRow>
+                            )}
                         </React.Fragment>
                     ))}
                 </TableBody>
@@ -1184,7 +1291,13 @@ function Overview({ integrationStatus, integrationSystems }) {
         return {
             title: `Integration Status: ${integrationStatus.charAt(0).toUpperCase() + integrationStatus.slice(1)}`,
             content: (
-                <Box sx={{ mt: 2 }}>
+                <Box sx={{
+                    mt: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: integrationStatus === 'down' ? 'center' : 'flex-start',
+                    textAlign: integrationStatus === 'down' ? 'center' : 'left'
+                }}>
                     <Typography>{integrationSystems.length} integrations monitored</Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-around', mt: 2, flexWrap: 'wrap' }}>
                         {groupedSystems.healthy.length > 0 && (
@@ -1270,11 +1383,11 @@ function Overview({ integrationStatus, integrationSystems }) {
         {
             title: 'Endpoint Error Rates',
             content: (
-                <ResponsiveContainer width="100%" height={400}>
+                <ResponsiveContainer width="100%" height={250}>
                     <BarChart
                         layout="vertical"
                         data={endpointErrorRates}
-                        margin={{ top: 5, right: 5, left: 25, bottom: 5 }}
+                        margin={{ top: 20, right: 30, left: -10, bottom: 20 }}
                         barCategoryGap="5%"
                     >
                         <XAxis
@@ -1284,8 +1397,8 @@ function Overview({ integrationStatus, integrationSystems }) {
                         <YAxis
                             type="category"
                             dataKey="endpoint"
-                            width={20}
-                            tick={{ fontSize: 8 }}
+                            width={100}
+                            tick={{ fontSize: 10 }}
                         />
                         <RechartsTooltip
                             wrapperStyle={{ zIndex: 1000 }}
@@ -1371,7 +1484,7 @@ function Overview({ integrationStatus, integrationSystems }) {
                         // First two cards (Integration Status and Endpoint Error Rates) are always side by side
                         ...(index < 2 && {
                             gridColumn: { md: 'span 1' }, // Explicitly set to span 1 column
-                            minHeight: '400px', // Set consistent height for side-by-side cards
+                            minHeight: '300px', // Set consistent height for side-by-side cards
                         }),
                         ...(isSystemHealthCard && {
                             borderRadius: '16px',
@@ -1395,7 +1508,16 @@ function Overview({ integrationStatus, integrationSystems }) {
 
                     return (
                         <Card key={index} sx={cardSx}>
-                            <CardContent sx={{ display: 'flex', flexDirection: 'column', width: '100%', flexGrow: 1 }}>
+                            <CardContent sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                width: '100%',
+                                flexGrow: 1,
+                                ...(isIntegrationCard && integrationStatus === 'down' && {
+                                    justifyContent: 'center',
+                                    alignItems: 'center'
+                                })
+                            }}>
                                 <Typography variant="h6" component="div" gutterBottom sx={{ textAlign: 'center' }}>
                                     {card.title}
                                 </Typography>
