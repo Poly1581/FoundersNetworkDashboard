@@ -246,14 +246,11 @@ function Sidebar({ activePage, onPageChange }) {
 }
 
 // --- Header Bar ---
-function Header({ onRefresh, onExpandAll }) {
+function Header({ onRefresh }) {
     return (
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={4}>
             <Typography variant="h4">{textContent.header.title}</Typography>
             <Box>
-                <Button variant="outlined" onClick={onExpandAll} sx={{ mr: 1 }}>
-                    Expand All
-                </Button>
                 <Button variant="outlined" startIcon={<RefreshIcon />} onClick={onRefresh} sx={{ mr: 1 }}>
                     {textContent.header.checkNow}
                 </Button>
@@ -450,7 +447,7 @@ function SentrySection({ allExpanded }) {
     return (
         <CollapsibleSection title={textContent.sentry.title}>
             <IntegrationDetailsSection integrations={sentryIntegrations} textContent={textContent.sentry.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
-            <ActiveIssuesSection issues={visibleIssues} onViewDetails={handleViewDetails} onResolveIssue={handleResolveIssue} allEventsData={allEventsData} expandedRows={expandedRows} textContent={textContent.sentry.activeIssues} />
+            <ActiveIssuesSection issues={visibleIssues} onViewDetails={handleViewDetails} onResolveIssue={handleResolveIssue} allEventsData={allEventsData} expandedRows={expandedRows} setExpandedRows={setExpandedRows} textContent={textContent.sentry.activeIssues} />
             <RecentAlertsSection alerts={filteredAlerts} showFilter={showFilter} toggleFilter={() => setShowFilter(prev => !prev)} filter={filter} onFilterChange={setFilter} expandedAlertDetails={expandedAlertDetails} onViewAlertDetails={handleViewAlertDetails} textContent={textContent.sentry.recentAlerts} />
         </CollapsibleSection>
     );
@@ -670,21 +667,17 @@ function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails
     );
 }
 
-function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, textContent }) {
+function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, setExpandedRows, textContent }) {
     const handleExpandAll = () => {
         const allIssueIds = issues.map(issue => issue.id);
         const allExpanded = allIssueIds.every(id => expandedRows.includes(id));
 
         if (allExpanded) {
-            // Collapse all
-            allIssueIds.forEach(id => onViewDetails(id));
+            // If all are expanded, collapse all
+            setExpandedRows([]);
         } else {
-            // Expand all that aren't already expanded
-            allIssueIds.forEach(id => {
-                if (!expandedRows.includes(id)) {
-                    onViewDetails(id);
-                }
-            });
+            // If not all are expanded, expand all
+            setExpandedRows(allIssueIds);
         }
     };
 
@@ -1309,12 +1302,11 @@ function Overview({ integrationStatus, integrationSystems }) {
     );
 }
 
-function LiveData({ allExpanded, onRefresh, onExpandAll }) {
+function LiveData({ allExpanded, onRefresh }) {
     return (
         <>
             <Header
                 onRefresh={onRefresh}
-                onExpandAll={onExpandAll}
             />
             <SentrySection allExpanded={allExpanded} />
             <HubSpotSection allExpanded={allExpanded} />
@@ -1391,7 +1383,6 @@ export default function App() {
                         <LiveData
                             allExpanded={allExpanded}
                             onRefresh={handleRefreshAll}
-                            onExpandAll={handleExpandAll}
                         />
                     )}
                 </Container>
