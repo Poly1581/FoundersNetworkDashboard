@@ -142,7 +142,7 @@ const textContent = {
                 responseTime: 'Response Time',
                 lastSuccess: 'Last Success',
                 uptime: 'Uptime',
-                issue: 'Issue'
+                issue: 'Errors per min'
             },
             viewDetails: 'View Details'
         },
@@ -169,7 +169,7 @@ const textContent = {
                 responseTime: 'Response Time',
                 lastSuccess: 'Last Success',
                 uptime: 'Uptime',
-                issue: 'Issue'
+                issue: 'Error per min'
             },
             viewDetails: 'View Details'
         },
@@ -246,17 +246,24 @@ function Sidebar({ activePage, onPageChange }) {
 }
 
 // --- Header Bar ---
-function Header({ onRefresh, onExpandAll, allExpanded }) {
+function Header({ onRefresh, onExpandAll, allExpanded, lastFetchTime }) {
     return (
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={4}>
             <Typography variant="h4">{textContent.header.title}</Typography>
-            <Box>
-                <Button variant="outlined" startIcon={<RefreshIcon />} onClick={onRefresh} sx={{ mr: 1 }}>
-                    {textContent.header.checkNow}
-                </Button>
-                <Button variant="outlined" onClick={onExpandAll}>
-                    {allExpanded ? 'Collapse All' : 'Expand All'}
-                </Button>
+            <Box display="flex" flexDirection="column" alignItems="flex-end">
+                <Box>
+                    <Button variant="outlined" startIcon={<RefreshIcon />} onClick={onRefresh} sx={{ mr: 1 }}>
+                        {textContent.header.checkNow}
+                    </Button>
+                    <Button variant="outlined" onClick={onExpandAll}>
+                        {allExpanded ? 'Collapse All' : 'Expand All'}
+                    </Button>
+                </Box>
+                {lastFetchTime && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                        Last updated: {lastFetchTime.toLocaleString()}
+                    </Typography>
+                )}
             </Box>
         </Box>
     );
@@ -286,7 +293,7 @@ function CollapsibleSection({ title, children, defaultOpen = true, isOpen, onTog
 }
 
 // --- Sentry Section ---
-function SentrySection({ allExpanded, isOpen, onToggle }) {
+function SentrySection({ allExpanded, isOpen, onToggle, onDataFetched }) {
     const [issues, setIssues] = useState([]);
     const [hiddenIssueIDs, setHiddenIssueIDs] = useState([]);
     const [sentryAlerts, setSentryAlerts] = useState([]);
@@ -303,6 +310,12 @@ function SentrySection({ allExpanded, isOpen, onToggle }) {
     const [allEventsData, setAllEventsData] = useState({});
     const [expandedAlertDetails, setExpandedAlertDetails] = useState([]);
     const [expandedIntegrations, setExpandedIntegrations] = useState([]);
+
+    // Use useRef to store the callback to prevent infinite loops
+    const onDataFetchedRef = React.useRef(onDataFetched);
+    React.useEffect(() => {
+        onDataFetchedRef.current = onDataFetched;
+    }, [onDataFetched]);
 
     useEffect(() => {
         if (allExpanded) {
@@ -397,6 +410,11 @@ function SentrySection({ allExpanded, isOpen, onToggle }) {
             setAllEventsData(eventsData);
 
             setError(null);
+
+            // Notify parent component that data was fetched using ref
+            if (onDataFetchedRef.current) {
+                onDataFetchedRef.current(new Date());
+            }
         } catch (err) {
             setError(err.message);
             console.error("Failed to fetch data:", err);
@@ -1391,15 +1409,16 @@ function Overview({ integrationStatus, integrationSystems }) {
     );
 }
 
-function LiveData({ allExpanded, onRefresh, onExpandAll, sentryOpen, hubspotOpen, onSentryToggle, onHubspotToggle }) {
+function LiveData({ allExpanded, onRefresh, onExpandAll, sentryOpen, hubspotOpen, onSentryToggle, onHubspotToggle, lastFetchTime, onDataFetched }) {
     return (
         <>
             <Header
                 onRefresh={onRefresh}
                 onExpandAll={onExpandAll}
                 allExpanded={allExpanded}
+                lastFetchTime={lastFetchTime}
             />
-            <SentrySection allExpanded={allExpanded} isOpen={sentryOpen} onToggle={onSentryToggle} />
+            <SentrySection allExpanded={allExpanded} isOpen={sentryOpen} onToggle={onSentryToggle} onDataFetched={onDataFetched} />
             <HubSpotSection allExpanded={allExpanded} isOpen={hubspotOpen} onToggle={onHubspotToggle} />
             <QuickLinksFooter />
         </>
@@ -1411,6 +1430,7 @@ export default function App() {
     const [allExpanded, setAllExpanded] = useState(false);
     const [sentryOpen, setSentryOpen] = useState(true);
     const [hubspotOpen, setHubspotOpen] = useState(true);
+    const [lastFetchTime, setLastFetchTime] = useState(null);
     const [activePage, setActivePage] = useState(() => {
         // Get the saved page from localStorage, default to 'overview' if not found
         return localStorage.getItem('activePage') || 'overview';
@@ -1433,9 +1453,14 @@ export default function App() {
 
     const integrationStatus = calculateIntegrationStatus(integrationSystems);
 
+    const handleDataFetched = (timestamp) => {
+        setLastFetchTime(timestamp);
+    };
+
     const handleRefreshAll = () => {
         // In a real app, you would trigger a refresh for all sections.
         // For now, this is a placeholder.
+        setLastFetchTime(new Date());
         window.location.reload();
     };
 
@@ -1511,6 +1536,8 @@ export default function App() {
                             hubspotOpen={hubspotOpen}
                             onSentryToggle={handleSentryToggle}
                             onHubspotToggle={handleHubspotToggle}
+                            lastFetchTime={lastFetchTime}
+                            onDataFetched={handleDataFetched}
                         />
                     )}
                 </Container>
