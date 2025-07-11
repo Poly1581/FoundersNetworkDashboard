@@ -246,7 +246,7 @@ function Sidebar({ activePage, onPageChange }) {
 }
 
 // --- Header Bar ---
-function Header({ onRefresh }) {
+function Header({ onRefresh, onExpandAll, allExpanded }) {
     return (
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={4}>
             <Typography variant="h4">{textContent.header.title}</Typography>
@@ -254,19 +254,27 @@ function Header({ onRefresh }) {
                 <Button variant="outlined" startIcon={<RefreshIcon />} onClick={onRefresh} sx={{ mr: 1 }}>
                     {textContent.header.checkNow}
                 </Button>
+                <Button variant="outlined" onClick={onExpandAll}>
+                    {allExpanded ? 'Collapse All' : 'Expand All'}
+                </Button>
             </Box>
         </Box>
     );
 }
 
 // --- Collapsible Wrapper ---
-function CollapsibleSection({ title, children, defaultOpen = true }) {
-    const [open, setOpen] = useState(defaultOpen);
+function CollapsibleSection({ title, children, defaultOpen = true, isOpen, onToggle }) {
+    const [internalOpen, setInternalOpen] = useState(defaultOpen);
+
+    // Use external state if provided, otherwise use internal state
+    const open = isOpen !== undefined ? isOpen : internalOpen;
+    const handleToggle = onToggle || (() => setInternalOpen(o => !o));
+
     return (
         <Card sx={{ mb: 4 }}>
             <Box display="flex" alignItems="center" justifyContent="space-between" p={2} pb={0}>
                 <Typography variant="h6">{title}</Typography>
-                <IconButton onClick={() => setOpen(o => !o)} size="small">
+                <IconButton onClick={handleToggle} size="small">
                     {open ? <ArrowDownIcon /> : <ArrowRightIcon />}
                 </IconButton>
             </Box>
@@ -278,7 +286,7 @@ function CollapsibleSection({ title, children, defaultOpen = true }) {
 }
 
 // --- Sentry Section ---
-function SentrySection({ allExpanded }) {
+function SentrySection({ allExpanded, isOpen, onToggle }) {
     const [issues, setIssues] = useState([]);
     const [hiddenIssueIDs, setHiddenIssueIDs] = useState([]);
     const [sentryAlerts, setSentryAlerts] = useState([]);
@@ -445,7 +453,7 @@ function SentrySection({ allExpanded }) {
     const visibleIssues = issues.filter(issue => !hiddenIssueIDs.includes(issue.id));
 
     return (
-        <CollapsibleSection title={textContent.sentry.title}>
+        <CollapsibleSection title={textContent.sentry.title} isOpen={isOpen} onToggle={onToggle}>
             <IntegrationDetailsSection integrations={sentryIntegrations} textContent={textContent.sentry.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
             <ActiveIssuesSection issues={visibleIssues} onViewDetails={handleViewDetails} onResolveIssue={handleResolveIssue} allEventsData={allEventsData} expandedRows={expandedRows} setExpandedRows={setExpandedRows} textContent={textContent.sentry.activeIssues} />
             <RecentAlertsSection alerts={filteredAlerts} showFilter={showFilter} toggleFilter={() => setShowFilter(prev => !prev)} filter={filter} onFilterChange={setFilter} expandedAlertDetails={expandedAlertDetails} onViewAlertDetails={handleViewAlertDetails} setExpandedAlertDetails={setExpandedAlertDetails} textContent={textContent.sentry.recentAlerts} />
@@ -454,7 +462,7 @@ function SentrySection({ allExpanded }) {
 }
 
 // --- HubSpot Section (Mock Data) ---
-function HubSpotSection({ allExpanded }) {
+function HubSpotSection({ allExpanded, isOpen, onToggle }) {
     const [expandedIntegrations, setExpandedIntegrations] = useState([]);
 
     const mockDeals = [
@@ -487,7 +495,7 @@ function HubSpotSection({ allExpanded }) {
     };
 
     return (
-        <CollapsibleSection title={textContent.hubspot.title}>
+        <CollapsibleSection title={textContent.hubspot.title} isOpen={isOpen} onToggle={onToggle}>
             <IntegrationDetailsSection integrations={mockIntegrations} textContent={textContent.hubspot.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
             <ActiveDealsSection deals={mockDeals} textContent={textContent.hubspot.activeDeals} />
             <RecentActivitiesSection activities={mockActivities} textContent={textContent.hubspot.recentActivities} />
@@ -1302,14 +1310,16 @@ function Overview({ integrationStatus, integrationSystems }) {
     );
 }
 
-function LiveData({ allExpanded, onRefresh }) {
+function LiveData({ allExpanded, onRefresh, onExpandAll, sentryOpen, hubspotOpen, onSentryToggle, onHubspotToggle }) {
     return (
         <>
             <Header
                 onRefresh={onRefresh}
+                onExpandAll={onExpandAll}
+                allExpanded={allExpanded}
             />
-            <SentrySection allExpanded={allExpanded} />
-            <HubSpotSection allExpanded={allExpanded} />
+            <SentrySection allExpanded={allExpanded} isOpen={sentryOpen} onToggle={onSentryToggle} />
+            <HubSpotSection allExpanded={allExpanded} isOpen={hubspotOpen} onToggle={onHubspotToggle} />
             <QuickLinksFooter />
         </>
     );
@@ -1318,6 +1328,8 @@ function LiveData({ allExpanded, onRefresh }) {
 // --- MAIN APP COMPONENT ---
 export default function App() {
     const [allExpanded, setAllExpanded] = useState(false);
+    const [sentryOpen, setSentryOpen] = useState(true);
+    const [hubspotOpen, setHubspotOpen] = useState(true);
     const [activePage, setActivePage] = useState(() => {
         // Get the saved page from localStorage, default to 'overview' if not found
         return localStorage.getItem('activePage') || 'overview';
@@ -1347,8 +1359,38 @@ export default function App() {
     };
 
     const handleExpandAll = () => {
-        setAllExpanded(prev => !prev);
+        const anyExpanded = sentryOpen || hubspotOpen;
+
+        if (anyExpanded) {
+            // If any main sections are expanded, collapse all
+            setSentryOpen(false);
+            setHubspotOpen(false);
+            setAllExpanded(false);
+        } else {
+            // If no main sections are expanded, expand all
+            setSentryOpen(true);
+            setHubspotOpen(true);
+            setAllExpanded(true);
+        }
     };
+
+    const handleSentryToggle = () => {
+        setSentryOpen(prev => !prev);
+    };
+
+    const handleHubspotToggle = () => {
+        setHubspotOpen(prev => !prev);
+    };
+
+    // Update allExpanded state based on main sections
+    const updateAllExpandedState = () => {
+        setAllExpanded(sentryOpen || hubspotOpen);
+    };
+
+    // Effect to update allExpanded when main sections change
+    useEffect(() => {
+        updateAllExpandedState();
+    }, [sentryOpen, hubspotOpen]);
 
     const handlePageChange = (page) => {
         setActivePage(page);
@@ -1383,6 +1425,11 @@ export default function App() {
                         <LiveData
                             allExpanded={allExpanded}
                             onRefresh={handleRefreshAll}
+                            onExpandAll={handleExpandAll}
+                            sentryOpen={sentryOpen}
+                            hubspotOpen={hubspotOpen}
+                            onSentryToggle={handleSentryToggle}
+                            onHubspotToggle={handleHubspotToggle}
                         />
                     )}
                 </Container>
