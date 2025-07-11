@@ -448,7 +448,7 @@ function SentrySection({ allExpanded }) {
         <CollapsibleSection title={textContent.sentry.title}>
             <IntegrationDetailsSection integrations={sentryIntegrations} textContent={textContent.sentry.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
             <ActiveIssuesSection issues={visibleIssues} onViewDetails={handleViewDetails} onResolveIssue={handleResolveIssue} allEventsData={allEventsData} expandedRows={expandedRows} setExpandedRows={setExpandedRows} textContent={textContent.sentry.activeIssues} />
-            <RecentAlertsSection alerts={filteredAlerts} showFilter={showFilter} toggleFilter={() => setShowFilter(prev => !prev)} filter={filter} onFilterChange={setFilter} expandedAlertDetails={expandedAlertDetails} onViewAlertDetails={handleViewAlertDetails} textContent={textContent.sentry.recentAlerts} />
+            <RecentAlertsSection alerts={filteredAlerts} showFilter={showFilter} toggleFilter={() => setShowFilter(prev => !prev)} filter={filter} onFilterChange={setFilter} expandedAlertDetails={expandedAlertDetails} onViewAlertDetails={handleViewAlertDetails} setExpandedAlertDetails={setExpandedAlertDetails} textContent={textContent.sentry.recentAlerts} />
         </CollapsibleSection>
     );
 }
@@ -507,11 +507,13 @@ function ActiveDealsSection({ deals, textContent }) {
 
     const handleExpandAll = () => {
         const allDealIds = deals.map(deal => deal.id);
-        const allExpanded = allDealIds.every(id => expandedDeals.includes(id));
+        const anyExpanded = expandedDeals.length > 0;
 
-        if (allExpanded) {
+        if (anyExpanded) {
+            // If any are expanded, collapse all
             setExpandedDeals([]);
         } else {
+            // If none are expanded, expand all
             setExpandedDeals(allDealIds);
         }
     };
@@ -521,7 +523,7 @@ function ActiveDealsSection({ deals, textContent }) {
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Box />
                 <Button size="small" onClick={handleExpandAll}>
-                    Expand All
+                    {expandedDeals.length > 0 ? 'Collapse All' : 'Expand All'}
                 </Button>
             </Box>
             <Table>
@@ -578,11 +580,13 @@ function RecentActivitiesSection({ activities, textContent }) {
 
     const handleExpandAll = () => {
         const allActivityIds = activities.map(activity => activity.id);
-        const allExpanded = allActivityIds.every(id => expandedActivities.includes(id));
+        const anyExpanded = expandedActivities.length > 0;
 
-        if (allExpanded) {
+        if (anyExpanded) {
+            // If any are expanded, collapse all
             setExpandedActivities([]);
         } else {
+            // If none are expanded, expand all
             setExpandedActivities(allActivityIds);
         }
     };
@@ -592,7 +596,7 @@ function RecentActivitiesSection({ activities, textContent }) {
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Box />
                 <Button size="small" onClick={handleExpandAll}>
-                    Expand All
+                    {expandedActivities.length > 0 ? 'Collapse All' : 'Expand All'}
                 </Button>
             </Box>
             <List>
@@ -670,13 +674,13 @@ function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails
 function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, setExpandedRows, textContent }) {
     const handleExpandAll = () => {
         const allIssueIds = issues.map(issue => issue.id);
-        const allExpanded = allIssueIds.every(id => expandedRows.includes(id));
+        const anyExpanded = expandedRows.length > 0;
 
-        if (allExpanded) {
-            // If all are expanded, collapse all
+        if (anyExpanded) {
+            // If any are expanded, collapse all
             setExpandedRows([]);
         } else {
-            // If not all are expanded, expand all
+            // If none are expanded, expand all
             setExpandedRows(allIssueIds);
         }
     };
@@ -686,7 +690,7 @@ function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsD
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Box />
                 <Button size="small" onClick={handleExpandAll}>
-                    Expand All
+                    {expandedRows.length > 0 ? 'Collapse All' : 'Expand All'}
                 </Button>
             </Box>
             <Table>
@@ -744,35 +748,31 @@ function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsD
     );
 }
 
-function RecentAlertsSection({ alerts, showFilter, toggleFilter, filter, onFilterChange, expandedAlertDetails, onViewAlertDetails, textContent }) {
+function RecentAlertsSection({ alerts, showFilter, toggleFilter, filter, onFilterChange, expandedAlertDetails, onViewAlertDetails, setExpandedAlertDetails, textContent }) {
     if (!alerts) return null;
 
     const handleExpandAll = () => {
         const allIndices = alerts.map((_, index) => index);
-        const allExpanded = allIndices.every(index => expandedAlertDetails.includes(index));
+        const anyExpanded = expandedAlertDetails.length > 0;
 
-        if (allExpanded) {
-            // Collapse all
-            allIndices.forEach(index => onViewAlertDetails(index));
+        if (anyExpanded) {
+            // If any are expanded, collapse all
+            setExpandedAlertDetails([]);
         } else {
-            // Expand all that aren't already expanded
-            allIndices.forEach(index => {
-                if (!expandedAlertDetails.includes(index)) {
-                    onViewAlertDetails(index);
-                }
-            });
+            // If none are expanded, expand all
+            setExpandedAlertDetails(allIndices);
         }
     };
 
     return (
         <CollapsibleSection title={textContent.heading}>
             <Box mb={2} display="flex" justifyContent="space-between" alignItems="center">
-                <Button size="small" onClick={handleExpandAll}>
-                    Expand All
-                </Button>
+                <Box />
                 <Box display="flex" gap={1}>
                     <Button size="small" onClick={toggleFilter}>{textContent.filter}</Button>
-                    <Button size="small" onClick={() => onFilterChange({ status: '', level: '', date: '' })}>{textContent.viewAll}</Button>
+                    <Button size="small" onClick={handleExpandAll}>
+                        {expandedAlertDetails.length > 0 ? 'Collapse All' : 'Expand All'}
+                    </Button>
                 </Box>
             </Box>
 
