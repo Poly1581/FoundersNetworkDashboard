@@ -11,6 +11,7 @@ import {
     Collapse,
     Container,
     IconButton,
+    Link,
     List,
     ListItem,
     ListItemText,
@@ -48,6 +49,7 @@ const handleError = (error, type = undefined) => {
     throw new Error(`${event} ${message}`);
 };
 
+// Consolidated api (services Sentry and HubSpot)
 const api = {
     backend: axios.create({
         baseURL: "http://localhost:8000"
@@ -55,7 +57,7 @@ const api = {
     sentry: {
         async fetchIssues() {
             try {
-                const response = await api.backend.get("/issues");
+                const response = await api.backend.get("/issues/");
                 return response.data;
             } catch(error) {
                 handleError(error, "fetching issues");
@@ -63,7 +65,7 @@ const api = {
         },
         async fetchEventsForIssue(issueId) {
             try {
-                const response = await api.backend.get(`/issues/${issueId}/events`);
+                const response = await api.backend.get(`/issues/${issueId}/events/`);
                 return response.data;
             } catch(error) {
                 handleError(error, "fetching events for issue");
@@ -71,7 +73,7 @@ const api = {
         },
         async updateIssueStatus(issueId, status) {
             try {
-                const response = await api.backend.get(`/issues/${issueId}`, { status });
+                const response = await api.backend.put(`/issues/${issueId}/`, { status });
                 return response.data;
             } catch (error) {
                 handleError(error, "updating issue status");
@@ -132,15 +134,9 @@ const textContent = {
         activeIssues: {
             heading: 'Active Issues',
             resolveIssue: 'Resolve Issue',
-            viewDetails: 'View Details',
-            reloadTitle: 'Reload Sentry Issues',
-        },
-        recentAlerts: {
-            heading: 'Recent Alerts',
             filter: 'Filter',
             viewAll: 'View All',
-            acknowledge: 'Acknowledge',
-            details: 'Details',
+            viewDetails: 'Details',
             reloadTitle: 'Reload Sentry Issues',
         },
         reloadTitle: 'Reload Sentry',
@@ -165,7 +161,7 @@ const textContent = {
         statusPage: 'StatusPage.io',
         sentry: 'Sentry',
         slack: 'Slack',
-        footerText: 'Dashboard · All data from integrated services · Last check: a few seconds ago',
+        footerText: 'Dashboard · All data from integrated services · Last check:',
     }
 };
 
@@ -229,19 +225,6 @@ function SentrySection({ issues, loadSentryIssues, sentryIntegrations, loadSentr
         loadSentryIntegrations();
     }
 
-
-            //<ActiveIssuesSection
-                //issues={issues}
-                //loadSentryIssues={() => loadSentryIssues()}
-                //resolveIssue={resolveIssue}
-                //expand={expand}
-            ///>
-            //<RecentAlertsSection
-                //issues={issues}
-                //loadSentryIssues={() => loadSentryIssues()}
-                //expand={expand}
-            ///>
-
     return (
         <CollapsibleSection
                 title={textContent.sentry.title}
@@ -254,98 +237,37 @@ function SentrySection({ issues, loadSentryIssues, sentryIntegrations, loadSentr
                 loadIntegrations={() => loadSentryIntegrations()}
                 expand={expand}
             />
+            <ActiveIssuesSection
+                issues={issues}
+                loadSentryIssues={() => loadSentryIssues()}
+                resolveIssue={(issueId) => resolveIssue(issueId)}
+                expand={expand}
+            />
         </CollapsibleSection>
     );
 }
 
 function ActiveIssuesSection({ issues, loadSentryIssues, resolveIssue, expand }) {
-    return (
-        <CollapsibleSection
-                    title={textContent.heading}
-                    reloadTitle={textContent.sentry.activeIssues.reloadTitle}
-                    reload={() => loadSentryIssues()}
-                    expand={expand}
-        >
-            <Table>
-                <TableHead>
-                    <TableRow>
-                        <TableCell>Title</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell align="right"></TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {issues.map(issue => ActiveIssue(issue, resolveIssue, expand))}
-                </TableBody>
-            </Table>
-        </CollapsibleSection>
-    );
-}
-
-function ActiveIssue({ issue, resolveIssue, expand }) {
-    // Keep track of expansion state
-    const [prevExpand, setPrevExpand] = useState(expand);
-    const [expanded, setExpanded] = useState(expand);
-
-    // Update expansion state when expand is changed
-    if(expand !== prevExpand) {
-        setExpanded(expand);
-        setPrevExpand(expand);
-    }
-
-    return (
-        <React.Fragment key={issue.id}>
-            <TableRow>
-                <TableCell>{issue.title}</TableCell>
-                <TableCell>
-                    <Chip label={issue.status} size="small" color={issue.status === 'unresolved' ? 'error' : 'success'} />
-                </TableCell>
-                <TableCell align="right">
-                    {issue.status === 'unresolved' && (
-                        <Button size="small" onClick={() => resolveIssue(issue.id)}>
-                            {textContent.resolveIssue}
-                        </Button>
-                    )}
-                    <Button size="small" startIcon={<InfoIcon/>} onClick={() => setExpanded(prev => !prev)}>
-                        {textContent.viewDetails}
-                    </Button>
-                </TableCell>
-            </TableRow>
-            <TableRow>
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={3}>
-                    <Collapse in={expanded} timeout="auto" unmountOnExit>
-                        <Box sx={{ margin: 1 }}>
-                            <Typography variant="h6" gutterBottom component="div">
-                                Event Details
-                            </Typography>
-                                
-                        </Box>
-                    </Collapse>
-                </TableCell>
-            </TableRow>
-        </React.Fragment>
-    );
-}
-
-function RecentAlertsSection({ alerts }) {
     const [showFilter, setShowFilter] = useState(false);
     const [statusFilter, setStatusFilter] = useState(undefined);
     const [levelFilter, setLevelFilter] = useState(undefined);
     const [dateFilter, setDateFilter] = useState(undefined);
 
-    if (!alerts) return null;
     return (
-        <CollapsibleSection title={textContent.sentry.recentAlerts.heading}>
+        <CollapsibleSection
+                    title={textContent.sentry.activeIssues.heading}
+                    reloadTitle={textContent.sentry.activeIssues.reloadTitle}
+                    reload={() => loadSentryIssues()}
+                    expand={expand}
+        >
             <Box mb={2} display="flex" justifyContent="flex-end" alignItems="center">
-                // Button to toggle filter option
                 <Button
                     size="small"
                     onClick={() => setShowFilter((prevShowFilter) => !prevShowFilter)}
                 >
-                    {textContent.sentry.recentAlerts.filter}
+                    {textContent.sentry.activeIssues.filter}
                 </Button>
 
-                // Button to show disable filters
                 <Button
                     size="small"
                     onClick={() => {
@@ -355,14 +277,12 @@ function RecentAlertsSection({ alerts }) {
                         setDateFilter(undefined);
                     }}
                 >
-                    {textContent.sentry.recentAlerts.viewAll}
+                    {textContent.sentry.activeIssues.viewAll}
                 </Button>
             </Box>
-
             {showFilter && (
                 <Box mb={2}>
                     <Box display="flex" gap={2} mb={2} flexWrap={"wrap"}>
-                        // Status filter
                         <TextField
                             select
                             label="Status"
@@ -375,8 +295,6 @@ function RecentAlertsSection({ alerts }) {
                             <MenuItem value="unresolved">Unresolved</MenuItem>
                             <MenuItem value="resolved">Resolved</MenuItem>
                         </TextField>
-        
-                        // Level filter
                         <TextField
                             select
                             label="Level"
@@ -386,12 +304,10 @@ function RecentAlertsSection({ alerts }) {
                             onChange={(event) => setLevelFilter(event.target.value)}
                         >
                             <MenuItem value={undefined}>All</MenuItem>
-                            <MenuItem value="healthy">Healthy</MenuItem>
-                            <MenuItem value="degraded">Degraded</MenuItem>
-                            <MenuItem value="down">Down</MenuItem>
+                            <MenuItem value={["fatal", "error"]}>Error</MenuItem>
+                            <MenuItem value={["warning"]}>Warning</MenuItem>
+                            <MenuItem value={["log", "info"]}>Info</MenuItem>
                         </TextField>
-        
-                        // Date filter
                         <TextField
                             select
                             label="Date Range"
@@ -401,49 +317,57 @@ function RecentAlertsSection({ alerts }) {
                             onChange={(event) => setDateFilter(event.target.value)}
                         >
                             <MenuItem value={undefined}>All</MenuItem>
-                            <MenuItem value={1}>Last 1 Day</MenuItem>
-                            <MenuItem value={7}>Last 7 Days</MenuItem>
-                            <MenuItem value={30}>Last 30 Days</MenuItem>
+                            <MenuItem value={1}>Last Day</MenuItem>
+                            <MenuItem value={7}>Last Week</MenuItem>
+                            <MenuItem value={31}>Last Month</MenuItem>
                         </TextField>
                     </Box>
                 </Box>
             )}
-
-            {alerts.length === 0 ? (
-                <Typography>No recent alerts.</Typography>
-            ) : (
-                <List>
-                    {alerts.filter((alert) => {
-                        // Apply status filter
+            <Table>
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Title</TableCell>
+                        <TableCell>Type</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell align="right"></TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {issues.filter((issue) => {
+                        // Status filter
                         if(!statusFilter) {
                             return true;
                         }
-                        return alert.status === statusFilter;
-                    }).filter((alert) => {
-                        // Apply level filter
+                        return issue.status === statusFilter;
+                    }).filter((issue) => {
+                        // Level filter
                         if(!levelFilter) {
                             return true;
                         }
-                    }).filter((alert) => {
-                        // Apply date filter
+                        return levelFilter.includes(issue.level);
+                    }).filter((issue) => {
+                        // Date filter
                         if(!dateFilter) {
                             return true;
                         }
-                        const lastSeen = new Date(alert.lastSeen);
+                        const lastSeen = new Date(issue.lastSeen);
                         const cutoffDate = new Date();
                         cutoffDate.setDate(cutoffDate.getDate() - dateFilter);
                         return cutoffDate < lastSeen;
-                    }).map((alert, index) => ActiveAlert(alert, index))}
-                </List>
-            )}
+                    }).map((issue, index) => (
+                        <ActiveIssue issue={issue} resolveIssue={(issueId) => resolveIssue(issueId)} expand={expand} key={index}/>
+                    ))}
+                </TableBody>
+            </Table>
         </CollapsibleSection>
     );
 }
 
-function ActiveAlert({ alert, key, expand }) {
+function ActiveIssue({ issue, resolveIssue, expand }) { 
     // Keep track of expansion state
     const [prevExpand, setPrevExpand] = useState(expand);
-    const [expanded, setExpanded] = useState(expand);
+    const [expanded, setExpanded] = useState(false);
 
     // Update expansion state when expand is changed
     if(expand !== prevExpand) {
@@ -452,26 +376,55 @@ function ActiveAlert({ alert, key, expand }) {
     }
 
     return (
-        <React.Fragment>
-            <ListItem
-                secondaryAction={
-                    <Box>
-                        <Button size="small" onClick={() => setExpanded(prev => !prev)}>View Details</Button>
-                    </Box>
-                }
-            >
-                {alert.severity === "warning"
-                    ? <WarningIcon color="warning" sx={{ mr: 1}}/>
-                    : <ErrorIcon color="error" sx={{ mr: 1}}/>
-                }
-            </ListItem>
-            <Collapse in={expanded} timeout="auto" unmountOnExit>
-                <Box sx={{ margin: 1, ml: 7}}>
-                    <Typography variant="body2" color="text.secondary">
-                        Short ID: {alert.originalIssue.shortId} | Culprit: {alert.originalIssue.culprit} | Last Seen: {new Date(alert.originalIssue.lastSeen).toLocaleString()} | Status: {alert.originalIssue.status}
-                    </Typography>
-                </Box>
-            </Collapse>
+        <React.Fragment key={issue.id}>
+            <TableRow>
+                <TableCell>{issue.title}</TableCell>
+                <TableCell>
+                    {["fatal", "error"].includes(issue.level) && <ErrorIcon color="error" sx={{ mr: 1}}/>}
+                    {["warning"].includes(issue.level) && <WarningIcon color="warning" sx={{ mr: 1}}/>}
+                    {["log", "info"].includes(issue.level) && <InfoIcon color="info" sx={{ mr:1 }}/>}
+                </TableCell>
+                <TableCell>
+                    <Chip
+                        label={issue.status}
+                        size="small"
+                        color={issue.status === 'unresolved' ? 'error' : 'success'}
+                    />
+                </TableCell>
+                <TableCell align="right">
+                    {issue.status === 'unresolved' && (
+                        <Button size="small" onClick={() => resolveIssue(issue.id)}>
+                            {textContent.sentry.activeIssues.resolveIssue}
+                        </Button>
+                    )}
+                    <Button size="small" startIcon={<InfoIcon/>} onClick={() => setExpanded(prev => !prev)}>
+                        {textContent.sentry.activeIssues.viewDetails}
+                    </Button>
+                </TableCell>
+            </TableRow>
+            <TableRow>
+                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+                    <Collapse in={expanded} timeout="auto" unmountOnExit>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ margin: 1 }}>
+                            <Link href={issue.permalink} target="_blank" rel="noopener">
+                                {issue.id}
+                            </Link>
+                            <Box>
+                                {`First Seen: ${new Date(issue.firstSeen).toString()}`}
+                            </Box>
+                            <Box>
+                                {`Last Seen: ${new Date(issue.lastSeen).toString()}`}
+                            </Box>
+                            <Box>
+                                {`Assigned To: ${issue.assignedTo}`}
+                            </Box>
+                            <Box>
+                                {`Priority: ${issue.priority}`}
+                            </Box>
+                        </Box>
+                    </Collapse>
+                </TableCell>
+            </TableRow>
         </React.Fragment>
     );
 }
@@ -485,18 +438,6 @@ function HubSpotSection({ hubSpotDeals, loadHubSpotDeals, hubSpotActivities, loa
         loadHubSpotIntegrations();
     }
 
-
-            //<ActiveDealsSection
-                //hubSpotdeals={hubSpotDeals}
-                //loadHubSpotDeals={() => loadHubSpotDeals()}
-                //expand={expand}
-            ///>
-            //<RecentActivitiesSection
-                //hubSpotActivities={hubSpotActivities}
-                //loadHubSpotActivities={() => loadHubSpotActivities()}
-                //expand={expand}
-            ///>
-
     return (
         <CollapsibleSection
             title={textContent.hubspot.title}
@@ -507,6 +448,16 @@ function HubSpotSection({ hubSpotDeals, loadHubSpotDeals, hubSpotActivities, loa
             <IntegrationDetailsSection
                 integrations={hubSpotIntegrations}
                 loadIntegrations={() => loadHubSpotIntegrations()}
+                expand={expand}
+            />
+            <ActiveDealsSection
+                hubSpotDeals={hubSpotDeals}
+                loadHubSpotDeals={() => loadHubSpotDeals()}
+                expand={expand}
+            />
+            <RecentActivitiesSection
+                hubSpotActivities={hubSpotActivities}
+                loadHubSpotActivities={() => loadHubSpotActivities()}
                 expand={expand}
             />
         </CollapsibleSection>
@@ -550,7 +501,7 @@ function ActiveDealsSection({ hubSpotDeals, loadHubSpotDeals, expand}) {
 function RecentActivitiesSection({ hubSpotActivities, loadHubSpotActivities, expand }) {
     return (
         <CollapsibleSection
-            title={textContent.heading}
+            title={textContent.hubspot.recentActivities.heading}
             reloadTitle={textContent.hubspot.recentActivities.reloadTitle}
             reload={() => loadHubSpotActivities()}
             expand={expand}
@@ -594,7 +545,7 @@ function IntegrationDetailsSection({ integrations, loadIntegrations, expand }) {
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {integrations.map((integration, index) => (
+                    {integrations.filter(integration => integration).map((integration, index) => (
                         <Integration integration={integration} expand={expand} key={index}/>
                     ))}
                 </TableBody>
@@ -606,7 +557,7 @@ function IntegrationDetailsSection({ integrations, loadIntegrations, expand }) {
 function Integration({ integration, expand }) {
     // Keep track of expansion state
     const [prevExpand, setPrevExpand] = useState(expand);
-    const [expanded, setExpanded] = useState(expand);
+    const [expanded, setExpanded] = useState(false);
 
     // Update expansion state when expand is changed
     if(expand !== prevExpand) {
@@ -638,9 +589,6 @@ function Integration({ integration, expand }) {
                 <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
                     <Collapse in={expanded} timeout="auto" unmountOnExit>
                         <Box sx={{ margin: 1 }}>
-                            <Typography variant="h6" gutterBottom component="div">
-                                Integration Details
-                            </Typography>
                             <Typography variant="body2" color="text.secondary">
                                 Service: {integration.name} | Category: {integration.category} | Status: {integration.status} | Response Time: {integration.responseTime} | Last Success: {integration.lastSuccess} | Uptime: {integration.uptime} | Issue: {integration.issue || '—'}
                             </Typography>
@@ -652,7 +600,7 @@ function Integration({ integration, expand }) {
     );
 }
 
-function QuickLinksFooter() {
+function QuickLinksFooter({ lastCheck }) {
     return (
         <Box display="flex" justifyContent="space-between" alignItems="center" mt={2} pb={4}>
             <Box display="flex" gap={2}>
@@ -661,7 +609,7 @@ function QuickLinksFooter() {
                 <Button size="small">{textContent.quickLinksFooter.slack}</Button>
             </Box>
             <Typography variant="caption" color="text.secondary">
-                {textContent.quickLinksFooter.footerText}
+                {`${textContent.quickLinksFooter.footerText} ${lastCheck}`}
             </Typography>
         </Box>
     );
@@ -669,8 +617,11 @@ function QuickLinksFooter() {
 
 // --- MAIN APP COMPONENT ---
 export default function App() {
+    // Last check state
+    const [lastCheck, setLastCheck] = useState("never");
+
     // Expand all state
-    const [expand, setExpand] = useState(false);
+    const [expand, setExpand] = useState(true);
 
     // Sentry related states
     const [sentryIssues, setSentryIssues] = useState([]);
@@ -685,30 +636,35 @@ export default function App() {
     const loadSentryIssues = async () => {
         const fetchedIssues = await api.sentry.fetchIssues();
         setSentryIssues(fetchedIssues);
+        setLastCheck(new Date().toLocaleTimeString());
     }
 
     // Load and set sentry integrations
     const loadSentryIntegrations = async () => {
         const fetchedSentryIntegrations = await api.sentry.fetchIntegrationStatus();
         setSentryIntegrations(fetchedSentryIntegrations);
+        setLastCheck(new Date().toLocaleTimeString());
     }
 
     // Load and set hubspot deals
     const loadHubSpotDeals = async () => {
         const fetchedHubSpotDeals = await api.hubSpot.fetchDeals();
         setHubSpotDeals(fetchedHubSpotDeals);
+        setLastCheck(new Date().toLocaleTimeString());
     }
 
     // Load and set hubspot activities
     const loadHubSpotActivities = async () => {
         const fetchedHubSpotActivities = await api.hubSpot.fetchActivities();
         setHubSpotActivities(fetchedHubSpotActivities);
+        setLastCheck(new Date().toLocaleTimeString());
     }
 
     // Load and set hubspot integrations
     const loadHubSpotIntegrations = async () => {
         const fetchedHubSpotIntegrations = await api.hubSpot.fetchIntegrationStatus();
         setHubSpotIntegrations(fetchedHubSpotIntegrations);
+        setLastCheck(new Date().toLocaleTimeString());
     }
 
     // Load all data
@@ -718,6 +674,7 @@ export default function App() {
         loadHubSpotDeals();
         loadHubSpotActivities();
         loadHubSpotIntegrations();
+        setLastCheck(new Date().toLocaleTimeString());
     }
 
     useEffect(() => {
@@ -748,7 +705,7 @@ export default function App() {
                 loadSentryIssues={() => loadSentryIssues()}
                 sentryIntegrations={sentryIntegrations}
                 loadSentryIntegrations={() => loadSentryIntegrations()}
-                resolveIssue={() => resolveIssue()}
+                resolveIssue={(issueId) => resolveIssue(issueId)}
                 expand={expand}
             />
             <HubSpotSection
@@ -760,7 +717,7 @@ export default function App() {
                 loadHubSpotIntegrations={() => loadHubSpotIntegrations()}
                 expand={expand}
             />
-            <QuickLinksFooter/>
+            <QuickLinksFooter lastCheck={lastCheck}/>
         </Container>
     );
 }
