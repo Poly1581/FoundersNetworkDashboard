@@ -9,6 +9,6 @@ services:
   backend:
     container_name: backend
     build: ./dashboardAPI
+    env_file: .env
     ports:
       - "8000:8000"
-    env_file: .env
