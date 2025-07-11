@@ -506,6 +506,17 @@ function HubSpotSection({ allExpanded, isOpen, onToggle }) {
 function ActiveDealsSection({ deals, textContent }) {
     const [expandedDeals, setExpandedDeals] = useState([]);
 
+    const getRowColorForDeal = (stage) => {
+        switch (stage) {
+            case 'Discovery':
+                return '#e3f2fd'; // light blue
+            case 'Proposal':
+                return '#bbdefb'; // slightly darker light blue
+            default:
+                return 'inherit';
+        }
+    };
+
     const handleViewDealDetails = (dealId) => {
         const newExpandedDeals = expandedDeals.includes(dealId)
             ? expandedDeals.filter(id => id !== dealId)
@@ -546,7 +557,7 @@ function ActiveDealsSection({ deals, textContent }) {
                 <TableBody>
                     {deals.map(deal => (
                         <React.Fragment key={deal.id}>
-                            <TableRow>
+                            <TableRow sx={{ backgroundColor: getRowColorForDeal(deal.stage) }}>
                                 <TableCell>{deal.title}</TableCell>
                                 <TableCell>{deal.stage}</TableCell>
                                 <TableCell>{deal.amount}</TableCell>
@@ -631,6 +642,19 @@ function RecentActivitiesSection({ activities, textContent }) {
 
 function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails, expandedIntegrations }) {
     if (!integrations) return null;
+
+    const getRowColor = (status) => {
+        switch (status) {
+            case 'Healthy':
+                return '#e8f5e8'; // light green
+            case 'Degraded':
+                return '#fff3e0'; // light orange
+            case 'Down':
+                return '#ffebee'; // light red
+            default:
+                return 'inherit';
+        }
+    };
     return (
         <CollapsibleSection title={textContent.heading}>
             {integrations.length === 0 ? <Typography>No integration data.</Typography> :
@@ -646,7 +670,7 @@ function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails
                     <TableBody>
                         {integrations.map((i, index) => (
                             <React.Fragment key={i.name}>
-                                <TableRow>
+                                <TableRow sx={{ backgroundColor: getRowColor(i.status) }}>
                                     <TableCell>{i.name}</TableCell>
                                     <TableCell>{i.category}</TableCell>
                                     <TableCell>
@@ -680,6 +704,17 @@ function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails
 }
 
 function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, setExpandedRows, textContent }) {
+    const getRowColorForIssue = (status) => {
+        switch (status) {
+            case 'unresolved':
+                return '#ffebee'; // light red
+            case 'resolved':
+                return '#e8f5e8'; // light green
+            default:
+                return 'inherit';
+        }
+    };
+
     const handleExpandAll = () => {
         const allIssueIds = issues.map(issue => issue.id);
         const anyExpanded = expandedRows.length > 0;
@@ -712,7 +747,7 @@ function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsD
                 <TableBody>
                     {issues.map(issue => (
                         <React.Fragment key={issue.id}>
-                            <TableRow>
+                            <TableRow sx={{ backgroundColor: getRowColorForIssue(issue.status) }}>
                                 <TableCell>{issue.title}</TableCell>
                                 <TableCell>
                                     <Chip label={issue.status} size="small" color={issue.status === 'unresolved' ? 'error' : 'success'} />
@@ -930,6 +965,20 @@ const pieChartData = [
 ];
 
 const PIE_CHART_COLORS = ['#FF6384', '#FFCE56', '#36A2EB'];
+
+// Endpoint error rate data (dummy data for now)
+const endpointErrorRates = [
+    { endpoint: 'POST /checkout', errorRate: 2.3, totalRequests: 15420 },
+    { endpoint: 'GET /dashboard', errorRate: 0.8, totalRequests: 45230 },
+    { endpoint: 'POST /login', errorRate: 1.2, totalRequests: 8950 },
+    { endpoint: 'GET /api/users', errorRate: 0.5, totalRequests: 32100 },
+    { endpoint: 'POST /api/payments', errorRate: 3.1, totalRequests: 6780 },
+    { endpoint: 'GET /profile', errorRate: 0.3, totalRequests: 18900 },
+    { endpoint: 'PUT /api/settings', errorRate: 1.8, totalRequests: 4560 },
+    { endpoint: 'DELETE /api/data', errorRate: 4.2, totalRequests: 2340 },
+    { endpoint: 'GET /api/analytics', errorRate: 0.9, totalRequests: 12670 },
+    { endpoint: 'POST /api/upload', errorRate: 2.7, totalRequests: 5890 }
+];
 
 
 
@@ -1201,6 +1250,42 @@ function Overview({ integrationStatus, integrationSystems }) {
             )
         },
         {
+            title: 'Endpoint Error Rates',
+            content: (
+                <ResponsiveContainer width="100%" height={400}>
+                    <BarChart
+                        layout="vertical"
+                        data={endpointErrorRates}
+                        margin={{ top: 5, right: 5, left: 25, bottom: 5 }}
+                        barCategoryGap="5%"
+                    >
+                        <XAxis
+                            type="number"
+                            label={{ value: 'Error Rate (%)', position: 'insideBottom', offset: -5 }}
+                        />
+                        <YAxis
+                            type="category"
+                            dataKey="endpoint"
+                            width={20}
+                            tick={{ fontSize: 8 }}
+                        />
+                        <RechartsTooltip
+                            wrapperStyle={{ zIndex: 1000 }}
+                            formatter={(value, name) => [
+                                name === 'errorRate' ? `${value}%` : value,
+                                name === 'errorRate' ? 'Error Rate' : 'Total Requests',
+                            ]}
+                        />
+                        <Bar
+                            dataKey="errorRate"
+                            fill="#ff6b6b"
+                            layout="vertical"
+                        />
+                    </BarChart>
+                </ResponsiveContainer>
+            )
+        },
+        {
             title: 'Issues by Error Type',
             content: (
                 <ResponsiveContainer width="100%" height={200}>
@@ -1227,10 +1312,14 @@ function Overview({ integrationStatus, integrationSystems }) {
     // Filter cards based on integration status
     const baseCards = createOverviewCards(selectedYear);
 
-    // Add Integration Status card only when healthy
-    const cardsToShow = integrationStatus === 'healthy'
-        ? [...baseCards, createIntegrationStatusCard()]
-        : baseCards;
+    // Always show Integration Status card in top left, Endpoint Error Rates in top right
+    const cardsToShow = [
+        createIntegrationStatusCard(), // Integration Status (always top left)
+        baseCards[1], // Endpoint Error Rates (always top right)
+        baseCards[0], // Issues Over Time (spans full width)
+        baseCards[2], // Issues by Error Type
+        baseCards[3], // System Health
+    ];
 
     return (
         <Box sx={{ p: 3, height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
@@ -1240,45 +1329,37 @@ function Overview({ integrationStatus, integrationSystems }) {
                 fontWeight: 700
             }}>Overview</Typography>
 
-            {/* Show Integration Status card below title but above other content */}
-            {(integrationStatus === 'degraded' || integrationStatus === 'down') && (
-                <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
-                    <Box sx={{ width: { xs: '100%', sm: '400px', md: '500px' } }}>
-                        <IntegrationStatusCard
-                            systems={integrationSystems}
-                            status={integrationStatus}
-                        />
-                    </Box>
-                </Box>
-            )}
 
             <Box sx={{
                 flexGrow: 1,
                 display: 'grid',
                 gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
                 gap: 3,
+                gridAutoRows: 'min-content',
             }}>
                 {cardsToShow.map((card, index) => {
                     // Apply green styling when Integration Status is healthy
-                    const isIntegrationCard = card.title === 'Integration Status';
+                    const isIntegrationCard = card.title.startsWith('Integration Status');
                     const isSystemHealthCard = card.title === 'System Health';
                     const isGraphCard = card.title === 'Issues Over Time';
                     const isPieChartCard = card.title === 'Issues by Error Type';
+                    const isEndpointErrorCard = card.title === 'Endpoint Error Rates';
                     const cardSx = {
                         display: 'flex',
                         flexDirection: 'column',
                         p: 2,
-                        ...(index < 2 && { background: 'transparent', boxShadow: 'none', border: 'none' }),
-                        ...((index === 0 || index === 3) && { gridColumn: { md: 'span 2' } }),
-                        ...(isIntegrationCard && integrationStatus === 'healthy' && {
-                            backgroundColor: '#e8f5e8', // Light green background
-                            border: '2px solid #4caf50' // Green border
+                        // Issues Over Time spans full width (at index 2)
+                        ...(isGraphCard && { gridColumn: { md: 'span 2' } }),
+                        // First two cards (Integration Status and Endpoint Error Rates) are always side by side
+                        ...(index < 2 && {
+                            gridColumn: { md: 'span 1' }, // Explicitly set to span 1 column
+                            minHeight: '400px', // Set consistent height for side-by-side cards
                         }),
                         ...(isSystemHealthCard && {
-                            borderRadius: '16px', // Rounded corners for System Health card
-                            backgroundColor: '#fafafa', // Lighter gray background
+                            borderRadius: '16px',
+                            backgroundColor: '#fafafa',
                             '& .MuiCardContent-root': {
-                                backgroundColor: 'transparent', // Remove background from content
+                                backgroundColor: 'transparent',
                                 '& > .MuiTypography-h6': {
                                     backgroundColor: '#1c938a',
                                     color: 'white',
@@ -1288,9 +1369,9 @@ function Overview({ integrationStatus, integrationSystems }) {
                                 }
                             }
                         }),
-                        ...((isGraphCard || isPieChartCard) && {
-                            borderRadius: '16px', // Rounded corners like System Health card
-                            backgroundColor: '#fafafa' // Lighter gray background
+                        ...((isIntegrationCard || isGraphCard || isPieChartCard || isEndpointErrorCard) && {
+                            borderRadius: '16px',
+                            backgroundColor: '#fafafa'
                         })
                     };
 
@@ -1437,4 +1518,3 @@ export default function App() {
         </Box>
     );
 }
-
