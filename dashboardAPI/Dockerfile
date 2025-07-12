@@ -16,7 +16,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Don't buffer outputs
 ENV PYTHONUNBUFFERED=1
 
-# Install dependencies
+# Indstall dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files

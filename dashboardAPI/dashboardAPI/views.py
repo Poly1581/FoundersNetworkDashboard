@@ -30,6 +30,7 @@ def get_issue_events(request, **kwargs):
         print(f"An unexpected error occurred in get_issue_events: {error}")
         return HttpResponseBadRequest(f"An unexpected error occurred: {error}")
 
+@csrf_exempt
 @api_view(["PUT"])
 def update_issue_status(request, **kwargs):
     URI = f"{SENTRY_URI}/organizations/{SENTRY_ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/"
