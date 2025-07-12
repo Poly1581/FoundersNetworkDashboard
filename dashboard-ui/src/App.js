@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './App.css';
-import foundersNetworkLogo from './assets/foundersnetworklogo.png';
 import {
     Container,
     Typography,
@@ -75,7 +74,7 @@ const handleError = (type, error) => {
  * Assumes the backend is running on http://localhost:8000.
  */
 const backendApi = axios.create({
-    baseURL: "http://localhost:5001/api"
+    baseURL: "http://localhost:8000"
 });
 
 /**
@@ -84,7 +83,7 @@ const backendApi = axios.create({
  */
 const fetchIssues = async () => {
     try {
-        const response = await backendApi.get("/sentry/issues/");
+        const response = await backendApi.get("/issues/");
         return response.data;
     } catch (error) {
         handleError("fetching issues", error);
@@ -98,7 +97,7 @@ const fetchIssues = async () => {
  */
 const fetchEventsForIssue = async (issueId) => {
     try {
-        const response = await backendApi.get(`/sentry/issues/${issueId}/events`);
+        const response = await backendApi.get(`/issues/${issueId}/events`);
         return response.data;
     } catch (error) {
         handleError("fetching events for issue", error);
@@ -113,7 +112,7 @@ const fetchEventsForIssue = async (issueId) => {
  */
 const updateIssueStatus = async (issueId, status) => {
     try {
-        const response = await backendApi.put(`/sentry/issues/${issueId}`, { status });
+        const response = await backendApi.put(`/issues/${issueId}`, { status });
         return response.data;
     } catch (error) {
         handleError("updating issue status", error);
@@ -183,9 +182,9 @@ const textContent = {
         },
     },
     quickLinksFooter: {
-        statusPage: 'StatusPage.io',
-        sentry: 'Sentry',
-        slack: 'Slack',
+        statusPage: 'https://statuspage.io',
+        sentry: 'https://sentry.io',
+        slack: 'https://slack.com',
         footerText: 'Dashboard · All data from integrated services · Last check: a few seconds ago'
     }
 };
@@ -194,9 +193,9 @@ function QuickLinksFooter() {
     return (
         <Box display="flex" justifyContent="space-between" alignItems="center" mt={2} pb={4}>
             <Box display="flex" gap={1}>
-                <Button size="small" startIcon={<LinkIcon />}>{textContent.quickLinksFooter.statusPage}</Button>
-                <Button size="small" startIcon={<LinkIcon />}>{textContent.quickLinksFooter.sentry}</Button>
-                <Button size="small" startIcon={<LinkIcon />}>{textContent.quickLinksFooter.slack}</Button>
+                <Button size="small" startIcon={<LinkIcon />} href={textContent.quickLinksFooter.statusPage} target="_blank" rel="noopener noreferrer">StatusPage.io</Button>
+                <Button size="small" startIcon={<LinkIcon />} href={textContent.quickLinksFooter.slack} target="_blank" rel="noopener noreferrer">Slack</Button>
+                <Button size="small" startIcon={<LinkIcon />} href={textContent.quickLinksFooter.sentry} target="_blank" rel="noopener noreferrer">Sentry</Button>
             </Box>
             <Typography variant="caption" color="text.secondary">
                 {textContent.quickLinksFooter.footerText}
@@ -223,7 +222,7 @@ function Sidebar({ activePage, onPageChange }) {
             variant="permanent"
             anchor="left"
         >
-            <Box sx={{ p: 2, textAlign: 'center' }}>
+            {/* <Box sx={{ p: 2, textAlign: 'center' }}>
                 <img
                     src={foundersNetworkLogo}
                     alt="Founders Network Dashboard"
@@ -234,7 +233,7 @@ function Sidebar({ activePage, onPageChange }) {
                     }}
                 />
             </Box>
-            <Divider />
+            <Divider /> */}
             <List>
                 <ListItemButton selected={activePage === 'overview'} onClick={() => onPageChange('overview')}>
                     <ListItemIcon><BarChartIcon /></ListItemIcon><ListItemText primary={textContent.sidebar.overview} />
@@ -336,7 +335,7 @@ function SentrySection({ allExpanded, isOpen, onToggle, onDataFetched }) {
 
     const fetchSentryIntegrationStatus = async () => {
         try {
-            const response = await backendApi.get("/sentry/integration-status");
+            const response = await backendApi.get("/integration-status");
             return response.data;
         } catch (error) {
             handleError("fetching sentry integration status", error);
