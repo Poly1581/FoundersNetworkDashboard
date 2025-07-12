@@ -102,6 +102,96 @@ const mockIntegrations = [
     }
 ];
 
+const mockHubSpotDeals = [
+    {
+        id: 'deal-001',
+        title: 'Enterprise Software License - TechCorp',
+        amount: '$50,000',
+        stage: 'Negotiation',
+        closeDate: '2025-01-15',
+        probability: 75,
+        contact: 'John Smith',
+        company: 'TechCorp Inc.'
+    },
+    {
+        id: 'deal-002',
+        title: 'Consulting Services - StartupXYZ',
+        amount: '$25,000',
+        stage: 'Proposal',
+        closeDate: '2025-01-30',
+        probability: 60,
+        contact: 'Sarah Johnson',
+        company: 'StartupXYZ'
+    },
+    {
+        id: 'deal-003',
+        title: 'Annual Subscription - MegaCorp',
+        amount: '$100,000',
+        stage: 'Closed Won',
+        closeDate: '2024-12-20',
+        probability: 100,
+        contact: 'Mike Davis',
+        company: 'MegaCorp Ltd.'
+    }
+];
+
+const mockHubSpotActivities = [
+    {
+        id: 'activity-001',
+        type: 'Email',
+        title: 'Follow-up email sent to TechCorp',
+        contact: 'John Smith',
+        timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+        details: 'Sent proposal follow-up email'
+    },
+    {
+        id: 'activity-002',
+        type: 'Call',
+        title: 'Discovery call with StartupXYZ',
+        contact: 'Sarah Johnson',
+        timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+        details: 'Discussed requirements and timeline'
+    },
+    {
+        id: 'activity-003',
+        type: 'Meeting',
+        title: 'Contract signing with MegaCorp',
+        contact: 'Mike Davis',
+        timestamp: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
+        details: 'Finalized annual subscription agreement'
+    }
+];
+
+const mockHubSpotIntegrations = [
+    {
+        name: 'HubSpot CRM',
+        category: 'Sales',
+        status: 'Healthy',
+        responseTime: '32ms',
+        lastSuccess: '1 minute ago',
+        uptime: '99.7%',
+        issue: '1'
+    },
+    {
+        name: 'Email Integration',
+        category: 'Marketing',
+        status: 'Healthy',
+        responseTime: '28ms',
+        lastSuccess: '3 minutes ago',
+        uptime: '99.9%',
+        issue: '0'
+    },
+    {
+        name: 'Pipeline Sync',
+        category: 'Sales',
+        status: 'Degraded',
+        responseTime: '150ms',
+        lastSuccess: '10 minutes ago',
+        uptime: '97.8%',
+        issue: '5'
+    }
+];
+
 // API Routes
 app.get('/api/sentry/issues', (req, res) => {
     res.json(mockIssues);
@@ -135,6 +225,19 @@ app.put('/api/sentry/issues/:id', (req, res) => {
     } else {
         res.status(404).json({ error: 'Issue not found' });
     }
+});
+
+// HubSpot API Routes
+app.get('/api/hubspot/deals', (req, res) => {
+    res.json(mockHubSpotDeals);
+});
+
+app.get('/api/hubspot/activities', (req, res) => {
+    res.json(mockHubSpotActivities);
+});
+
+app.get('/api/hubspot/integration-status', (req, res) => {
+    res.json(mockHubSpotIntegrations);
 });
 
 // Health check endpoint

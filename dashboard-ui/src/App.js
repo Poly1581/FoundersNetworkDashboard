@@ -74,7 +74,7 @@ const handleError = (type, error) => {
  * Assumes the backend is running on http://localhost:8000.
  */
 const backendApi = axios.create({
-    baseURL: "http://localhost:8000"
+    baseURL: "http://localhost:5001"
 });
 
 /**
@@ -83,7 +83,7 @@ const backendApi = axios.create({
  */
 const fetchIssues = async () => {
     try {
-        const response = await backendApi.get("/issues/");
+        const response = await backendApi.get("/api/sentry/issues");
         return response.data;
     } catch (error) {
         handleError("fetching issues", error);
@@ -97,7 +97,7 @@ const fetchIssues = async () => {
  */
 const fetchEventsForIssue = async (issueId) => {
     try {
-        const response = await backendApi.get(`/issues/${issueId}/events`);
+        const response = await backendApi.get(`/api/sentry/issues/${issueId}/events`);
         return response.data;
     } catch (error) {
         handleError("fetching events for issue", error);
@@ -112,10 +112,49 @@ const fetchEventsForIssue = async (issueId) => {
  */
 const updateIssueStatus = async (issueId, status) => {
     try {
-        const response = await backendApi.put(`/issues/${issueId}`, { status });
+        const response = await backendApi.put(`/api/sentry/issues/${issueId}`, { status });
         return response.data;
     } catch (error) {
         handleError("updating issue status", error);
+    }
+};
+
+/**
+ * Fetches HubSpot deals from the backend.
+ * @returns {Promise<Array>} A promise that resolves to an array of deal objects.
+ */
+const fetchHubSpotDeals = async () => {
+    try {
+        const response = await backendApi.get("/api/hubspot/deals");
+        return response.data;
+    } catch (error) {
+        handleError("fetching HubSpot deals", error);
+    }
+};
+
+/**
+ * Fetches HubSpot activities from the backend.
+ * @returns {Promise<Array>} A promise that resolves to an array of activity objects.
+ */
+const fetchHubSpotActivities = async () => {
+    try {
+        const response = await backendApi.get("/api/hubspot/activities");
+        return response.data;
+    } catch (error) {
+        handleError("fetching HubSpot activities", error);
+    }
+};
+
+/**
+ * Fetches HubSpot integration status from the backend.
+ * @returns {Promise<Array>} A promise that resolves to an array of integration objects.
+ */
+const fetchHubSpotIntegrationStatus = async () => {
+    try {
+        const response = await backendApi.get("/api/hubspot/integration-status");
+        return response.data;
+    } catch (error) {
+        handleError("fetching HubSpot integration status", error);
     }
 };
 
@@ -135,7 +174,7 @@ const textContent = {
             viewDetails: 'View Details',
         },
         integrationDetails: {
-            heading: 'Integration Details',
+            heading: 'Integrations',
             columns: {
                 service: 'Service',
                 category: 'Category',
@@ -162,7 +201,7 @@ const textContent = {
             viewDeal: 'View Deal',
         },
         integrationDetails: {
-            heading: 'Integration Details',
+            heading: 'Integrations',
             columns: {
                 service: 'Service',
                 category: 'Category',
@@ -294,7 +333,7 @@ function CollapsibleSection({ title, children, defaultOpen = true, isOpen, onTog
 }
 
 // --- Sentry Section ---
-function SentrySection({ allExpanded, isOpen, onToggle, onDataFetched }) {
+function SentrySection({ isOpen, onToggle, onDataFetched }) {
     const [issues, setIssues] = useState([]);
     const [resolvedIssues, setResolvedIssues] = useState([]);
     const [sentryAlerts, setSentryAlerts] = useState([]);
@@ -319,23 +358,12 @@ function SentrySection({ allExpanded, isOpen, onToggle, onDataFetched }) {
         onDataFetchedRef.current = onDataFetched;
     }, [onDataFetched]);
 
-    useEffect(() => {
-        if (allExpanded) {
-            setExpandedRows(issues.map(issue => issue.id));
-            setExpandedInactiveRows(resolvedIssues.map(issue => issue.id));
-            setExpandedAlertDetails(sentryAlerts.map((_, index) => index));
-            setExpandedIntegrations(sentryIntegrations.map((_, index) => index));
-        } else {
-            setExpandedRows([]);
-            setExpandedInactiveRows([]);
-            setExpandedAlertDetails([]);
-            setExpandedIntegrations([]);
-        }
-    }, [allExpanded, issues.length, resolvedIssues.length, sentryAlerts.length, sentryIntegrations.length]);
+    // Remove the useEffect that was controlling inner sections based on allExpanded
+    // The allExpanded prop should only control main sections (Sentry, HubSpot)
 
     const fetchSentryIntegrationStatus = async () => {
         try {
-            const response = await backendApi.get("/integration-status");
+            const response = await backendApi.get("/api/sentry/integration-status");
             return response.data;
         } catch (error) {
             handleError("fetching sentry integration status", error);
@@ -497,7 +525,196 @@ function SentrySection({ allExpanded, isOpen, onToggle, onDataFetched }) {
     );
 }
 
-// HubSpot section temporarily removed to focus on Active Issues
+// --- HubSpot Section ---
+function HubSpotSection({ isOpen, onToggle, onDataFetched }) {
+    const [deals, setDeals] = useState([]);
+    const [activities, setActivities] = useState([]);
+    const [hubspotIntegrations, setHubspotIntegrations] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [expandedDeals, setExpandedDeals] = useState([]);
+    const [expandedActivities, setExpandedActivities] = useState([]);
+    const [expandedIntegrations, setExpandedIntegrations] = useState([]);
+
+    // Use useRef to store the callback to prevent infinite loops
+    const onDataFetchedRef = React.useRef(onDataFetched);
+    React.useEffect(() => {
+        onDataFetchedRef.current = onDataFetched;
+    }, [onDataFetched]);
+
+    const loadData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const [fetchedDeals, fetchedActivities, fetchedIntegrations] = await Promise.all([
+                fetchHubSpotDeals(),
+                fetchHubSpotActivities(),
+                fetchHubSpotIntegrationStatus()
+            ]);
+
+            setDeals(fetchedDeals);
+            setActivities(fetchedActivities);
+            setHubspotIntegrations(fetchedIntegrations);
+            setError(null);
+
+            // Notify parent component that data was fetched using ref
+            if (onDataFetchedRef.current) {
+                onDataFetchedRef.current(new Date());
+            }
+        } catch (err) {
+            setError(err.message);
+            console.error("Failed to fetch HubSpot data:", err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    const handleViewDealDetails = (dealId) => {
+        const newExpandedDeals = expandedDeals.includes(dealId)
+            ? expandedDeals.filter(id => id !== dealId)
+            : [...expandedDeals, dealId];
+        setExpandedDeals(newExpandedDeals);
+    };
+
+    const handleViewActivityDetails = (index) => {
+        const newExpandedActivities = expandedActivities.includes(index)
+            ? expandedActivities.filter(i => i !== index)
+            : [...expandedActivities, index];
+        setExpandedActivities(newExpandedActivities);
+    };
+
+    const handleViewIntegrationDetails = (index) => {
+        const newExpandedIntegrations = expandedIntegrations.includes(index)
+            ? expandedIntegrations.filter(i => i !== index)
+            : [...expandedIntegrations, index];
+        setExpandedIntegrations(newExpandedIntegrations);
+    };
+
+    if (loading) {
+        return <CollapsibleSection title={textContent.hubspot.title}><Typography>Loading HubSpot Data...</Typography></CollapsibleSection>;
+    }
+
+    if (error) {
+        return <CollapsibleSection title={textContent.hubspot.title}><Typography color="error">Error fetching HubSpot data: {error}</Typography></CollapsibleSection>;
+    }
+
+    return (
+        <CollapsibleSection title={textContent.hubspot.title} isOpen={isOpen} onToggle={onToggle}>
+            <IntegrationDetailsSection integrations={hubspotIntegrations} textContent={textContent.hubspot.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
+            <ActiveDealsSection deals={deals} onViewDetails={handleViewDealDetails} expandedDeals={expandedDeals} textContent={textContent.hubspot.activeDeals} />
+            <RecentActivitiesSection activities={activities} onViewDetails={handleViewActivityDetails} expandedActivities={expandedActivities} textContent={textContent.hubspot.recentActivities} />
+        </CollapsibleSection>
+    );
+}
+
+function ActiveDealsSection({ deals, onViewDetails, expandedDeals, textContent }) {
+    const getRowColorForDeal = (stage) => {
+        switch (stage) {
+            case 'Closed Won':
+                return '#e8f5e8'; // light green
+            case 'Negotiation':
+                return '#fff3e0'; // light orange
+            case 'Proposal':
+                return '#e3f2fd'; // light blue
+            default:
+                return 'inherit';
+        }
+    };
+
+    return (
+        <CollapsibleSection title={textContent.heading}>
+            <Table>
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Deal</TableCell>
+                        <TableCell>Amount</TableCell>
+                        <TableCell>Stage</TableCell>
+                        <TableCell>Close Date</TableCell>
+                        <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {deals.map(deal => (
+                        <React.Fragment key={deal.id}>
+                            <TableRow sx={{ backgroundColor: getRowColorForDeal(deal.stage) }}>
+                                <TableCell>{deal.title}</TableCell>
+                                <TableCell>{deal.amount}</TableCell>
+                                <TableCell>
+                                    <Chip
+                                        label={deal.stage}
+                                        size="small"
+                                        color={deal.stage === 'Closed Won' ? 'success' : deal.stage === 'Negotiation' ? 'warning' : 'primary'}
+                                    />
+                                </TableCell>
+                                <TableCell>{new Date(deal.closeDate).toLocaleDateString()}</TableCell>
+                                <TableCell align="right">
+                                    <Button size="small" startIcon={<InfoIcon />} onClick={() => onViewDetails(deal.id)}>
+                                        {textContent.viewDeal}
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
+                                    <Collapse in={expandedDeals.includes(deal.id)} timeout="auto" unmountOnExit>
+                                        <Box sx={{ margin: 1, p: 2, backgroundColor: '#f5f5f5' }}>
+                                            <Typography variant="h6" gutterBottom component="div">
+                                                Deal Details
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ mb: 1 }}>
+                                                <strong>Contact:</strong> {deal.contact}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ mb: 1 }}>
+                                                <strong>Company:</strong> {deal.company}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ mb: 1 }}>
+                                                <strong>Probability:</strong> {deal.probability}%
+                                            </Typography>
+                                        </Box>
+                                    </Collapse>
+                                </TableCell>
+                            </TableRow>
+                        </React.Fragment>
+                    ))}
+                </TableBody>
+            </Table>
+        </CollapsibleSection>
+    );
+}
+
+function RecentActivitiesSection({ activities, onViewDetails, expandedActivities, textContent }) {
+    return (
+        <CollapsibleSection title={textContent.heading}>
+            <List>
+                {activities.map((activity, index) => (
+                    <React.Fragment key={activity.id}>
+                        <ListItem
+                            secondaryAction={
+                                <Button size="small" onClick={() => onViewDetails(index)}>
+                                    {textContent.details}
+                                </Button>
+                            }
+                        >
+                            <ListItemText
+                                primary={activity.title}
+                                secondary={`${activity.type} • ${new Date(activity.timestamp).toLocaleString()} • ${activity.contact}`}
+                            />
+                        </ListItem>
+                        <Collapse in={expandedActivities.includes(index)} timeout="auto" unmountOnExit>
+                            <Box sx={{ margin: 1, ml: 7 }}>
+                                <Typography variant="body2" color="text.secondary">
+                                    {activity.details}
+                                </Typography>
+                            </Box>
+                        </Collapse>
+                    </React.Fragment>
+                ))}
+            </List>
+        </CollapsibleSection>
+    );
+}
 
 
 function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails, expandedIntegrations }) {
@@ -1392,7 +1609,7 @@ function Overview({ integrationStatus, integrationSystems }) {
     );
 }
 
-function LiveData({ allExpanded, onRefresh, onExpandAll, sentryOpen, hubspotOpen, onSentryToggle, onHubspotToggle, lastFetchTime, onDataFetched }) {
+function LiveData({ onRefresh, onExpandAll, sentryOpen, hubspotOpen, onSentryToggle, onHubspotToggle, lastFetchTime, onDataFetched }) {
     const [notificationMessage, setNotificationMessage] = useState('');
 
     const handleNotifyMembers = () => {
@@ -1409,11 +1626,11 @@ function LiveData({ allExpanded, onRefresh, onExpandAll, sentryOpen, hubspotOpen
             <Header
                 onRefresh={onRefresh}
                 onExpandAll={onExpandAll}
-                allExpanded={allExpanded}
+                allExpanded={sentryOpen || hubspotOpen}
                 lastFetchTime={lastFetchTime}
             />
-            <SentrySection allExpanded={allExpanded} isOpen={sentryOpen} onToggle={onSentryToggle} onDataFetched={onDataFetched} />
-            {/* <HubSpotSection allExpanded={allExpanded} isOpen={hubspotOpen} onToggle={onHubspotToggle} /> */}
+            <SentrySection isOpen={sentryOpen} onToggle={onSentryToggle} onDataFetched={onDataFetched} />
+            <HubSpotSection isOpen={hubspotOpen} onToggle={onHubspotToggle} onDataFetched={onDataFetched} />
 
             {/* Notify Members Section */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 4, mb: 2, justifyContent: 'center' }}>
@@ -1497,15 +1714,13 @@ export default function App() {
         const anyExpanded = sentryOpen || hubspotOpen;
 
         if (anyExpanded) {
-            // If any main sections are expanded, collapse all
+            // If any main sections are expanded, collapse all main sections only
             setSentryOpen(false);
             setHubspotOpen(false);
-            setAllExpanded(false);
         } else {
-            // If no main sections are expanded, expand all
+            // If no main sections are expanded, expand all main sections only
             setSentryOpen(true);
             setHubspotOpen(true);
-            setAllExpanded(true);
         }
     };
 
@@ -1517,15 +1732,7 @@ export default function App() {
         setHubspotOpen(prev => !prev);
     };
 
-    // Update allExpanded state based on main sections
-    const updateAllExpandedState = () => {
-        setAllExpanded(sentryOpen || hubspotOpen);
-    };
-
-    // Effect to update allExpanded when main sections change
-    useEffect(() => {
-        updateAllExpandedState();
-    }, [sentryOpen, hubspotOpen]);
+    // Remove the allExpanded state management since we're not using it for inner sections anymore
 
     const handlePageChange = (page) => {
         setActivePage(page);
@@ -1558,7 +1765,6 @@ export default function App() {
                     {activePage === 'overview' && <Overview integrationStatus={integrationStatus} integrationSystems={integrationSystems} />}
                     {activePage === 'liveData' && (
                         <LiveData
-                            allExpanded={allExpanded}
                             onRefresh={handleRefreshAll}
                             onExpandAll={handleExpandAll}
                             sentryOpen={sentryOpen}
