@@ -771,39 +771,25 @@ function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails
                                     <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
                                         <Collapse in={expandedIntegrations.includes(index)} timeout="auto" unmountOnExit>
                                             <Box sx={{ margin: 1, p: 2, backgroundColor: '#f5f5f5' }}>
-                                                <Typography variant="body2" sx={{ mb: 2 }}>
-                                                    Users or sessions most affected: {i.affectedUsers || 'Premium users (15%), Mobile app sessions (8%), API integrations (12%)'}
-                                                </Typography>
-
-                                                <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
-                                                    Most Frequent Exception Types:
-                                                </Typography>
                                                 <Box sx={{ ml: 2 }}>
-                                                    {i.exceptionTypes ? (
-                                                        i.exceptionTypes.map((exception, idx) => (
-                                                            <Typography key={idx} variant="body2" sx={{ mb: 0.5 }}>
-                                                                • {exception.type}: {exception.count} occurrences
-                                                            </Typography>
-                                                        ))
-                                                    ) : (
-                                                        <>
-                                                            <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                                                • ValueError: 47 occurrences
-                                                            </Typography>
-                                                            <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                                                • TimeoutError: 23 occurrences
-                                                            </Typography>
-                                                            <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                                                • ConnectionError: 18 occurrences
-                                                            </Typography>
-                                                            <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                                                • KeyError: 12 occurrences
-                                                            </Typography>
-                                                            <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                                                • AttributeError: 8 occurrences
-                                                            </Typography>
-                                                        </>
-                                                    )}
+                                                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                        ○ Integration name: {i.name}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                        ○ Service category: {i.category}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                        ○ Connected user: {i.connectedUser || 'admin@foundersnetwork.com'}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                        ○ Authorization: {i.authorization || 'Bearer ****...a8f2 (OAuth token)'}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                        ○ Last failure: {i.lastFailure || 'Rate limit exceeded - 2024-12-15 14:23:45'}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                        ○ Last success: {i.lastSuccess}
+                                                    </Typography>
                                                 </Box>
                                             </Box>
                                         </Collapse>

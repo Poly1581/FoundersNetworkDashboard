@@ -165,30 +165,39 @@ const mockHubSpotActivities = [
 const mockHubSpotIntegrations = [
     {
         name: 'HubSpot CRM',
-        category: 'Sales',
+        category: 'CRM',
         status: 'Healthy',
         responseTime: '32ms',
         lastSuccess: '1 minute ago',
         uptime: '99.7%',
-        issue: '1'
+        issue: '1',
+        connectedUser: 'admin@foundersnetwork.com',
+        authorization: 'Bearer ****...a8f2 (OAuth token)',
+        lastFailure: 'Connection timeout - 2024-12-10 09:15:32'
     },
     {
         name: 'Email Integration',
-        category: 'Marketing',
+        category: 'CRM',
         status: 'Healthy',
         responseTime: '28ms',
         lastSuccess: '3 minutes ago',
         uptime: '99.9%',
-        issue: '0'
+        issue: '0',
+        connectedUser: 'marketing@foundersnetwork.com',
+        authorization: 'Bearer ****...b9e3 (OAuth token)',
+        lastFailure: 'Rate limit exceeded - 2024-12-08 16:42:18'
     },
     {
         name: 'Pipeline Sync',
-        category: 'Sales',
+        category: 'CRM',
         status: 'Degraded',
         responseTime: '150ms',
         lastSuccess: '10 minutes ago',
         uptime: '97.8%',
-        issue: '5'
+        issue: '5',
+        connectedUser: 'sales@foundersnetwork.com',
+        authorization: 'Bearer ****...c7d4 (OAuth token)',
+        lastFailure: 'API endpoint unavailable - 2024-12-15 14:23:45'
     }
 ];
 
