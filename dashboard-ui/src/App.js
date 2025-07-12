@@ -184,7 +184,7 @@ function Header({ loadAll, expandAll }) {
 }
 
 // --- Collapsible Wrapper ---
-function CollapsibleSection({ title, children, expand, reloadTitle = undefined, reload = undefined}) {
+function CollapsibleSection({ title, children, expand, reloadTitle = undefined}) {
     // Keep track of expansion state
     const [prevExpand, setPrevExpand] = useState(expand);
     const [expanded, setExpanded] = useState(expand);
@@ -200,11 +200,16 @@ function CollapsibleSection({ title, children, expand, reloadTitle = undefined, 
             <Box display="flex" alignItems="center" justifyContent="space-between" p={2} pb={0}>
                 <Typography variant="h6">{title}</Typography>
                 <Box>
-                    {reloadTitle && <Button variant="outlined" startIcon={<RefreshIcon/>} onClick={() => reload()} sx={{ mr: 1 }}>
-                        {reloadTitle}
-                    </Button>}
+                    {/* Reload button (only render if we have reload) */}
+                    {reload && 
+                        <IconButton onClick={() => reload()} size = "small">
+                            <RefreshIcon color="primary"/>
+                        </IconButton>
+                    }
+
+                    {/* Expand button */}
                     <IconButton onClick={() => setExpanded(prev => !prev )} size="small">
-                        {expanded ? <ArrowDownIcon/> : <ArrowRightIcon/>}
+                        {expanded ? <ArrowDownIcon color="primary"/> : <ArrowRightIcon color="primary"/>}
                     </IconButton>
                 </Box>
             </Box>
@@ -218,7 +223,7 @@ function CollapsibleSection({ title, children, expand, reloadTitle = undefined, 
 }
 
 // --- Sentry Section ---
-function SentrySection({ issues, loadSentryIssues, sentryIntegrations, loadSentryIntegrations, resolveIssue, expand }) { // UNFINISHED
+function SentrySection({ issues, loadSentryIssues, sentryIntegrations, loadSentryIntegrations, resolveIssue, expand }) {
     // Load and set all sentry data
     const loadAllSentry = () => {
         loadSentryIssues();
@@ -228,7 +233,6 @@ function SentrySection({ issues, loadSentryIssues, sentryIntegrations, loadSentr
     return (
         <CollapsibleSection
                 title={textContent.sentry.title}
-                reloadTitle={textContent.sentry.reloadTitle}
                 reload={() => loadAllSentry()}
                 expand ={expand}
         >
@@ -256,11 +260,11 @@ function ActiveIssuesSection({ issues, loadSentryIssues, resolveIssue, expand })
     return (
         <CollapsibleSection
                     title={textContent.sentry.activeIssues.heading}
-                    reloadTitle={textContent.sentry.activeIssues.reloadTitle}
                     reload={() => loadSentryIssues()}
                     expand={expand}
         >
             <Box mb={2} display="flex" justifyContent="flex-end" alignItems="center">
+                {/* Show filter button */}
                 <Button
                     size="small"
                     onClick={() => setShowFilter((prevShowFilter) => !prevShowFilter)}
@@ -268,6 +272,7 @@ function ActiveIssuesSection({ issues, loadSentryIssues, resolveIssue, expand })
                     {textContent.sentry.activeIssues.filter}
                 </Button>
 
+                {/* Reset filters button */}
                 <Button
                     size="small"
                     onClick={() => {
@@ -280,9 +285,12 @@ function ActiveIssuesSection({ issues, loadSentryIssues, resolveIssue, expand })
                     {textContent.sentry.activeIssues.viewAll}
                 </Button>
             </Box>
+
+            {/* Filter options (only show if showFilter is true) */}
             {showFilter && (
                 <Box mb={2}>
                     <Box display="flex" gap={2} mb={2} flexWrap={"wrap"}>
+                        {/* Status issue filter */}
                         <TextField
                             select
                             label="Status"
@@ -295,6 +303,8 @@ function ActiveIssuesSection({ issues, loadSentryIssues, resolveIssue, expand })
                             <MenuItem value="unresolved">Unresolved</MenuItem>
                             <MenuItem value="resolved">Resolved</MenuItem>
                         </TextField>
+
+                        {/* Status level filter */}
                         <TextField
                             select
                             label="Level"
@@ -308,6 +318,8 @@ function ActiveIssuesSection({ issues, loadSentryIssues, resolveIssue, expand })
                             <MenuItem value={["warning"]}>Warning</MenuItem>
                             <MenuItem value={["log", "info"]}>Info</MenuItem>
                         </TextField>
+
+                        {/* Status date filter */}
                         <TextField
                             select
                             label="Date Range"
@@ -327,27 +339,27 @@ function ActiveIssuesSection({ issues, loadSentryIssues, resolveIssue, expand })
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableCell>Title</TableCell>
                         <TableCell>Type</TableCell>
+                        <TableCell>Title</TableCell>
                         <TableCell>Status</TableCell>
                         <TableCell align="right"></TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
                     {issues.filter((issue) => {
-                        // Status filter
+                        // Filter issues based on status
                         if(!statusFilter) {
                             return true;
                         }
                         return issue.status === statusFilter;
                     }).filter((issue) => {
-                        // Level filter
+                        // Filter issues based on level
                         if(!levelFilter) {
                             return true;
                         }
                         return levelFilter.includes(issue.level);
                     }).filter((issue) => {
-                        // Date filter
+                        // Filter issues based on date
                         if(!dateFilter) {
                             return true;
                         }
@@ -356,7 +368,12 @@ function ActiveIssuesSection({ issues, loadSentryIssues, resolveIssue, expand })
                         cutoffDate.setDate(cutoffDate.getDate() - dateFilter);
                         return cutoffDate < lastSeen;
                     }).map((issue, index) => (
-                        <ActiveIssue issue={issue} resolveIssue={(issueId) => resolveIssue(issueId)} expand={expand} key={index}/>
+                        <ActiveIssue
+                            issue={issue}
+                            resolveIssue={(issueId) => resolveIssue(issueId)}
+                            expand={expand}
+                            key={index}
+                        />
                     ))}
                 </TableBody>
             </Table>
@@ -377,13 +394,19 @@ function ActiveIssue({ issue, resolveIssue, expand }) {
 
     return (
         <React.Fragment key={issue.id}>
+            {/* Issue overview */}
             <TableRow>
-                <TableCell>{issue.title}</TableCell>
+                {/* Issue type */}
                 <TableCell>
                     {["fatal", "error"].includes(issue.level) && <ErrorIcon color="error" sx={{ mr: 1}}/>}
                     {["warning"].includes(issue.level) && <WarningIcon color="warning" sx={{ mr: 1}}/>}
                     {["log", "info"].includes(issue.level) && <InfoIcon color="info" sx={{ mr:1 }}/>}
                 </TableCell>
+
+                {/* Issue title */}
+                <TableCell>{issue.title}</TableCell>
+
+                {/* Issue status */}
                 <TableCell>
                     <Chip
                         label={issue.status}
@@ -391,33 +414,48 @@ function ActiveIssue({ issue, resolveIssue, expand }) {
                         color={issue.status === 'unresolved' ? 'error' : 'success'}
                     />
                 </TableCell>
+                
                 <TableCell align="right">
+                    {/* Resolve issue button (only show for unresolved issues) */}
                     {issue.status === 'unresolved' && (
                         <Button size="small" onClick={() => resolveIssue(issue.id)}>
                             {textContent.sentry.activeIssues.resolveIssue}
                         </Button>
                     )}
+
+                    {/* View details button */}
                     <Button size="small" startIcon={<InfoIcon/>} onClick={() => setExpanded(prev => !prev)}>
                         {textContent.sentry.activeIssues.viewDetails}
                     </Button>
                 </TableCell>
             </TableRow>
+
+            {/* Issue details */}
             <TableRow>
                 <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
                     <Collapse in={expanded} timeout="auto" unmountOnExit>
                         <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ margin: 1 }}>
+                            {/* Issue permalink */}
                             <Link href={issue.permalink} target="_blank" rel="noopener">
                                 {issue.id}
                             </Link>
+
+                            {/* Issue first seen date */}
                             <Box>
-                                {`First Seen: ${new Date(issue.firstSeen).toString()}`}
+                                {`First Seen: ${new Date(issue.firstSeen).toLocaleTimeString()}`}
                             </Box>
+
+                            {/* Issue last seen date */}
                             <Box>
-                                {`Last Seen: ${new Date(issue.lastSeen).toString()}`}
+                                {`Last Seen: ${new Date(issue.lastSeen).toLocaleTimeString()}`}
                             </Box>
+
+                            {/* Issue assigned to */}
                             <Box>
-                                {`Assigned To: ${issue.assignedTo}`}
+                                {`Assigned To: ${issue.assignedTo || "nobody"}`}
                             </Box>
+
+                            {/* Issue priority */}
                             <Box>
                                 {`Priority: ${issue.priority}`}
                             </Box>
@@ -441,7 +479,6 @@ function HubSpotSection({ hubSpotDeals, loadHubSpotDeals, hubSpotActivities, loa
     return (
         <CollapsibleSection
             title={textContent.hubspot.title}
-            reloadTitle={textContent.hubspot.reloadTitle}
             reload={()=>loadAllHubSpot()}
             expand={expand}
         >
@@ -468,7 +505,6 @@ function ActiveDealsSection({ hubSpotDeals, loadHubSpotDeals, expand}) {
     return (
         <CollapsibleSection
                     title={textContent.hubspot.activeDeals.heading}
-                    reloadTitle={textContent.hubspot.activeDeals.reloadTitle}
                     reload={() => loadHubSpotDeals()}
                     expand={expand}
         >
@@ -502,7 +538,6 @@ function RecentActivitiesSection({ hubSpotActivities, loadHubSpotActivities, exp
     return (
         <CollapsibleSection
             title={textContent.hubspot.recentActivities.heading}
-            reloadTitle={textContent.hubspot.recentActivities.reloadTitle}
             reload={() => loadHubSpotActivities()}
             expand={expand}
         >
@@ -532,7 +567,11 @@ function IntegrationDetailsSection({ integrations, loadIntegrations, expand }) {
     }
 
     return (
-        <CollapsibleSection title={textContent.integrations.heading} reloadTitle={textContent.integrations.reloadTitle} reload={() => loadIntegrations()} expand={expand}>
+        <CollapsibleSection
+            title={textContent.integrations.heading}
+            reload={() => loadIntegrations()}
+            expand={expand}
+        >
             <Table sx={{ mb: 4 }}>
                 <TableHead>
                     <TableRow>
@@ -588,10 +627,30 @@ function Integration({ integration, expand }) {
             <TableRow>
                 <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
                     <Collapse in={expanded} timeout="auto" unmountOnExit>
-                        <Box sx={{ margin: 1 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                Service: {integration.name} | Category: {integration.category} | Status: {integration.status} | Response Time: {integration.responseTime} | Last Success: {integration.lastSuccess} | Uptime: {integration.uptime} | Issue: {integration.issue || '—'}
-                            </Typography>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ margin: 1 }}>
+                            <Box>
+                                {`Service: ${integration.name}`}
+                            </Box>
+                            <Box>
+                                {`Category: ${integration.category}`}
+                            </Box>
+                            <Box>
+                                {`Status: ${Integration.status}`}
+                            </Box>
+                            <Box>
+                                {`Response Time: ${integration.responseTime}`}
+                            </Box>
+                            <Box>
+                                {`Last Sync: ${integration.lastSuccess}`}
+                            </Box>
+                            <Box>
+                                {`Uptime: ${integration.uptime}`}
+                            </Box>
+                            <Box>
+                                {integration.issue
+                                    ? `Issue: ${integration.issue}`
+                                    : '-'}
+                            </Box>
                         </Box>
                     </Collapse>
                 </TableCell>
@@ -617,22 +676,27 @@ function QuickLinksFooter({ lastCheck }) {
 
 // --- MAIN APP COMPONENT ---
 export default function App() {
-    // Last check state
-    const [lastCheck, setLastCheck] = useState("never");
-
     // Expand all state
+    // Used in every CollapsibleSection and Collapse
     const [expand, setExpand] = useState(true);
 
+    // Last check state
+    // Used in QuickLinksFooter
+    const [lastCheck, setLastCheck] = useState("never");
+    
     // Sentry related states
+    // Used in SentrySection
     const [sentryIssues, setSentryIssues] = useState([]);
     const [sentryIntegrations, setSentryIntegrations] = useState([]);
 
     // HubSpot related states
+    // Used in HubSpotSection
     const [hubSpotDeals, setHubSpotDeals] = useState([]);
     const [hubSpotActivities, setHubSpotActivities] = useState([]);
     const [hubSpotIntegrations, setHubSpotIntegrations] = useState([]);
 
     // Load and set sentry issues
+    // Used in SentrySection
     const loadSentryIssues = async () => {
         const fetchedIssues = await api.sentry.fetchIssues();
         setSentryIssues(fetchedIssues);
@@ -640,6 +704,7 @@ export default function App() {
     }
 
     // Load and set sentry integrations
+    // Used in SentrySection
     const loadSentryIntegrations = async () => {
         const fetchedSentryIntegrations = await api.sentry.fetchIntegrationStatus();
         setSentryIntegrations(fetchedSentryIntegrations);
@@ -647,6 +712,7 @@ export default function App() {
     }
 
     // Load and set hubspot deals
+    // Used in HubSpotSection
     const loadHubSpotDeals = async () => {
         const fetchedHubSpotDeals = await api.hubSpot.fetchDeals();
         setHubSpotDeals(fetchedHubSpotDeals);
@@ -654,6 +720,7 @@ export default function App() {
     }
 
     // Load and set hubspot activities
+    // Used in HubSpotSection
     const loadHubSpotActivities = async () => {
         const fetchedHubSpotActivities = await api.hubSpot.fetchActivities();
         setHubSpotActivities(fetchedHubSpotActivities);
@@ -661,6 +728,7 @@ export default function App() {
     }
 
     // Load and set hubspot integrations
+    // Used in HubSpotSection
     const loadHubSpotIntegrations = async () => {
         const fetchedHubSpotIntegrations = await api.hubSpot.fetchIntegrationStatus();
         setHubSpotIntegrations(fetchedHubSpotIntegrations);
@@ -668,19 +736,22 @@ export default function App() {
     }
 
     // Load all data
+    // Used in Header
     const loadAll = async () => {
         loadSentryIssues();
         loadSentryIntegrations();
         loadHubSpotDeals();
         loadHubSpotActivities();
         loadHubSpotIntegrations();
-        setLastCheck(new Date().toLocaleTimeString());
     }
 
+    // Load all data once
     useEffect(() => {
         loadAll();
     }, []);
 
+    // Resolve an issue with a given ID
+    // Used in SentrySection
     const resolveIssue = async (issueId) => {
         const issue = sentryIssues.find((issue) => issue.id === issueId);
         setSentryIssues(sentryIssues.filter((issue) => issue.id !== issueId));
