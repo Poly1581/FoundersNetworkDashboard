@@ -1,8 +1,5 @@
 # No leaks
 .env
 
-# No notes
-*.md
-
 # No node modules (yuck)
-dashboard-ui/node_modules/*
+./dashboard-ui/node_modules/*
