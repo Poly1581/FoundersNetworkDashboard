@@ -74,7 +74,7 @@ const handleError = (type, error) => {
  * Assumes the backend is running on http://localhost:8000.
  */
 const backendApi = axios.create({
-    baseURL: "http://localhost:5001"
+    baseURL: "http://localhost:8000"
 });
 
 /**
@@ -772,12 +772,6 @@ function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails
                                         <Collapse in={expandedIntegrations.includes(index)} timeout="auto" unmountOnExit>
                                             <Box sx={{ margin: 1, p: 2, backgroundColor: '#f5f5f5' }}>
                                                 <Box sx={{ ml: 2 }}>
-                                                    <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                                        ○ Integration name: {i.name}
-                                                    </Typography>
-                                                    <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                                        ○ Service category: {i.category}
-                                                    </Typography>
                                                     <Typography variant="body2" sx={{ mb: 0.5 }}>
                                                         ○ Connected user: {i.connectedUser || 'admin@foundersnetwork.com'}
                                                     </Typography>
