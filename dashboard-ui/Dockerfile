@@ -8,7 +8,7 @@ WORKDIR /app
  COPY package*.json .
 
  # Install dependencies
-RUN npm install --no-audit --progress=false
+ RUN npm install
 
 # Copy project files
 COPY . .
