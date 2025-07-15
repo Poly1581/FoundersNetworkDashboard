@@ -68,7 +68,7 @@ def get_issues(request, **kwargs):
 
 @api_view(["GET"])
 def get_events(request, **kwargs):
-    URI = f"{SENTRY_URI}/projects/{SENTRY_ORGANIZATION_SLUG}/{SENTRY_PROJECT_ID}/events"
+    URI = f"{SENTRY_URI}/projects/{SENTRY_ORGANIZATION_SLUG}/{SENTRY_PROJECT_ID}/events/"
     try:
         response = requests.get(URI, headers = HEADERS)
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
