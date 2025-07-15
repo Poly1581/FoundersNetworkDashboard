@@ -209,7 +209,7 @@ const textContent = {
                 responseTime: 'Response Time',
                 lastSuccess: 'Last Success',
                 uptime: 'Uptime',
-                issue: 'Error per min'
+                issue: 'Connected User'
             },
             viewDetails: 'View Details'
         },
@@ -760,7 +760,7 @@ function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails
                                     <TableCell>{i.responseTime}</TableCell>
                                     <TableCell>{i.lastSuccess}</TableCell>
                                     <TableCell>{i.uptime}</TableCell>
-                                    <TableCell>{i.issue || '—'}</TableCell>
+                                    <TableCell>{i.connectedUser || i.issue || '—'}</TableCell>
                                     <TableCell align="right">
                                         <Button size="small" startIcon={<InfoIcon />} onClick={() => onAndViewDetails(index)}>
                                             {textContent.viewDetails}
