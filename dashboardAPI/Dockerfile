@@ -1,9 +1,6 @@
 # Use python base image
 FROM python:3.14.0b3-slim
 
-# Create directory
-RUN mkdir /dashboard-backend
-
 # Set workdir
 WORKDIR /app
 
@@ -16,7 +13,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Don't buffer outputs
 ENV PYTHONUNBUFFERED=1
 
-# Indstall dependencies
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files

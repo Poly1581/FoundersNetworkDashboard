@@ -5,10 +5,10 @@ FROM node:24-bookworm-slim
 WORKDIR /app
 
 # Copy dependencies
- COPY package*.json .
+COPY ./package*.json .
 
  # Install dependencies
- RUN npm install
+RUN npm install --no-audit --progress=false
 
 # Copy project files
 COPY . .
