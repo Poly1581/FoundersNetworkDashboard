@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import CssBaseline from '@mui/material/CssBaseline';
 import axios from 'axios';
 import './App.css';
 import {
@@ -184,7 +185,7 @@ function Header({ loadAll, expandAll }) {
 }
 
 // --- Collapsible Wrapper ---
-function CollapsibleSection({ title, children, expand, reloadTitle = undefined}) {
+function CollapsibleSection({ title, children, expand, reload = undefined}) {
     // Keep track of expansion state
     const [prevExpand, setPrevExpand] = useState(expand);
     const [expanded, setExpanded] = useState(expand);
@@ -767,6 +768,7 @@ export default function App() {
 
     return (
         <Container maxWidth="xl" sx={{ py: 4 }}>
+            <CssBaseline/>
             <Header
                 loadAll={() => loadAll()}
                 expandAll={() => setExpand(prev => !prev)}
