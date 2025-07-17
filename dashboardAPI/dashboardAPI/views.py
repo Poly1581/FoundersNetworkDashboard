@@ -1,3 +1,4 @@
+import os
 import json
 import requests
 from django.http import HttpResponse, HttpResponseBadRequest
@@ -5,26 +6,29 @@ from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime
 
+
 # Environment variables
-import environ
-env = environ.Env()
-environ.Env.read_env()
+SENTRY_ORGANIZATION_SLUG = os.environ.get("SENTRY_ORGANIZATION_SLUG")
+SENTRY_PROJECT_ID = os.environ.get("SENTRY_PROJECT_ID")
+SENTRY_BEARER_AUTH = os.environ.get("SENTRY_BEARER_AUTH")
+MAILGUN_API_NAME = os.environ.get("MAILGUN_API_NAME")
+MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY")
+
+# URIs
 SENTRY_URI = "https://sentry.io/api/0"
+MAILGUN_URI = "https://api.mailgun.net"
 
-# Use default values if environment variables are not set or are placeholders
-SENTRY_ORGANIZATION_SLUG = env("SENTRY_ORGANIZATION_SLUG", default="demo-org")
-SENTRY_PROJECT_ID = env("SENTRY_PROJECT_ID", default="demo-project")
-SENTRY_BEARER_AUTH = env("SENTRY_BEARER_AUTH", default="demo-token")
-
-HEADERS = {
+# Headers & auth
+SENTRY_HEADERS = {
     "Authorization": f"Bearer {SENTRY_BEARER_AUTH}"
 }
+MAILGUN_AUTH = ('api', f"{MAILGUN_API_KEY}")
 
 @api_view(["GET"])
 def get_issue_events(request, **kwargs):
     URI = f"{SENTRY_URI}/organizations/{SENTRY_ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/events/"
     try:
-        response = requests.get(URI, headers = HEADERS)
+        response = requests.get(URI, headers = SENTRY_HEADERS)
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
         return HttpResponse(json.dumps(response.json()), content_type="application/json")
     except requests.exceptions.RequestException as e:
@@ -39,7 +43,7 @@ def get_issue_events(request, **kwargs):
 def update_issue_status(request, **kwargs):
     URI = f"{SENTRY_URI}/organizations/{SENTRY_ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/"
     try:
-        response = requests.put(URI, headers = HEADERS, json = {"status": request.data.get("status")})
+        response = requests.put(URI, headers = SENTRY_HEADERS, json = {"status": request.data.get("status")})
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
         return HttpResponse(json.dumps(response.json()), content_type="application/json")
     except requests.exceptions.RequestException as e:
@@ -54,7 +58,7 @@ def get_issues(request, **kwargs):
     URI = f"{SENTRY_URI}/projects/{SENTRY_ORGANIZATION_SLUG}/{SENTRY_PROJECT_ID}/issues/"
     print(f"Attempting to fetch issues from Sentry URI: {URI}")
     try:
-        response = requests.get(URI, headers = HEADERS)
+        response = requests.get(URI, headers = SENTRY_HEADERS)
         print(f"Sentry API response status for issues: {response.status_code}")
         print(f"Sentry API response content for issues: {response.text[:500]}...") # Log first 500 chars
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
@@ -70,7 +74,7 @@ def get_issues(request, **kwargs):
 def get_events(request, **kwargs):
     URI = f"{SENTRY_URI}/projects/{SENTRY_ORGANIZATION_SLUG}/{SENTRY_PROJECT_ID}/events"
     try:
-        response = requests.get(URI, headers = HEADERS)
+        response = requests.get(URI, headers = SENTRY_HEADERS)
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
         return HttpResponse(json.dumps(response.json()), content_type="application/json")
     except requests.exceptions.RequestException as e:
@@ -85,7 +89,7 @@ def get_events(request, **kwargs):
 def get_sentry_integration_status(request, **kwargs):
     start_time = datetime.now()
     try:
-        response = requests.get("https://sentry.io/_health/", headers=HEADERS)
+        response = requests.get("https://sentry.io/_health/", headers = SENTRY_HEADERS)
         end_time = datetime.now()
         response_time = (end_time - start_time).total_seconds() * 1000
         if response.status_code == 200:
@@ -132,90 +136,6 @@ def get_sentry_integration_status(request, **kwargs):
 
     data = [sentry_api_status, sentry_webhooks_status]
     return HttpResponse(json.dumps(data), content_type="application/json")
-
-
-# HubSpot API endpoints (placeholder implementations with mock data)
-@api_view(["GET"])
-def get_hubspot_deals(request, **kwargs):
-    """
-    Mock HubSpot deals data for development/demo purposes
-    """
-    mock_deals = [
-        {
-            "id": "deal_001",
-            "title": "Enterprise Software License - TechCorp",
-            "amount": "$125,000",
-            "stage": "Negotiation",
-            "closeDate": "2024-02-15T00:00:00Z",
-            "contact": "John Smith",
-            "company": "TechCorp Inc.",
-            "probability": 75
-        },
-        {
-            "id": "deal_002",
-            "title": "Consulting Services - StartupXYZ",
-            "amount": "$45,000",
-            "stage": "Proposal",
-            "closeDate": "2024-01-30T00:00:00Z",
-            "contact": "Sarah Johnson",
-            "company": "StartupXYZ",
-            "probability": 60
-        },
-        {
-            "id": "deal_003",
-            "title": "Annual Subscription - MegaCorp",
-            "amount": "$200,000",
-            "stage": "Closed Won",
-            "closeDate": "2024-01-10T00:00:00Z",
-            "contact": "Mike Wilson",
-            "company": "MegaCorp Ltd.",
-            "probability": 100
-        }
-    ]
-    return HttpResponse(json.dumps(mock_deals), content_type="application/json")
-
-
-@api_view(["GET"])
-def get_hubspot_activities(request, **kwargs):
-    """
-    Mock HubSpot activities data for development/demo purposes
-    """
-    mock_activities = [
-        {
-            "id": "activity_001",
-            "title": "Follow-up call scheduled",
-            "type": "Call",
-            "timestamp": "2024-01-15T14:30:00Z",
-            "contact": "John Smith",
-            "details": "Discussed pricing options and implementation timeline. Next call scheduled for Friday."
-        },
-        {
-            "id": "activity_002",
-            "title": "Proposal sent",
-            "type": "Email",
-            "timestamp": "2024-01-14T09:15:00Z",
-            "contact": "Sarah Johnson",
-            "details": "Sent detailed proposal including scope of work and pricing breakdown."
-        },
-        {
-            "id": "activity_003",
-            "title": "Demo completed",
-            "type": "Meeting",
-            "timestamp": "2024-01-12T16:00:00Z",
-            "contact": "Mike Wilson",
-            "details": "Conducted product demo focusing on enterprise features and security capabilities."
-        },
-        {
-            "id": "activity_004",
-            "title": "Contract signed",
-            "type": "Deal",
-            "timestamp": "2024-01-10T11:45:00Z",
-            "contact": "Mike Wilson",
-            "details": "Annual subscription contract signed. Implementation to begin next week."
-        }
-    ]
-    return HttpResponse(json.dumps(mock_activities), content_type="application/json")
-
 
 @api_view(["GET"])
 def get_hubspot_integration_status(request, **kwargs):
@@ -274,3 +194,50 @@ def get_hubspot_integration_status(request, **kwargs):
     data = [hubspot_api_status, hubspot_webhooks_status]
     return HttpResponse(json.dumps(data), content_type="application/json")
 
+@api_view(["GET"])
+def get_mailgun_queue_status(request, **kwargs):
+    URI = f"{MAILGUN_URI}/v3/domains/{MAILGUN_API_NAME}/sending_queues"
+    try:
+        response = requests.get(URI, auth = MAILGUN_AUTH)
+        response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+        return HttpResponse(json.dumps(response.json()), content_type="application/json")
+    except requests.exceptions.RequestException as e:
+        error_message = f"Error fetching mailgun queue status: {e}"
+        print(error_message)
+        return HttpResponseBadRequest(error_message)
+    except Exception as error:
+        error_message = f"An unexpected error occurred in get_mailgun_whitelist: {error}"
+        print(error_message)
+        return HttpResponseBadRequest(error_message)
+
+@api_view(["PUT"])
+def get_mailgun_account_metrics(request, **kwargs):
+    URI = f"{MAILGUN_URI}/v1/analytics/metrics"
+    try:
+        response = requests.get(URI, auth = MAILGUN_AUTH)
+        response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+        return HttpResponse(json.dumps(response.json()), content_type="application/json")
+    except requests.exceptions.RequestException as e:
+        error_message = f"Error fetching mailgun account metrics: {e}"
+        print(error_message)
+        return HttpResponseBadRequest(error_message)
+    except Exception as error:
+        error_message = f"An unexpected error occurred in get_mailgun_account_metrics: {error}"
+        print(error_message)
+        return HttpResponseBadRequest(error_message)
+
+@api_view(["PUT"])
+def get_mailgun_account_usage_metrics(request, **kwargs):
+    URI = f"{MAILGUN_URI}/v1/analytics/usage/metrics"
+    try:
+        response = requests.get(URI, auth = MAILGUN_AUTH)
+        response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+        return HttpResponse(json.dumps(response.json()), content_type="application/json")
+    except requests.exceptions.RequestException as e:
+        error_message = f"Error fetching mailgun account usage metrics: {e}"
+        print(error_message)
+        return HttpResponseBadRequest(error_message)
+    except Exception as error:
+        error_message = f"An unexpected error occurred in get_mailgun_account_usage_metrics: {error}"
+        print(error_message)
+        return HttpResponseBadRequest(error_message)
