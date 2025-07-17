@@ -1,19 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useDeferredValue } from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
-import { Box, Typography, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
-// A simple color palette for the pie chart slices
 const sliceColors = [
   '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
   '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
 ];
 
-/**
- * Processes Sentry events to generate data for the pie chart.
- * @param {Array} events - An array of Sentry event objects with `offsetSeconds`.
- * @param {string} timeRange - The selected time range ('1d', '7d', or '30d').
- * @returns {Array} An array of objects formatted for the MUI Pie Chart.
- */
 function processDataForPieChart(events, timeRange) {
   const maxSeconds = {
     '1d': 86400,
@@ -41,38 +34,21 @@ function processDataForPieChart(events, timeRange) {
   }));
 }
 
-export default function SentryPieChart({ allEvents, timeRange: initialTimeRange }) {
-  const [timeRange, setTimeRange] = useState(initialTimeRange || '7d');
+export default function SentryPieChart({ allEvents, timeRange }) {
+  const deferredTimeRange = useDeferredValue(timeRange);
 
-  const handleTimeRangeChange = (event, newTimeRange) => {
-    if (newTimeRange !== null) {
-      setTimeRange(newTimeRange);
-    }
-  };
-
-  const pieData = useMemo(() => processDataForPieChart(allEvents, timeRange), [allEvents, timeRange]);
-  const totalIssues = pieData.reduce((sum, item) => sum + item.value, 0);
+  const pieData = useMemo(() => processDataForPieChart(allEvents, deferredTimeRange), [allEvents, deferredTimeRange]);
+  const totalIssues = useMemo(() => pieData.reduce((sum, item) => sum + item.value, 0), [pieData]);
   const hasData = pieData.length > 0;
 
   return (
-    <Box>
+    <Box style={{ opacity: timeRange !== deferredTimeRange ? 0.6 : 1 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
         <Typography variant="h6" component="div">
           Issues by Type
         </Typography>
-        <ToggleButtonGroup
-          value={timeRange}
-          exclusive
-          onChange={handleTimeRangeChange}
-          aria-label="Time range"
-          size="small"
-        >
-          <ToggleButton value="1d" aria-label="1 day">24 hr</ToggleButton>
-          <ToggleButton value="7d" aria-label="7 days">1 wk</ToggleButton>
-          <ToggleButton value="30d" aria-label="30 days">1 mo</ToggleButton>
-        </ToggleButtonGroup>
       </Box>
-      <Box className="pie-chart-container">
+      <Box sx={{ position: 'relative', height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {hasData ? (
           <PieChart
             series={[{
@@ -80,9 +56,19 @@ export default function SentryPieChart({ allEvents, timeRange: initialTimeRange 
               highlightScope: { faded: 'global', highlighted: 'item' },
               faded: { innerRadius: 30, additionalRadius: -30, color: 'gray' },
               arcLabel: (item) => `${item.value}`,
-              innerRadius: 60, // Make space for the total in the center
+              innerRadius: 60,
             }]}
             height={250}
+            slotProps={{
+              legend: {
+                direction: 'row',
+                position: { vertical: 'bottom', horizontal: 'middle' },
+                padding: 0,
+                labelStyle: {
+                  fontSize: 12,
+                }
+              },
+            }}
           />
         ) : (
           <PieChart
@@ -95,9 +81,10 @@ export default function SentryPieChart({ allEvents, timeRange: initialTimeRange 
             position: 'absolute',
             top: '50%',
             left: '50%',
-            transform: 'translate(calc(-50% - 61px), -50%)',
+            transform: 'translate(-50%, -50%)',
             textAlign: 'center',
             pointerEvents: 'none',
+            mt: -2.5
           }}
         >
           {hasData ? (
@@ -117,3 +104,5 @@ export default function SentryPieChart({ allEvents, timeRange: initialTimeRange 
     </Box>
   );
 }
+
+

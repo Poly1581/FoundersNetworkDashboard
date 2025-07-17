@@ -1,47 +1,40 @@
 import React from 'react';
-import { List, ListItem, ListItemIcon, ListItemText, Chip, Typography, Box } from '@mui/material';
-import { CheckCircle, Warning, Error } from '@mui/icons-material';
+import { Card, CardContent, Typography, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Chip } from '@mui/material';
 
-const statusIcons = {
-  Healthy: <CheckCircle color="success" />,
-  Degraded: <Warning color="warning" />,
-  Down: <Error color="error" />,
-};
+const IntegrationStatusList = React.memo(({ integrations }) => {
+    return (
+        <Card>
+            <CardContent>
+                <Typography variant="h6" gutterBottom>Integration Status</Typography>
+                <TableContainer>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Service</TableCell>
+                                <TableCell>Status</TableCell>
+                                <TableCell>Last Success</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {integrations.map((integration, index) => (
+                                <TableRow key={index}>
+                                    <TableCell>{integration.name}</TableCell>
+                                    <TableCell>
+                                        <Chip
+                                            label={integration.status}
+                                            color={integration.status === 'Healthy' ? 'success' : integration.status === 'Degraded' ? 'warning' : 'error'}
+                                            size="small"
+                                        />
+                                    </TableCell>
+                                    <TableCell>{integration.lastSuccess}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </CardContent>
+        </Card>
+    );
+});
 
-const statusColors = {
-  Healthy: 'success',
-  Degraded: 'warning',
-  Down: 'error',
-};
-
-export default function IntegrationStatusList({ integrations }) {
-  if (!integrations || integrations.length === 0) {
-    return <Typography>No integration data available.</Typography>;
-  }
-
-  return (
-    <Box>
-      <Typography variant="h6" component="div" sx={{ textAlign: 'center', mb: 1 }}>
-        Integration Status
-      </Typography>
-      <List dense>
-        {integrations.map((integration, index) => (
-          <ListItem key={index} divider>
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              {statusIcons[integration.status] || <Error color="disabled" />}
-            </ListItemIcon>
-            <ListItemText
-              primary={integration.name}
-              secondary={integration.category}
-            />
-            <Chip
-              label={integration.status}
-              color={statusColors[integration.status] || 'default'}
-              size="small"
-            />
-          </ListItem>
-        ))}
-      </List>
-    </Box>
-  );
-}
+export default IntegrationStatusList;

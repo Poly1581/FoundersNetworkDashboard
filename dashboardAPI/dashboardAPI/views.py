@@ -3,6 +3,7 @@ import requests
 from django.http import HttpResponse, HttpResponseBadRequest
 from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import cache_page
 from datetime import datetime
 
 # Environment variables
@@ -21,6 +22,7 @@ HEADERS = {
 }
 
 @api_view(["GET"])
+@cache_page(60 * 5)
 def get_issue_events(request, **kwargs):
     URI = f"{SENTRY_URI}/organizations/{SENTRY_ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/events/"
     try:
@@ -50,15 +52,32 @@ def update_issue_status(request, **kwargs):
         return HttpResponseBadRequest(f"An unexpected error occurred: {error}")
 
 @api_view(["GET"])
+@cache_page(60 * 5)
 def get_issues(request, **kwargs):
     URI = f"{SENTRY_URI}/projects/{SENTRY_ORGANIZATION_SLUG}/{SENTRY_PROJECT_ID}/issues/"
     print(f"Attempting to fetch issues from Sentry URI: {URI}")
     try:
         response = requests.get(URI, headers = HEADERS)
         print(f"Sentry API response status for issues: {response.status_code}")
-        print(f"Sentry API response content for issues: {response.text[:500]}...") # Log first 500 chars
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
-        return HttpResponse(json.dumps(response.json()), content_type="application/json")
+        issues = response.json()
+        # Trim the payload to only include fields used by the frontend
+        trimmed_issues = [
+            {
+                "id": issue.get("id"),
+                "title": issue.get("title"),
+                "shortId": issue.get("shortId"),
+                "culprit": issue.get("culprit"),
+                "permalink": issue.get("permalink"),
+                "level": issue.get("level"),
+                "status": issue.get("status"),
+                "type": issue.get("type"),
+                "metadata": issue.get("metadata"),
+                "lastSeen": issue.get("lastSeen"),
+            }
+            for issue in issues
+        ]
+        return HttpResponse(json.dumps(trimmed_issues), content_type="application/json")
     except requests.exceptions.RequestException as e:
         print(f"Error fetching issues from Sentry: {e}")
         return HttpResponseBadRequest(f"Error fetching issues: {e}")
@@ -67,6 +86,7 @@ def get_issues(request, **kwargs):
         return HttpResponseBadRequest(f"An unexpected error occurred: {error}")
 
 @api_view(["GET"])
+@cache_page(60 * 5)
 def get_events(request, **kwargs):
     URI = f"{SENTRY_URI}/projects/{SENTRY_ORGANIZATION_SLUG}/{SENTRY_PROJECT_ID}/events/"
     try:
@@ -82,6 +102,7 @@ def get_events(request, **kwargs):
 
 
 @api_view(["GET"])
+@cache_page(60 * 5)
 def get_sentry_integration_status(request, **kwargs):
     start_time = datetime.now()
     try:
@@ -133,144 +154,29 @@ def get_sentry_integration_status(request, **kwargs):
     data = [sentry_api_status, sentry_webhooks_status]
     return HttpResponse(json.dumps(data), content_type="application/json")
 
-
-# HubSpot API endpoints (placeholder implementations with mock data)
 @api_view(["GET"])
-def get_hubspot_deals(request, **kwargs):
-    """
-    Mock HubSpot deals data for development/demo purposes
-    """
-    mock_deals = [
-        {
-            "id": "deal_001",
-            "title": "Enterprise Software License - TechCorp",
-            "amount": "$125,000",
-            "stage": "Negotiation",
-            "closeDate": "2024-02-15T00:00:00Z",
-            "contact": "John Smith",
-            "company": "TechCorp Inc.",
-            "probability": 75
-        },
-        {
-            "id": "deal_002",
-            "title": "Consulting Services - StartupXYZ",
-            "amount": "$45,000",
-            "stage": "Proposal",
-            "closeDate": "2024-01-30T00:00:00Z",
-            "contact": "Sarah Johnson",
-            "company": "StartupXYZ",
-            "probability": 60
-        },
-        {
-            "id": "deal_003",
-            "title": "Annual Subscription - MegaCorp",
-            "amount": "$200,000",
-            "stage": "Closed Won",
-            "closeDate": "2024-01-10T00:00:00Z",
-            "contact": "Mike Wilson",
-            "company": "MegaCorp Ltd.",
-            "probability": 100
-        }
-    ]
-    return HttpResponse(json.dumps(mock_deals), content_type="application/json")
-
-
-@api_view(["GET"])
-def get_hubspot_activities(request, **kwargs):
-    """
-    Mock HubSpot activities data for development/demo purposes
-    """
-    mock_activities = [
-        {
-            "id": "activity_001",
-            "title": "Follow-up call scheduled",
-            "type": "Call",
-            "timestamp": "2024-01-15T14:30:00Z",
-            "contact": "John Smith",
-            "details": "Discussed pricing options and implementation timeline. Next call scheduled for Friday."
-        },
-        {
-            "id": "activity_002",
-            "title": "Proposal sent",
-            "type": "Email",
-            "timestamp": "2024-01-14T09:15:00Z",
-            "contact": "Sarah Johnson",
-            "details": "Sent detailed proposal including scope of work and pricing breakdown."
-        },
-        {
-            "id": "activity_003",
-            "title": "Demo completed",
-            "type": "Meeting",
-            "timestamp": "2024-01-12T16:00:00Z",
-            "contact": "Mike Wilson",
-            "details": "Conducted product demo focusing on enterprise features and security capabilities."
-        },
-        {
-            "id": "activity_004",
-            "title": "Contract signed",
-            "type": "Deal",
-            "timestamp": "2024-01-10T11:45:00Z",
-            "contact": "Mike Wilson",
-            "details": "Annual subscription contract signed. Implementation to begin next week."
-        }
-    ]
-    return HttpResponse(json.dumps(mock_activities), content_type="application/json")
-
-
-@api_view(["GET"])
-def get_hubspot_integration_status(request, **kwargs):
-    """
-    Mock HubSpot integration status for development/demo purposes
-    """
-    start_time = datetime.now()
-    try:
-        # Simulate a health check (using a reliable endpoint for demo)
-        response = requests.get("https://httpbin.org/status/200", timeout=5)
-        end_time = datetime.now()
-        response_time = (end_time - start_time).total_seconds() * 1000
-        
-        if response.status_code == 200:
-            hubspot_api_status = {
-                "name": "HubSpot API",
-                "category": "CRM",
-                "status": "Healthy",
-                "responseTime": f"{response_time:.2f}ms",
-                "lastSuccess": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "uptime": "99.9%",
-                "issue": None
-            }
-        else:
-            hubspot_api_status = {
-                "name": "HubSpot API",
-                "category": "CRM",
-                "status": "Degraded",
-                "responseTime": f"{response_time:.2f}ms",
-                "lastSuccess": None,
-                "uptime": "95%",
-                "issue": f"API returned status code {response.status_code}"
-            }
-    except Exception as e:
-        hubspot_api_status = {
-            "name": "HubSpot API",
-            "category": "CRM",
-            "status": "Down",
-            "responseTime": "N/A",
-            "lastSuccess": None,
-            "uptime": "0%",
-            "issue": str(e)
-        }
-
-    # HubSpot Webhooks status
-    hubspot_webhooks_status = {
-        "name": "HubSpot Webhooks",
-        "category": "Notifications",
-        "status": "Healthy",
-        "responseTime": "N/A",
-        "lastSuccess": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "uptime": "100%",
-        "issue": None
+@cache_page(60 * 5)
+def get_sentry_endpoint_stats(request):
+    project_id = SENTRY_PROJECT_ID
+    time_range = request.GET.get("timeRange", "7d")
+    sentry_url = f"https://sentry.io/api/0/organizations/{SENTRY_ORGANIZATION_SLUG}/stats_v2/"
+    params = {
+        'statsPeriod': time_range,
+        'project': project_id,
+        'yAxis': 'sum(quantity)',
+        'groupBy': 'transaction',
+        'dataset': 'errors'
     }
+    try:
+        response = requests.get(sentry_url, headers=HEADERS, params=params)
+        response.raise_for_status()
+        return HttpResponse(json.dumps(response.json()), content_type="application/json")
+    except requests.exceptions.RequestException as e:
+        return HttpResponseBadRequest(f"Error fetching endpoint stats: {e}")
+    except Exception as error:
+        return HttpResponseBadRequest(f"An unexpected error occurred: {error}")
 
-    data = [hubspot_api_status, hubspot_webhooks_status]
-    return HttpResponse(json.dumps(data), content_type="application/json")
+
+
+
 

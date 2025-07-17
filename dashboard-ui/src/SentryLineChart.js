@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useDeferredValue } from 'react';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { Box, Typography } from '@mui/material';
 
@@ -101,21 +101,22 @@ function processDataForChart(events, timeRange = '7d') {
   return { chartData: data, series: allSeries };
 }
 
-export default function SentryLineChart({ allEvents, timeRange }) {
-  const { chartData, series } = useMemo(() => processDataForChart(allEvents, timeRange), [allEvents, timeRange]);
+const SentryLineChart = React.memo(({ allEvents, timeRange }) => {
+  const deferredTimeRange = useDeferredValue(timeRange);
+  const { chartData, series } = useMemo(() => processDataForChart(allEvents, deferredTimeRange), [allEvents, deferredTimeRange]);
 
   if (!allEvents || allEvents.length === 0) {
     return <Typography>No event data available for the selected time range.</Typography>;
   }
 
   const xAxisFormatter = (value) => {
-    if (value === 0) return timeRange === '1d' ? 'Now' : 'Today';
-    const seconds = Math.abs(value) * (timeRange === '1d' ? 3600 : 86400);
+    if (value === 0) return deferredTimeRange === '1d' ? 'Now' : 'Today';
+    const seconds = Math.abs(value) * (deferredTimeRange === '1d' ? 3600 : 86400);
     return formatTimeAgo(seconds);
   };
 
   return (
-    <Box className="line-chart-container">
+    <Box sx={{ width: '100%', height: 300, opacity: timeRange !== deferredTimeRange ? 0.6 : 1 }}>
       <LineChart
         xAxis={[{
           data: chartData.x,
@@ -130,7 +131,21 @@ export default function SentryLineChart({ allEvents, timeRange }) {
           curve: "monotoneX",
         }))}
         yAxis={[{ label: 'Event Count' }]}
+        slotProps={{
+          legend: {
+            labelStyle: {
+              fontWeight: 500,
+              fontSize: 12,
+            },
+            itemMarkWidth: 10,
+            itemMarkHeight: 10,
+            markGap: 5,
+            itemGap: 10,
+          },
+        }}
       />
     </Box>
   );
-}
+});
+
+export default SentryLineChart;
