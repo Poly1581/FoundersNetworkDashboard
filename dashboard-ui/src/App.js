@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import './App.css';
-import dataManager from './dataManager';
-import { useDataManager, useDataActions } from './useDataManager';
+import { useSentryData, useHubSpotData, useRefreshAllData, useRefreshSection, useUpdateIssueStatus } from './hooks/useDataQueries';
 import {
     Container,
     Typography,
@@ -18,8 +17,6 @@ import {
     TableRow,
     TableCell,
     TableBody,
-    TableContainer,
-    Paper,
     IconButton,
     Collapse,
     TextField,
@@ -27,7 +24,6 @@ import {
     Drawer,
     ListItemButton,
     ListItemIcon,
-    Divider,
     Tooltip,
     Menu
 } from '@mui/material';
@@ -52,8 +48,6 @@ import {
     Link
 } from '@mui/material';
 
-
-// Backend API functions are now handled by dataManager.js
 
 // --- Text Variables ---
 const textContent = {
@@ -237,8 +231,9 @@ function CollapsibleSection({ title, children, defaultOpen = true, isOpen, onTog
 
 // --- Sentry Section ---
 function SentrySection({ isOpen, onToggle }) {
-    const { sentry } = useDataManager();
-    const { updateIssueStatus } = useDataActions();
+    const { data: sentry, isLoading, error } = useSentryData();
+    const refreshSection = useRefreshSection();
+    const updateIssueStatusMutation = useUpdateIssueStatus();
 
     const [filter, setFilter] = useState({
         status: '',
@@ -251,10 +246,10 @@ function SentrySection({ isOpen, onToggle }) {
     const [expandedAlertDetails, setExpandedAlertDetails] = useState([]);
     const [expandedIntegrations, setExpandedIntegrations] = useState([]);
 
-    // Notify parent when data changes - handled by parent's data manager subscription
-    // No useEffect needed since parent already subscribes to data changes
+    // Provide default values if sentry data is not yet available
+    const sentryData = sentry || { issues: [], resolvedIssues: [], allEventsData: {}, integrations: [], alerts: [] };
 
-    const filteredAlerts = sentry.alerts?.filter(alert => {
+    const filteredAlerts = sentryData.alerts?.filter(alert => {
         const originalIssue = alert.originalIssue;
 
         if (filter.status && originalIssue.status !== filter.status) {
@@ -297,13 +292,16 @@ function SentrySection({ isOpen, onToggle }) {
         return true;
     }) || [];
 
-    const handleResolveIssue = async (issueId) => {
-        try {
-            await updateIssueStatus(issueId, 'resolved');
-        } catch (err) {
-            console.error("Failed to resolve issue:", err);
-            alert(`Failed to resolve issue: ${err.message}`);
-        }
+    const handleResolveIssue = (issueId) => {
+        updateIssueStatusMutation.mutate(
+            { issueId, status: 'resolved' },
+            {
+                onError: (err) => {
+                    console.error("Failed to resolve issue:", err);
+                    alert(`Failed to resolve issue: ${err.message}`);
+                }
+            }
+        );
     };
 
     const handleViewDetails = (issueId) => {
@@ -334,24 +332,25 @@ function SentrySection({ isOpen, onToggle }) {
         setExpandedIntegrations(newExpandedIntegrations);
     };
 
-    if (sentry.loading) {
+    if (isLoading) {
         return <CollapsibleSection title={textContent.sentry.title}><Typography>Loading Sentry Data...</Typography></CollapsibleSection>;
     }
 
-    if (sentry.error) {
-        return <CollapsibleSection title={textContent.sentry.title}><Typography color="error">Error fetching Sentry data: {sentry.error}</Typography></CollapsibleSection>;
+    if (error) {
+        return <CollapsibleSection title={textContent.sentry.title}><Typography color="error">Error fetching Sentry data: {error.message}</Typography></CollapsibleSection>;
     }
+
 
     return (
         <CollapsibleSection
             title={textContent.sentry.title}
             isOpen={isOpen}
             onToggle={onToggle}
-            onRefresh={() => dataManager.refreshSection('sentry')}
+            onRefresh={() => refreshSection('sentry')}
         >
-            <IntegrationDetailsSection integrations={sentry.integrations} textContent={textContent.sentry.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
-            <ActiveIssuesSection issues={sentry.issues} onViewDetails={handleViewDetails} onResolveIssue={handleResolveIssue} allEventsData={sentry.allEventsData} expandedRows={expandedRows} setExpandedRows={setExpandedRows} textContent={textContent.sentry.activeIssues} />
-            <InactiveIssuesSection issues={sentry.resolvedIssues} onViewDetails={handleViewInactiveDetails} allEventsData={sentry.allEventsData} expandedRows={expandedInactiveRows} setExpandedRows={setExpandedInactiveRows} />
+            <IntegrationDetailsSection integrations={sentryData.integrations} textContent={textContent.sentry.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
+            <ActiveIssuesSection issues={sentryData.issues} onViewDetails={handleViewDetails} onResolveIssue={handleResolveIssue} allEventsData={sentryData.allEventsData} expandedRows={expandedRows} setExpandedRows={setExpandedRows} textContent={textContent.sentry.activeIssues} />
+            <InactiveIssuesSection issues={sentryData.resolvedIssues} onViewDetails={handleViewInactiveDetails} allEventsData={sentryData.allEventsData} expandedRows={expandedInactiveRows} setExpandedRows={setExpandedInactiveRows} />
             <RecentAlertsSection alerts={filteredAlerts} showFilter={showFilter} toggleFilter={() => setShowFilter(prev => !prev)} filter={filter} onFilterChange={setFilter} expandedAlertDetails={expandedAlertDetails} onViewAlertDetails={handleViewAlertDetails} setExpandedAlertDetails={setExpandedAlertDetails} textContent={textContent.sentry.recentAlerts} />
         </CollapsibleSection>
     );
@@ -359,13 +358,14 @@ function SentrySection({ isOpen, onToggle }) {
 
 // --- HubSpot Section ---
 function HubSpotSection({ isOpen, onToggle }) {
-    const { hubspot } = useDataManager();
+    const { data: hubspot, isLoading, error } = useHubSpotData();
+    const refreshSection = useRefreshSection();
     const [expandedDeals, setExpandedDeals] = useState([]);
     const [expandedActivities, setExpandedActivities] = useState([]);
     const [expandedIntegrations, setExpandedIntegrations] = useState([]);
 
-    // Notify parent when data changes - handled by parent's data manager subscription
-    // No useEffect needed since parent already subscribes to data changes
+    // Provide default values if hubspot data is not yet available
+    const hubspotData = hubspot || { deals: [], integrations: [], activities: [] };
 
     const handleViewDealDetails = (dealId) => {
         const newExpandedDeals = expandedDeals.includes(dealId)
@@ -388,12 +388,12 @@ function HubSpotSection({ isOpen, onToggle }) {
         setExpandedIntegrations(newExpandedIntegrations);
     };
 
-    if (hubspot.loading) {
+    if (isLoading) {
         return <CollapsibleSection title={textContent.hubspot.title}><Typography>Loading HubSpot Data...</Typography></CollapsibleSection>;
     }
 
-    if (hubspot.error) {
-        return <CollapsibleSection title={textContent.hubspot.title}><Typography color="error">Error fetching HubSpot data: {hubspot.error}</Typography></CollapsibleSection>;
+    if (error) {
+        return <CollapsibleSection title={textContent.hubspot.title}><Typography color="error">Error fetching HubSpot data: {error.message}</Typography></CollapsibleSection>;
     }
 
     return (
@@ -401,16 +401,17 @@ function HubSpotSection({ isOpen, onToggle }) {
             title={textContent.hubspot.title}
             isOpen={isOpen}
             onToggle={onToggle}
-            onRefresh={() => dataManager.refreshSection('hubspot')}
+            onRefresh={() => refreshSection('hubspot')}
         >
-            <IntegrationDetailsSection integrations={hubspot.integrations} textContent={textContent.hubspot.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
-            <ActiveDealsSection deals={hubspot.deals} onViewDetails={handleViewDealDetails} expandedDeals={expandedDeals} textContent={textContent.hubspot.activeDeals} />
-            <RecentActivitiesSection activities={hubspot.activities} onViewDetails={handleViewActivityDetails} expandedActivities={expandedActivities} textContent={textContent.hubspot.recentActivities} />
+            <IntegrationDetailsSection integrations={hubspotData.integrations} textContent={textContent.hubspot.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
+            <ActiveDealsSection deals={hubspotData.deals} onViewDetails={handleViewDealDetails} expandedDeals={expandedDeals} textContent={textContent.hubspot.activeDeals} />
+            <RecentActivitiesSection activities={hubspotData.activities} onViewDetails={handleViewActivityDetails} expandedActivities={expandedActivities} textContent={textContent.hubspot.recentActivities} />
         </CollapsibleSection>
     );
 }
 
 function ActiveDealsSection({ deals, onViewDetails, expandedDeals, textContent }) {
+    const refreshSection = useRefreshSection();
     const getRowColorForDeal = (stage) => {
         switch (stage) {
             case 'Closed Won':
@@ -427,7 +428,7 @@ function ActiveDealsSection({ deals, onViewDetails, expandedDeals, textContent }
     return (
         <CollapsibleSection
             title={textContent.heading}
-            onRefresh={() => dataManager.refreshSection('hubspot')}
+            onRefresh={() => refreshSection('hubspot')}
         >
             <Table>
                 <TableHead>
@@ -1471,32 +1472,16 @@ function LiveData({ onRefresh, onExpandAll, sentryOpen, hubspotOpen, onSentryTog
 
 // --- MAIN APP COMPONENT ---
 export default function App() {
-    const [allExpanded, setAllExpanded] = useState(false);
     const [sentryOpen, setSentryOpen] = useState(true);
     const [hubspotOpen, setHubspotOpen] = useState(true);
-    const [lastFetchTime, setLastFetchTime] = useState(null);
+    const [lastFetchTime, setLastFetchTime] = useState(new Date());
     const [activePage, setActivePage] = useState(() => {
         // Get the saved page from localStorage, default to 'overview' if not found
         return localStorage.getItem('activePage') || 'overview';
     });
 
-    // Load all data at startup and subscribe to data changes
-    useEffect(() => {
-        // Load initial data
-        dataManager.loadAllData().then(() => {
-            setLastFetchTime(new Date());
-        }).catch(error => {
-            console.error('Failed to load initial data:', error);
-        });
-
-        // Subscribe to data changes to update lastFetchTime
-        const unsubscribe = dataManager.subscribe(() => {
-            setLastFetchTime(new Date());
-        });
-
-        // Cleanup subscription on unmount
-        return unsubscribe;
-    }, []);
+    // Get refresh functions from React Query hooks
+    const refreshAllData = useRefreshAllData();
 
     // Integration systems state
     const [integrationSystems] = useState([
@@ -1516,13 +1501,9 @@ export default function App() {
     const integrationStatus = calculateIntegrationStatus(integrationSystems);
 
 
-    const handleRefreshAll = async () => {
-        try {
-            await dataManager.loadAllData();
-            setLastFetchTime(new Date());
-        } catch (error) {
-            console.error('Failed to refresh data:', error);
-        }
+    const handleRefreshAll = () => {
+        refreshAllData();
+        setLastFetchTime(new Date());
     };
 
     const handleExpandAll = () => {
