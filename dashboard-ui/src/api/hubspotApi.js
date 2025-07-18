@@ -26,15 +26,6 @@ const handleError = (error, context) => {
 };
 
 // HubSpot API functions
-export const fetchHubSpotDeals = async () => {
-    try {
-        const response = await apiClient.get('/api/hubspot/deals/');
-        return response.data;
-    } catch (error) {
-        throw new Error(handleError(error, 'fetchHubSpotDeals'));
-    }
-};
-
 export const fetchHubSpotIntegrations = async () => {
     try {
         const response = await apiClient.get('/api/hubspot/integration-status/');
@@ -44,28 +35,15 @@ export const fetchHubSpotIntegrations = async () => {
     }
 };
 
-export const fetchHubSpotActivities = async () => {
-    try {
-        const response = await apiClient.get('/api/hubspot/activities/');
-        return response.data;
-    } catch (error) {
-        throw new Error(handleError(error, 'fetchHubSpotActivities'));
-    }
-};
-
 // Fetch all HubSpot data at once
 export const fetchAllHubSpotData = async () => {
     try {
-        const [deals, integrations, activities] = await Promise.all([
-            fetchHubSpotDeals(),
-            fetchHubSpotIntegrations(),
-            fetchHubSpotActivities()
-        ]);
+        const integrations = await fetchHubSpotIntegrations();
 
         return {
-            deals: deals || [],
+            deals: [], // Mock empty deals data
             integrations: integrations || [],
-            activities: activities || [],
+            activities: [], // Mock empty activities data
             loading: false,
             error: null
         };

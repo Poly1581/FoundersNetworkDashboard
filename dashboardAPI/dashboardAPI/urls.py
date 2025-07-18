@@ -34,7 +34,5 @@ urlpatterns = [
     path("api/sentry/integration-status/", views.get_sentry_integration_status, name="get sentry integration status"),
     path("api/sentry/alerts/", views.get_sentry_alerts, name="get sentry alerts"),
     # HubSpot API endpoints (placeholder implementations)
-    path("api/hubspot/deals/", views.get_hubspot_deals, name="get hubspot deals"),
-    path("api/hubspot/activities/", views.get_hubspot_activities, name="get hubspot activities"),
     path("api/hubspot/integration-status/", views.get_hubspot_integration_status, name="get hubspot integration status"),
 ]
