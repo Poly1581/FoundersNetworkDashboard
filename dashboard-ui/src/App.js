@@ -86,10 +86,10 @@ const textContent = {
     },
     hubspot: {
         title: 'HubSpot',
-        activeDeals: {
-            heading: 'Active Deals',
-            viewDeal: 'View Deal',
-        },
+        // activeDeals: {
+        //     heading: 'Active Deals',
+        //     viewDeal: 'View Deal',
+        // },
         integrationDetails: {
             heading: 'Integrations',
             columns: {
@@ -103,12 +103,12 @@ const textContent = {
             },
             viewDetails: 'View Details'
         },
-        recentActivities: {
-            heading: 'Recent Activities',
-            filter: 'Filter',
-            viewAll: 'View All',
-            details: 'Details'
-        },
+        // recentActivities: {
+        //     heading: 'Recent Activities',
+        //     filter: 'Filter',
+        //     viewAll: 'View All',
+        //     details: 'Details'
+        // },
     },
     quickLinksFooter: {
         statusPage: 'https://statuspage.io',
@@ -397,129 +397,13 @@ function HubSpotSection({ isOpen, onToggle }) {
     }
 
     return (
-        <CollapsibleSection
-            title={textContent.hubspot.title}
-            isOpen={isOpen}
-            onToggle={onToggle}
-            onRefresh={() => refreshSection('hubspot')}
-        >
-            <IntegrationDetailsSection integrations={hubspotData.integrations} textContent={textContent.hubspot.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
-            <ActiveDealsSection deals={hubspotData.deals} onViewDetails={handleViewDealDetails} expandedDeals={expandedDeals} textContent={textContent.hubspot.activeDeals} />
-            <RecentActivitiesSection activities={hubspotData.activities} onViewDetails={handleViewActivityDetails} expandedActivities={expandedActivities} textContent={textContent.hubspot.recentActivities} />
+        <CollapsibleSection title={textContent.hubspot.title} isOpen={isOpen} onToggle={onToggle}>
+            <IntegrationDetailsSection integrations={hubspotIntegrations} textContent={textContent.hubspot.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
+            {/* <ActiveDealsSection deals={deals} onViewDetails={handleViewDealDetails} expandedDeals={expandedDeals} textContent={textContent.hubspot.activeDeals} /> */}
+            {/* <RecentActivitiesSection activities={activities} onViewDetails={handleViewActivityDetails} expandedActivities={expandedActivities} textContent={textContent.hubspot.recentActivities} /> */}
         </CollapsibleSection>
     );
 }
-
-function ActiveDealsSection({ deals, onViewDetails, expandedDeals, textContent }) {
-    const refreshSection = useRefreshSection();
-    const getRowColorForDeal = (stage) => {
-        switch (stage) {
-            case 'Closed Won':
-                return '#e8f5e8'; // light green
-            case 'Negotiation':
-                return '#fff3e0'; // light orange
-            case 'Proposal':
-                return '#e3f2fd'; // light blue
-            default:
-                return 'inherit';
-        }
-    };
-
-    return (
-        <CollapsibleSection
-            title={textContent.heading}
-            onRefresh={() => refreshSection('hubspot')}
-        >
-            <Table>
-                <TableHead>
-                    <TableRow>
-                        <TableCell>Deal</TableCell>
-                        <TableCell>Amount</TableCell>
-                        <TableCell>Stage</TableCell>
-                        <TableCell>Close Date</TableCell>
-                        <TableCell align="right">Actions</TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {deals.map(deal => (
-                        <React.Fragment key={deal.id}>
-                            <TableRow sx={{ backgroundColor: getRowColorForDeal(deal.stage) }}>
-                                <TableCell>{deal.title}</TableCell>
-                                <TableCell>{deal.amount}</TableCell>
-                                <TableCell>
-                                    <Chip
-                                        label={deal.stage}
-                                        size="small"
-                                        color={deal.stage === 'Closed Won' ? 'success' : deal.stage === 'Negotiation' ? 'warning' : 'primary'}
-                                    />
-                                </TableCell>
-                                <TableCell>{new Date(deal.closeDate).toLocaleDateString()}</TableCell>
-                                <TableCell align="right">
-                                    <Button size="small" startIcon={<InfoIcon />} onClick={() => onViewDetails(deal.id)}>
-                                        {textContent.viewDeal}
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
-                                    <Collapse in={expandedDeals.includes(deal.id)} timeout="auto" unmountOnExit>
-                                        <Box sx={{ margin: 1, p: 2, backgroundColor: '#f5f5f5' }}>
-                                            <Typography variant="h6" gutterBottom component="div">
-                                                Deal Details
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ mb: 1 }}>
-                                                <strong>Contact:</strong> {deal.contact}
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ mb: 1 }}>
-                                                <strong>Company:</strong> {deal.company}
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ mb: 1 }}>
-                                                <strong>Probability:</strong> {deal.probability}%
-                                            </Typography>
-                                        </Box>
-                                    </Collapse>
-                                </TableCell>
-                            </TableRow>
-                        </React.Fragment>
-                    ))}
-                </TableBody>
-            </Table>
-        </CollapsibleSection>
-    );
-}
-
-function RecentActivitiesSection({ activities, onViewDetails, expandedActivities, textContent }) {
-    return (
-        <CollapsibleSection title={textContent.heading}>
-            <List>
-                {activities.map((activity, index) => (
-                    <React.Fragment key={activity.id}>
-                        <ListItem
-                            secondaryAction={
-                                <Button size="small" onClick={() => onViewDetails(index)}>
-                                    {textContent.details}
-                                </Button>
-                            }
-                        >
-                            <ListItemText
-                                primary={activity.title}
-                                secondary={`${activity.type} • ${new Date(activity.timestamp).toLocaleString()} • ${activity.contact}`}
-                            />
-                        </ListItem>
-                        <Collapse in={expandedActivities.includes(index)} timeout="auto" unmountOnExit>
-                            <Box sx={{ margin: 1, ml: 7 }}>
-                                <Typography variant="body2" color="text.secondary">
-                                    {activity.details}
-                                </Typography>
-                            </Box>
-                        </Collapse>
-                    </React.Fragment>
-                ))}
-            </List>
-        </CollapsibleSection>
-    );
-}
-
 
 function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails, expandedIntegrations }) {
     if (!integrations) return null;
