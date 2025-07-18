@@ -17,21 +17,23 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from . import views
+from . import sentry_views as sentry
+from . import integration_views as integration
+from . import mailgun_views as mailgun
 
 urlpatterns = [
     # Sentry API endpoints
-    path("api/sentry/issues/<int:issue_id>/events/", views.get_issue_events, name="get issue events"),
-    path("api/sentry/issues/<int:issue_id>/", views.update_issue_status, name="update issue status"),
-    path("api/sentry/issues/", views.get_issues, name="get issues"),
-    path("api/sentry/events/", views.get_events, name="get events"),
-    path("api/sentry/integration-status/", views.get_sentry_integration_status, name="get sentry integration status"),
+    path("api/sentry/issues/<int:issue_id>/events/", sentry.get_issue_events, name="get issue events"),
+    path("api/sentry/issues/<int:issue_id>/", sentry.update_issue_status, name="update issue status"),
+    path("api/sentry/issues/", sentry.get_issues, name="get issues"),
+    path("api/sentry/events/", sentry.get_events, name="get events"),
 
-    # HubSpot API endpoints (placeholder implementations)
-    path("api/hubspot/integration-status/", views.get_hubspot_integration_status, name="get hubspot integration status"),
+    # Integration API endpoints
+    path("api/sentry/integration-status/", integration.get_sentry_integration_status, name="get sentry integration status"),
+    path("api/hubspot/integration-status/", integration.get_hubspot_integration_status, name="get hubspot integration status"),
 
     # Mailgun API endpoints
-    path("api/mailgun/queue-status/", views.get_mailgun_queue_status, name="get mailgun whitelist"),
-    path("api/mailgun/account-metrics/", views.get_mailgun_account_metrics, name="get mailgun account metrics"),
-    path("api/mailgun/account-usage-metrics/", views.get_mailgun_account_usage_metrics, name="get"),
+    path("api/mailgun/queue-status/", mailgun.get_mailgun_queue_status, name="get mailgun whitelist"),
+    path("api/mailgun/account-metrics/", mailgun.get_mailgun_account_metrics, name="get mailgun account metrics"),
+    path("api/mailgun/account-usage-metrics/", mailgun.get_mailgun_account_usage_metrics, name="get"),
 ]
