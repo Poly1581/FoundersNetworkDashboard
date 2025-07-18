@@ -30,7 +30,7 @@ def get_mailgun_queue_status(request, **kwargs):
 def get_mailgun_account_metrics(request, **kwargs):
     URI = f"{BASE_URI}/v1/analytics/metrics"
     try:
-        response = requests.get(URI, auth = AUTH)
+        response = requests.post(URI, auth = AUTH)
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
         return HttpResponse(json.dumps(response.json()), content_type="application/json")
     except requests.exceptions.RequestException as e:
@@ -46,7 +46,7 @@ def get_mailgun_account_metrics(request, **kwargs):
 def get_mailgun_account_usage_metrics(request, **kwargs):
     URI = f"{BASE_URI}/v1/analytics/usage/metrics"
     try:
-        response = requests.get(URI, auth = AUTH)
+        response = requests.post(URI, auth = AUTH)
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
         return HttpResponse(json.dumps(response.json()), content_type="application/json")
     except requests.exceptions.RequestException as e:
