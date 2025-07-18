@@ -45,8 +45,12 @@ export const fetchSentryIntegrations = async () => {
 };
 
 export const fetchSentryAlerts = async () => {
-    // Return empty array since alerts endpoint doesn't exist yet
-    return [];
+    try {
+        const response = await apiClient.get('/api/sentry/alerts/');
+        return response.data;
+    } catch (error) {
+        throw new Error(handleError(error, 'fetchSentryAlerts'));
+    }
 };
 
 export const updateIssueStatus = async (issueId, status) => {
@@ -67,10 +71,14 @@ export const fetchAllSentryData = async () => {
             fetchSentryAlerts()
         ]);
 
+        // Filter issues by status
+        const activeIssues = Array.isArray(issues) ? issues.filter(issue => issue.status === 'unresolved') : [];
+        const resolvedIssues = Array.isArray(issues) ? issues.filter(issue => issue.status === 'resolved') : [];
+
         return {
-            issues: issues.issues || [],
-            resolvedIssues: issues.resolved_issues || [],
-            allEventsData: issues.all_events_data || {},
+            issues: activeIssues,
+            resolvedIssues: resolvedIssues,
+            allEventsData: {}, // This would need to be populated from a separate endpoint
             integrations: integrations || [],
             alerts: alerts || [],
             loading: false,

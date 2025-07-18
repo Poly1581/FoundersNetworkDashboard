@@ -397,8 +397,8 @@ function HubSpotSection({ isOpen, onToggle }) {
     }
 
     return (
-        <CollapsibleSection title={textContent.hubspot.title} isOpen={isOpen} onToggle={onToggle}>
-            <IntegrationDetailsSection integrations={hubspotIntegrations} textContent={textContent.hubspot.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
+        <CollapsibleSection title={textContent.hubspot.title} isOpen={isOpen} onToggle={onToggle} onRefresh={() => refreshSection('hubspot')}>
+            <IntegrationDetailsSection integrations={hubspotData.integrations} textContent={textContent.hubspot.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
             {/* <ActiveDealsSection deals={deals} onViewDetails={handleViewDealDetails} expandedDeals={expandedDeals} textContent={textContent.hubspot.activeDeals} /> */}
             {/* <RecentActivitiesSection activities={activities} onViewDetails={handleViewActivityDetails} expandedActivities={expandedActivities} textContent={textContent.hubspot.recentActivities} /> */}
         </CollapsibleSection>
@@ -570,9 +570,9 @@ function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsD
                                                     Latest Event ID: <Link href={`${issue.permalink}events/${allEventsData[issue.id][0].id}/`} target="_blank" rel="noopener">{allEventsData[issue.id][0].id}</Link> | Message: {allEventsData[issue.id][0].message} | Timestamp: {new Date(allEventsData[issue.id][0].dateCreated).toLocaleString()}
                                                 </Typography>
                                             ) : (
-                                                <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                                                    <CircularProgress size={24} />
-                                                </Box>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    No event data available for this issue
+                                                </Typography>
                                             )}
                                         </Box>
                                     </Collapse>
@@ -662,7 +662,7 @@ function InactiveIssuesSection({ issues, onViewDetails, allEventsData, expandedR
                                                 </Typography>
                                             ) : (
                                                 <Typography variant="body2" color="text.secondary">
-                                                    No event data available
+                                                    No event data available for this issue
                                                 </Typography>
                                             )}
                                         </Box>
