@@ -59,50 +59,44 @@ def get_sentry_webhooks_status():
 def get_sentry_integration_status(request, **kwargs):
     return HttpResponse(json.dumps([get_sentry_api_status(), get_sentry_webhooks_status()]), content_type="application/json")
 
-@api_view(["GET"])
-def get_hubspot_integration_status(request, **kwargs):
-    """
-    Mock HubSpot integration status for development/demo purposes
-    """
-    start_time = datetime.now()
+def get_hubspot_api_status():
+    hubspot_api_status = {
+        "name": "HubSpot API",
+        "category": "CRM",
+        "status": "Down",
+        "responseTime": "N/A",
+        "lastSuccess": None,
+        "uptime": "0%",
+        "issue": None,
+    }
     try:
         # Simulate a health check (using a reliable endpoint for demo)
+        start_time = datetime.now()
         response = requests.get("https://httpbin.org/status/200", timeout=5)
         end_time = datetime.now()
         response_time = (end_time - start_time).total_seconds() * 1000
         
         if response.status_code == 200:
-            hubspot_api_status = {
-                "name": "HubSpot API",
-                "category": "CRM",
+            hubspot_api_status.update({
                 "status": "Healthy",
                 "responseTime": f"{response_time:.2f}ms",
                 "lastSuccess": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "uptime": "99.9%",
-                "issue": None
-            }
+            })
         else:
-            hubspot_api_status = {
-                "name": "HubSpot API",
-                "category": "CRM",
+            hubspot_api_status.update({
                 "status": "Degraded",
                 "responseTime": f"{response_time:.2f}ms",
-                "lastSuccess": None,
                 "uptime": "95%",
                 "issue": f"API returned status code {response.status_code}"
-            }
+            })
     except Exception as e:
-        hubspot_api_status = {
-            "name": "HubSpot API",
-            "category": "CRM",
-            "status": "Down",
-            "responseTime": "N/A",
-            "lastSuccess": None,
-            "uptime": "0%",
+        hubspot_api_status.update({
             "issue": str(e)
-        }
+        })
+    return hubspot_api_status
 
-    # HubSpot Webhooks status
+def get_hubspot_webhooks_status():
     hubspot_webhooks_status = {
         "name": "HubSpot Webhooks",
         "category": "Notifications",
@@ -112,6 +106,9 @@ def get_hubspot_integration_status(request, **kwargs):
         "uptime": "100%",
         "issue": None
     }
+    return hubspot_webhooks_status
 
-    data = [hubspot_api_status, hubspot_webhooks_status]
-    return HttpResponse(json.dumps(data), content_type="application/json")
+
+@api_view(["GET"])
+def get_hubspot_integration_status(request, **kwargs):
+    return HttpResponse(json.dumps([get_hubspot_api_status(), get_hubspot_webhooks_status()]), content_type="application/json")
