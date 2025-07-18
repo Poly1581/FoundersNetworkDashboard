@@ -14,6 +14,10 @@ HEADERS = {
 
 @api_view(["GET"])
 def get_issue_events(request, **kwargs):
+    '''
+        Endpoint to access sentry issue events
+        See: https://docs.sentry.io/api/events/list-an-issues-events/
+    '''
     URI = f"{BASE_URI}/organizations/{ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/events/"
     try:
         response = requests.get(URI, headers = HEADERS)
@@ -28,6 +32,10 @@ def get_issue_events(request, **kwargs):
 
 @api_view(["PUT"])
 def update_issue_status(request, **kwargs):
+    '''
+        Endpoint to update sentry issue status
+        See: https://docs.sentry.io/api/events/update-an-issue/
+    '''
     URI = f"{BASE_URI}/organizations/{ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/"
     try:
         response = requests.put(URI, headers = HEADERS, json = {"status": request.data.get("status")})
@@ -42,6 +50,10 @@ def update_issue_status(request, **kwargs):
 
 @api_view(["GET"])
 def get_issues(request, **kwargs):
+    '''
+        Endpoint to access sentry issues
+        See: https://docs.sentry.io/api/events/list-a-projects-issues/
+    '''
     URI = f"{BASE_URI}/projects/{ORGANIZATION_SLUG}/{PROJECT_ID}/issues/"
     print(f"Attempting to fetch issues from Sentry URI: {BASE_URI}")
     try:
@@ -59,6 +71,10 @@ def get_issues(request, **kwargs):
 
 @api_view(["GET"])
 def get_events(request, **kwargs):
+    '''
+        Endpoint to access sentry events
+        See: https://docs.sentry.io/api/events/list-a-projects-error-events/
+    '''
     URI = f"{BASE_URI}/projects/{ORGANIZATION_SLUG}/{PROJECT_ID}/events"
     try:
         response = requests.get(URI, headers = HEADERS)
