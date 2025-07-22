@@ -30,7 +30,7 @@ def update_issue_status(request, **kwargs):
         Endpoint to update sentry issue status
         See: https://docs.sentry.io/api/events/update-an-issue/
     '''
-    make_request({
+    return make_request({
         "uri": f"{BASE_URI}/organizations/{ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/",
         "method": "put",
         "headers": {
@@ -45,7 +45,7 @@ def get_issues(request, **kwargs):
         Endpoint to access sentry issues
         See: https://docs.sentry.io/api/events/list-a-projects-issues/
     '''
-    make_request({
+    return make_request({
         "uri": f"{BASE_URI}/projects/{ORGANIZATION_SLUG}/{PROJECT_ID}/issues/",
         "method": "get",
         "headers": {
@@ -59,7 +59,7 @@ def get_events(request, **kwargs):
         Endpoint to access sentry events
         See: https://docs.sentry.io/api/events/list-a-projects-error-events/
     '''
-    make_request({
+    return make_request({
         "uri": f"{BASE_URI}/projects/{ORGANIZATION_SLUG}/{PROJECT_ID}/events",
         "method": "get",
         "headers": {
