@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Box, Typography, Card, CardContent, Collapse, IconButton, CircularProgress } from '@mui/material';
-import { KeyboardArrowDown as ArrowDownIcon, KeyboardArrowRight as ArrowRightIcon } from '@mui/icons-material';
+import { CircularProgress, Typography } from '@mui/material';
 import IntegrationDetailsSection from './IntegrationDetailsSection';
 import ActiveIssuesSection from './ActiveIssuesSection';
 import RecentAlertsSection from './RecentAlertsSection';
-import { updateIssueStatus, fetchIssues, fetchSentryIntegrationStatus } from './api';
+import { updateIssueStatus } from './api';
 import CollapsibleSection from './CollapsibleSection';
-import { useData } from './hooks/useData';
+import { filterLiveDataByTimeRange } from './utils/dataFilters';
 
 const textContent = {
     sentry: {
@@ -39,9 +38,12 @@ const textContent = {
     }
 };
 
-export default function SentrySection({ allExpanded }) {
-    const { data: issues, loading: issuesLoading, error: issuesError, refresh: refreshIssues } = useData('sentryIssues', fetchIssues);
-    const { data: integrations, loading: integrationsLoading, error: integrationsError } = useData('sentryIntegrations', fetchSentryIntegrationStatus);
+export default function SentrySection({ issues, integrations, loading, error, allExpanded, liveDataFilter }) {
+    // Use props from context instead of individual data fetching for better performance
+    const refreshIssues = useCallback(() => {
+        // This would trigger a refresh from the parent component
+        console.log('Refresh requested - handled by parent');
+    }, []);
     
     const [hiddenIssueIDs, setHiddenIssueIDs] = useState([]);
     const [sentryAlerts, setSentryAlerts] = useState([]);
@@ -81,7 +83,12 @@ export default function SentrySection({ allExpanded }) {
     }, [issues]);
 
 
-    const filteredAlerts = useMemo(() => sentryAlerts.filter(alert => {
+    // Apply live data filtering first, then local filtering
+    const liveFilteredAlerts = useMemo(() => {
+        return filterLiveDataByTimeRange(sentryAlerts, null, liveDataFilter);
+    }, [sentryAlerts, liveDataFilter]);
+
+    const filteredAlerts = useMemo(() => liveFilteredAlerts.filter(alert => {
         const originalIssue = alert.originalIssue;
 
         if (filter.status && originalIssue.status !== filter.status) {
@@ -122,7 +129,7 @@ export default function SentrySection({ allExpanded }) {
         }
 
         return true;
-    }), [sentryAlerts, filter]);
+    }), [liveFilteredAlerts, filter]);
 
     const handleResolveIssue = useCallback(async (issueId) => {
         setHiddenIssueIDs(prev => [...prev, issueId]);
@@ -158,8 +165,14 @@ export default function SentrySection({ allExpanded }) {
         setExpandedIntegrations(newExpandedIntegrations);
     }, [expandedIntegrations]);
 
-    const loading = issuesLoading || integrationsLoading;
-    const error = issuesError || integrationsError;
+    // Apply live data filtering to issues and integrations as well
+    const liveFilteredIssues = useMemo(() => {
+        return filterLiveDataByTimeRange(issues, null, liveDataFilter);
+    }, [issues, liveDataFilter]);
+
+    const liveFilteredIntegrations = useMemo(() => {
+        return filterLiveDataByTimeRange(integrations, null, liveDataFilter);
+    }, [integrations, liveDataFilter]);
 
     if (loading) {
         return <CollapsibleSection title={textContent.sentry.title}><CircularProgress /></CollapsibleSection>;
@@ -169,13 +182,34 @@ export default function SentrySection({ allExpanded }) {
         return <CollapsibleSection title={textContent.sentry.title}><Typography color="error">Error fetching Sentry data: {error.message}</Typography></CollapsibleSection>;
     }
 
-    const visibleIssues = issues ? issues.filter(issue => !hiddenIssueIDs.includes(issue.id)) : [];
+    const visibleIssues = liveFilteredIssues ? liveFilteredIssues.filter(issue => !hiddenIssueIDs.includes(issue.id)) : [];
 
     return (
         <CollapsibleSection title={textContent.sentry.title}>
-            <IntegrationDetailsSection integrations={integrations || []} textContent={textContent.sentry.integrationDetails} onAndViewDetails={handleViewIntegrationDetails} expandedIntegrations={expandedIntegrations} />
-            <ActiveIssuesSection issues={visibleIssues} onViewDetails={handleViewDetails} onResolveIssue={handleResolveIssue} allEventsData={{}} expandedRows={expandedRows} textContent={textContent.sentry.activeIssues} />
-            <RecentAlertsSection alerts={filteredAlerts} showFilter={showFilter} toggleFilter={() => setShowFilter(prev => !prev)} filter={filter} onFilterChange={setFilter} expandedAlertDetails={expandedAlertDetails} onViewAlertDetails={handleViewAlertDetails} textContent={textContent.sentry.recentAlerts} />
+            <IntegrationDetailsSection 
+                integrations={liveFilteredIntegrations || []} 
+                textContent={textContent.sentry.integrationDetails} 
+                onAndViewDetails={handleViewIntegrationDetails} 
+                expandedIntegrations={expandedIntegrations} 
+            />
+            <ActiveIssuesSection 
+                issues={visibleIssues} 
+                onViewDetails={handleViewDetails} 
+                onResolveIssue={handleResolveIssue} 
+                allEventsData={{}} 
+                expandedRows={expandedRows} 
+                textContent={textContent.sentry.activeIssues} 
+            />
+            <RecentAlertsSection 
+                alerts={filteredAlerts} 
+                showFilter={showFilter} 
+                toggleFilter={() => setShowFilter(prev => !prev)} 
+                filter={filter} 
+                onFilterChange={setFilter} 
+                expandedAlertDetails={expandedAlertDetails} 
+                onViewAlertDetails={handleViewAlertDetails} 
+                textContent={textContent.sentry.recentAlerts} 
+            />
         </CollapsibleSection>
     );
 }

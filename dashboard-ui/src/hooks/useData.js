@@ -1,5 +1,4 @@
-import { useContext, useState, useEffect, useCallback } from 'react';
-import { CacheContext } from '../context/CacheContext';
+import { useState, useEffect, useCallback } from 'react';
 
 const cache = new Map();
 

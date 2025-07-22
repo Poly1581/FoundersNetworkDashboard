@@ -27,8 +27,8 @@ urlpatterns = [
     # Without trailing slash
     path('admin/', admin.site.urls),
     # Sentry API endpoints
-    path("issues/<int:issue_id>/events/", views.get_issue_events, name="get issue events"),
-    path("issues/<int:issue_id>/", views.update_issue_status, name="update issue status"),
+    path("issues/<str:issue_id>/events/", views.get_issue_events, name="get issue events"),
+    path("issues/<str:issue_id>/", views.update_issue_status, name="update issue status"),
     path("issues/", views.get_issues, name="get issues"),
     path("events/", views.get_events, name="get events"),
     path("integration-status/", views.get_sentry_integration_status, name="get sentry integration status"),

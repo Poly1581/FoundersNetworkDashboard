@@ -133,14 +133,8 @@ const SentryLineChart = React.memo(({ allEvents, timeRange }) => {
         yAxis={[{ label: 'Event Count' }]}
         slotProps={{
           legend: {
-            labelStyle: {
-              fontWeight: 500,
-              fontSize: 12,
-            },
-            itemMarkWidth: 10,
-            itemMarkHeight: 10,
-            markGap: 5,
-            itemGap: 10,
+            direction: 'row',
+            position: { vertical: 'top', horizontal: 'middle' },
           },
         }}
       />

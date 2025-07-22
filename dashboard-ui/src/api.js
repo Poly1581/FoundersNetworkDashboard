@@ -14,7 +14,8 @@ const backendApi = axios.create({
 
 export const fetchIssues = async () => {
     try {
-        const response = await backendApi.get("/issues/");
+        // Always fetch 1-month data for client-side filtering
+        const response = await backendApi.get("/issues/?timeRange=30d");
         return response.data;
     } catch (error) {
         handleError("fetching issues", error);
@@ -23,10 +24,21 @@ export const fetchIssues = async () => {
 
 export const fetchEventsForIssue = async (issueId) => {
     try {
-        const response = await backendApi.get(`/issues/${issueId}/events`);
+        // Always fetch 1-month data for client-side filtering
+        const response = await backendApi.get(`/issues/${issueId}/events?timeRange=30d`);
         return response.data;
     } catch (error) {
         handleError("fetching events for issue", error);
+    }
+};
+
+export const fetchAllEvents = async () => {
+    try {
+        // Always fetch 1-month data for client-side filtering
+        const response = await backendApi.get("/events/?timeRange=30d");
+        return response.data;
+    } catch (error) {
+        handleError("fetching all events", error);
     }
 };
 

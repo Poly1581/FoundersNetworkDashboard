@@ -16,5 +16,10 @@ COPY . .
 # Expose port
 EXPOSE 3000
 
+# Set environment variables for webpack dev server in Docker
+ENV WATCHPACK_POLLING=true
+ENV WDS_SOCKET_HOST=localhost
+ENV WDS_SOCKET_PORT=3000
+
 # Start project
 CMD ["npm", "start"]

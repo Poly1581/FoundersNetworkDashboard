@@ -24,7 +24,10 @@ HEADERS = {
 @api_view(["GET"])
 @cache_page(60 * 5)
 def get_issue_events(request, **kwargs):
-    URI = f"{SENTRY_URI}/organizations/{SENTRY_ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/events/"
+    issue_id = kwargs.get("issue_id")
+    
+    
+    URI = f"{SENTRY_URI}/organizations/{SENTRY_ORGANIZATION_SLUG}/issues/{issue_id}/events/"
     try:
         response = requests.get(URI, headers = HEADERS)
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
@@ -52,13 +55,23 @@ def update_issue_status(request, **kwargs):
         return HttpResponseBadRequest(f"An unexpected error occurred: {error}")
 
 @api_view(["GET"])
-@cache_page(60 * 5)
+@cache_page(60 * 15)  # Increased cache time for bulk data
 def get_issues(request, **kwargs):
-    URI = f"{SENTRY_URI}/projects/{SENTRY_ORGANIZATION_SLUG}/{SENTRY_PROJECT_ID}/issues/"
-    print(f"Attempting to fetch issues from Sentry URI: {URI}")
+    # Always fetch 1-month window for optimal performance
+    time_range = request.GET.get('timeRange', '30d')
+    URI = f"{SENTRY_URI}/organizations/{SENTRY_ORGANIZATION_SLUG}/issues/"
+    params = {
+        'statsPeriod': time_range,
+        'sort': 'date',
+        'project': SENTRY_PROJECT_ID
+        # Removed limit parameter that was causing 400 error
+    }
+    
+    print(f"Attempting to fetch issues from Sentry URI: {URI} with timeRange: {time_range}")
     try:
-        response = requests.get(URI, headers = HEADERS)
+        response = requests.get(URI, headers=HEADERS, params=params)
         print(f"Sentry API response status for issues: {response.status_code}")
+        
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
         issues = response.json()
         # Trim the payload to only include fields used by the frontend
@@ -74,6 +87,9 @@ def get_issues(request, **kwargs):
                 "type": issue.get("type"),
                 "metadata": issue.get("metadata"),
                 "lastSeen": issue.get("lastSeen"),
+                "firstSeen": issue.get("firstSeen"),
+                "count": issue.get("count"),
+                "userCount": issue.get("userCount"),
             }
             for issue in issues
         ]
@@ -86,13 +102,29 @@ def get_issues(request, **kwargs):
         return HttpResponseBadRequest(f"An unexpected error occurred: {error}")
 
 @api_view(["GET"])
-@cache_page(60 * 5)
+@cache_page(60 * 15)  # Increased cache time for bulk data
 def get_events(request, **kwargs):
-    URI = f"{SENTRY_URI}/projects/{SENTRY_ORGANIZATION_SLUG}/{SENTRY_PROJECT_ID}/events/"
+    # Always fetch 1-month window for optimal performance
+    time_range = request.GET.get('timeRange', '30d')
+    URI = f"{SENTRY_URI}/organizations/{SENTRY_ORGANIZATION_SLUG}/events/"
+    params = {
+        'statsPeriod': time_range,
+        'sort': '-timestamp',
+        'project': SENTRY_PROJECT_ID
+        # Removed limit parameter that was causing 400 error
+    }
+    
     try:
-        response = requests.get(URI, headers = HEADERS)
+        response = requests.get(URI, headers=HEADERS, params=params)
+        
         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
-        return HttpResponse(json.dumps(response.json()), content_type="application/json")
+        events = response.json()
+            
+        # Ensure consistent timestamp format for client-side filtering
+        for event in events:
+            if 'dateCreated' not in event and 'timestamp' in event:
+                event['dateCreated'] = event['timestamp']
+        return HttpResponse(json.dumps(events), content_type="application/json")
     except requests.exceptions.RequestException as e:
         print(f"Error fetching events from Sentry: {e}")
         return HttpResponseBadRequest(f"Error fetching events: {e}")

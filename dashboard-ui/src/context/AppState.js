@@ -1,7 +1,8 @@
-import React, { useReducer, startTransition, useCallback } from 'react';
+import React, { useReducer, startTransition, useCallback, useMemo } from 'react';
 import AppContext from './AppContext';
-import { appReducer, FETCH_DATA_START, FETCH_DATA_SUCCESS, FETCH_DATA_FAILURE } from './AppReducer';
+import { appReducer, FETCH_DATA_START, FETCH_DATA_SUCCESS, FETCH_DATA_FAILURE, UPDATE_FILTERED_DATA, SET_LIVE_DATA_FILTER } from './AppReducer';
 import { fetchIssues, fetchEventsForIssue, fetchSentryIntegrationStatus } from '../api';
+import { filterEventsByTimeRange, filterIssuesByTimeRange, createMemoizedFilter } from '../utils/dataFilters';
 
 // Utility function from App.js
 function getTimeOffsetFromNow(timestampStr) {
@@ -16,6 +17,12 @@ const AppState = ({ children }) => {
         allExpanded: false,
         activePage: 'overview',
         timeRange: '7d',
+        liveDataFilter: 'all',
+        // Raw data (always 1-month window)
+        rawSentryIssues: [],
+        rawAllEventsData: {},
+        rawAllEventsForChart: [],
+        // Filtered data (applied based on timeRange/liveDataFilter)
         sentryIssues: [],
         allEventsData: {},
         allEventsForChart: [],
@@ -24,11 +31,15 @@ const AppState = ({ children }) => {
             { name: 'HubSpot API', category: 'CRM', status: 'Healthy', responseTime: '120ms', lastSuccess: 'Just now', uptime: '99.99%', issue: null },
         ],
         allIntegrations: [],
-        loading: true,
+        loading: false,
         error: null,
     };
 
     const [state, dispatch] = useReducer(appReducer, initialState);
+    
+    // Create memoized filter functions for performance
+    const memoizedEventFilter = useMemo(() => createMemoizedFilter(), []);
+    const memoizedIssueFilter = useMemo(() => createMemoizedFilter(), []);
 
     const loadSentryData = useCallback(async () => {
         startTransition(() => {
@@ -41,7 +52,14 @@ const AppState = ({ children }) => {
                 fetchSentryIntegrationStatus(),
             ]);
 
-            const eventPromises = fetchedIssues.map(issue => fetchEventsForIssue(issue.id));
+            const eventPromises = fetchedIssues.map(async (issue) => {
+                try {
+                    return await fetchEventsForIssue(issue.id);
+                } catch (error) {
+                    console.warn(`Failed to fetch events for issue ${issue.id}:`, error.message);
+                    return []; // Return empty array for failed fetches
+                }
+            });
             const allEventsByIssue = await Promise.all(eventPromises);
 
             const eventsDataMap = fetchedIssues.reduce((acc, issue, index) => {
@@ -68,10 +86,39 @@ const AppState = ({ children }) => {
                         sentryIntegrations: fetchedSentryIntegrations,
                         allEventsData: eventsDataMap,
                         allEventsForChart: flattenedEvents,
-                        hubspotIntegrations: initialState.hubspotIntegrations, // Keep mock data
+                        hubspotIntegrations: [
+                            { name: 'HubSpot API', category: 'CRM', status: 'Healthy', responseTime: '120ms', lastSuccess: 'Just now', uptime: '99.99%', issue: null },
+                        ], // Keep mock data
                     }
                 });
             });
+
+            // Apply initial filtering after data loads (using current timeRange from state)
+            setTimeout(() => {
+                const currentTimeRange = '7d'; // Use default time range for initial load
+                // Filter issues and events based on time range
+                const filteredIssues = memoizedIssueFilter(fetchedIssues, currentTimeRange, filterIssuesByTimeRange);
+                const filteredEvents = memoizedEventFilter(flattenedEvents, currentTimeRange, filterEventsByTimeRange);
+                
+                // Filter events data map
+                const filteredEventsData = {};
+                Object.keys(eventsDataMap).forEach(issueId => {
+                    const events = eventsDataMap[issueId];
+                    filteredEventsData[issueId] = filterEventsByTimeRange(events, currentTimeRange);
+                });
+
+                startTransition(() => {
+                    dispatch({
+                        type: UPDATE_FILTERED_DATA,
+                        payload: {
+                            sentryIssues: filteredIssues,
+                            allEventsData: filteredEventsData,
+                            allEventsForChart: filteredEvents,
+                        }
+                    });
+                });
+            }, 100); // Small delay to ensure state is settled
+
 
         } catch (err) {
             startTransition(() => {
@@ -79,10 +126,52 @@ const AppState = ({ children }) => {
             });
             console.error("Failed to fetch Sentry data:", err);
         }
-    }, [dispatch, initialState.hubspotIntegrations]);
+    }, [dispatch]); // Removed initialState.hubspotIntegrations to prevent recreation
+
+    // Client-side filtering function
+    const updateFilteredData = useCallback((newTimeRange = state.timeRange) => {
+        const { rawSentryIssues, rawAllEventsData, rawAllEventsForChart } = state;
+        
+        if (!rawSentryIssues.length) return; // No data to filter yet
+        
+        // Filter issues and events based on time range
+        const filteredIssues = memoizedIssueFilter(rawSentryIssues, newTimeRange, filterIssuesByTimeRange);
+        const filteredEvents = memoizedEventFilter(rawAllEventsForChart, newTimeRange, filterEventsByTimeRange);
+        
+        // Filter events data map
+        const filteredEventsData = {};
+        Object.keys(rawAllEventsData).forEach(issueId => {
+            const events = rawAllEventsData[issueId];
+            filteredEventsData[issueId] = filterEventsByTimeRange(events, newTimeRange);
+        });
+
+        startTransition(() => {
+            dispatch({
+                type: UPDATE_FILTERED_DATA,
+                payload: {
+                    sentryIssues: filteredIssues,
+                    allEventsData: filteredEventsData,
+                    allEventsForChart: filteredEvents,
+                }
+            });
+        });
+    }, [state, memoizedEventFilter, memoizedIssueFilter]);
+
+    // Live data filter setter
+    const setLiveDataFilter = useCallback((filterValue) => {
+        dispatch({ type: SET_LIVE_DATA_FILTER, payload: filterValue });
+    }, [dispatch]);
+
+    // Apply initial filtering when raw data becomes available (removed to prevent infinite loop)
 
     return (
-        <AppContext.Provider value={{ state, dispatch, loadSentryData }}>
+        <AppContext.Provider value={{ 
+            state, 
+            dispatch, 
+            loadSentryData, 
+            updateFilteredData,
+            setLiveDataFilter 
+        }}>
             {children}
         </AppContext.Provider>
     );
