@@ -3,6 +3,10 @@ import requests
 from django.http import HttpResponse, HttpResponseBadRequest
 
 request_params = {
+    # Sentry:
+    "update_issue_status": ("status", "statusDetails", "assignedTo", "hasSeen", "isBookmarked", "isSubscribed", "isPublic"),
+
+    # Mailgun:
     "get_account_metrics": ("start", "end", "resolution", "duration", "dimensions", "metrics", "filter"),
     "get_account_usage_metrics": ("start", "end", "resolution", "duration", "dimensions", "metrics", "filter"),
     "get_logs": ("start", "end", "events", "metric_events", "filter", "include_subaccounts", "include_totals", "pagination"),
@@ -25,10 +29,12 @@ def make_request(request):
         match method:
             case "get":
                 response = requests.get(uri, **params)
+            case "put":
+                response = requests.put(uri, **params)
             case "post":
                 response = requests.post(uri, **params)
             case _:
-                raise Exception("Invalid request type (only \"get\" and \"post\" are allowed)")
+                raise Exception("Invalid request type (only \"get\", \"put\", and \"post\" are allowed)")
         response.raise_for_status()
         return HttpResponse(json.dumps(response.json()))
     except requests.exceptions.RequestException as request_exception:
