@@ -83,7 +83,7 @@ const backendApi = axios.create({
  */
 const fetchIssues = async () => {
     try {
-        const response = await backendApi.get("/api/sentry/issues");
+        const response = await backendApi.get("/api/sentry/issues/");
         return response.data;
     } catch (error) {
         handleError("fetching issues", error);
@@ -97,7 +97,7 @@ const fetchIssues = async () => {
  */
 const fetchEventsForIssue = async (issueId) => {
     try {
-        const response = await backendApi.get(`/api/sentry/issues/${issueId}/events`);
+        const response = await backendApi.get(`/api/sentry/issues/${issueId}/events/`);
         return response.data;
     } catch (error) {
         handleError("fetching events for issue", error);
@@ -112,7 +112,7 @@ const fetchEventsForIssue = async (issueId) => {
  */
 const updateIssueStatus = async (issueId, status) => {
     try {
-        const response = await backendApi.put(`/api/sentry/issues/${issueId}`, { status });
+        const response = await backendApi.put(`/api/sentry/issues/${issueId}/`, { status });
         return response.data;
     } catch (error) {
         handleError("updating issue status", error);
@@ -125,7 +125,7 @@ const updateIssueStatus = async (issueId, status) => {
  */
 const fetchHubSpotDeals = async () => {
     try {
-        const response = await backendApi.get("/api/hubspot/deals");
+        const response = await backendApi.get("/api/hubspot/deals/");
         return response.data;
     } catch (error) {
         handleError("fetching HubSpot deals", error);
@@ -138,7 +138,7 @@ const fetchHubSpotDeals = async () => {
  */
 const fetchHubSpotActivities = async () => {
     try {
-        const response = await backendApi.get("/api/hubspot/activities");
+        const response = await backendApi.get("/api/hubspot/activities/");
         return response.data;
     } catch (error) {
         handleError("fetching HubSpot activities", error);
@@ -151,7 +151,7 @@ const fetchHubSpotActivities = async () => {
  */
 const fetchHubSpotIntegrationStatus = async () => {
     try {
-        const response = await backendApi.get("/api/hubspot/integration-status");
+        const response = await backendApi.get("/api/hubspot/integration-status/");
         return response.data;
     } catch (error) {
         handleError("fetching HubSpot integration status", error);
@@ -363,7 +363,7 @@ function SentrySection({ isOpen, onToggle, onDataFetched }) {
 
     const fetchSentryIntegrationStatus = async () => {
         try {
-            const response = await backendApi.get("/api/sentry/integration-status");
+            const response = await backendApi.get("/api/sentry/integration-status/");
             return response.data;
         } catch (error) {
             handleError("fetching sentry integration status", error);
