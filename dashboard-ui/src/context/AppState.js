@@ -16,7 +16,7 @@ const AppState = ({ children }) => {
     const initialState = {
         allExpanded: false,
         activePage: 'overview',
-        timeRange: '7d',
+        timeRange: '30d',
         liveDataFilter: 'all',
         // Raw data (always 1-month window)
         rawSentryIssues: [],
@@ -95,7 +95,7 @@ const AppState = ({ children }) => {
 
             // Apply initial filtering after data loads (using current timeRange from state)
             setTimeout(() => {
-                const currentTimeRange = '7d'; // Use default time range for initial load
+                const currentTimeRange = '30d'; // Use default time range for initial load
                 // Filter issues and events based on time range
                 const filteredIssues = memoizedIssueFilter(fetchedIssues, currentTimeRange, filterIssuesByTimeRange);
                 const filteredEvents = memoizedEventFilter(flattenedEvents, currentTimeRange, filterEventsByTimeRange);

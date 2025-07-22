@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { CircularProgress, Typography } from '@mui/material';
+import { CircularProgress, Typography, Box, Card, CardContent, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import IntegrationDetailsSection from './IntegrationDetailsSection';
 import ActiveIssuesSection from './ActiveIssuesSection';
 import RecentAlertsSection from './RecentAlertsSection';
+import SentryLineChart from './SentryLineChart';
+import SentryPieChart from './SentryPieChart';
+import SentryBarChart from './SentryBarChart';
 import { updateIssueStatus } from './api';
 import CollapsibleSection from './CollapsibleSection';
 import { filterLiveDataByTimeRange } from './utils/dataFilters';
@@ -38,7 +41,7 @@ const textContent = {
     }
 };
 
-export default function SentrySection({ issues, integrations, loading, error, allExpanded, liveDataFilter }) {
+export default function SentrySection({ issues, integrations, loading, error, allExpanded, liveDataFilter, allEvents, timeRange, onTimeRangeChange }) {
     // Use props from context instead of individual data fetching for better performance
     const refreshIssues = useCallback(() => {
         // This would trigger a refresh from the parent component

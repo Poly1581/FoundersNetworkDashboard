@@ -33,7 +33,7 @@ function formatTimeAgo(totalSeconds) {
  * @param {string} timeRange - The selected time range ('1d', '7d', or '30d').
  * @returns {{chartData: Object, series: Array}} An object containing the data and series configuration.
  */
-function processDataForChart(events, timeRange = '7d') {
+function processDataForChart(events, timeRange = '30d') {
   const data = { x: [], total: [] };
   const issueCategories = [...new Set(events.map(e => e.issueCategory).filter(Boolean))];
 

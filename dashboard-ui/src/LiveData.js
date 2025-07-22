@@ -13,7 +13,7 @@ const LIVE_DATA_FILTERS = [
     { value: 'all', label: 'All' }
 ];
 
-export default function LiveData({ allExpanded, onRefresh, onExpandAll, sentryProps, hubspotProps }) {
+export default function LiveData({ allExpanded, onRefresh, onExpandAll, sentryProps, hubspotProps, timeRange, onTimeRangeChange }) {
     const { state, setLiveDataFilter } = useContext(AppContext);
     const { liveDataFilter } = state;
     
@@ -88,6 +88,8 @@ export default function LiveData({ allExpanded, onRefresh, onExpandAll, sentryPr
                             {...sentryProps}
                             allExpanded={allExpanded}
                             liveDataFilter={liveDataFilter}
+                            timeRange={timeRange}
+                            onTimeRangeChange={onTimeRangeChange}
                         />
                     </Suspense>
                     <Suspense fallback={<CircularProgress />}>
@@ -95,6 +97,8 @@ export default function LiveData({ allExpanded, onRefresh, onExpandAll, sentryPr
                             {...hubspotProps}
                             allExpanded={allExpanded}
                             liveDataFilter={liveDataFilter}
+                            timeRange={timeRange}
+                            onTimeRangeChange={onTimeRangeChange}
                         />
                     </Suspense>
                 </>
