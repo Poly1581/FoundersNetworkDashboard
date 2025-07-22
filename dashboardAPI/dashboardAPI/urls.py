@@ -39,4 +39,6 @@ urlpatterns = [
     path("api/mailgun/logs/", mailgun.get_logs, name="get mailgun logs"),
     path("api/mailgun/stats/totals", mailgun.get_stat_totals, name = "get mailgun stat totals"),
     path("api/mailgun/stats/filter", mailgun.get_filtered_grouped_stats, name = "get filtered mailgun stats"),
+    path("api/mailgun/mailing-lists/", mailgun.get_mailing_lists, name = "get mailing lists"),
+    path("api/mailgun/mailing-list-members/<str:list_address>/", mailgun.get_mailing_list_members, name = "get mailing list members"),
 ]
