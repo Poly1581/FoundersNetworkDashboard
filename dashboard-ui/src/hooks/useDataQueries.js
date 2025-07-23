@@ -2,6 +2,7 @@
  * React Query hooks for data fetching
  * Replaces the custom dataManager and useDataManager
  */
+// TODO: Change to Factory Design Pattern (so nothing changes when we add any other API)
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchAllSentryData, updateIssueStatus } from '../api/sentryApi';
