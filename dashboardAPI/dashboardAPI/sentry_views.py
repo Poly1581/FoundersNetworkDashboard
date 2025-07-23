@@ -24,7 +24,7 @@ def get_issue_events(request, **kwargs):
         },
     })
 
-@api_view(["PUT"])
+@api_view(["PATCH"])
 def update_issue_status(request, **kwargs):
     '''
         Endpoint to update sentry issue status
