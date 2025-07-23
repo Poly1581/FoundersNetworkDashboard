@@ -48,7 +48,6 @@ import {
     Link
 } from '@mui/material';
 
-
 // --- Text Variables ---
 const textContent = {
     sidebar: { overview: 'Overview', liveData: 'Live Data' },
