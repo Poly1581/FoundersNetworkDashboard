@@ -35,7 +35,7 @@ def get_issue_events(request, **kwargs):
         return HttpResponseBadRequest(f"An unexpected error occurred: {error}")
 
 @csrf_exempt
-@api_view(["PUT"])
+@api_view(["PATCH"])
 def update_issue_status(request, **kwargs):
     URI = f"{SENTRY_URI}/organizations/{SENTRY_ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/"
     try:
@@ -80,6 +80,53 @@ def get_events(request, **kwargs):
         print(f"An unexpected error occurred in get_events: {error}")
         return HttpResponseBadRequest(f"An unexpected error occurred: {error}")
 
+@api_view(["GET"])
+def get_sentry_alerts(request, **kwargs):
+    """
+    Fetch recent alerts from Sentry by transforming recent issues into alert format
+    """
+    try:
+        # Get recent issues from Sentry
+        issues_uri = f"{SENTRY_URI}/projects/{SENTRY_ORGANIZATION_SLUG}/{SENTRY_PROJECT_ID}/issues/"
+        response = requests.get(issues_uri, headers=HEADERS, params={'statsPeriod': '24h'})
+        response.raise_for_status()
+        
+        issues = response.json()
+        alerts = []
+        
+        # Transform recent issues into alerts format
+        for issue in issues[:10]:  # Limit to 10 most recent
+            # Determine severity based on issue level
+            severity = "Error" if issue.get('level') == 'error' else "Warning"
+            
+            # Create alert object
+            alert = {
+                "message": f"Issue detected: {issue.get('title', 'Unknown issue')}",
+                "severity": severity,
+                "time": issue.get('lastSeen', datetime.now().isoformat()),
+                "details": f"Project: {issue.get('project', {}).get('name', 'Unknown')}",
+                "originalIssue": {
+                    "id": issue.get('id'),
+                    "shortId": issue.get('shortId'),
+                    "title": issue.get('title'),
+                    "culprit": issue.get('culprit', 'Unknown'),
+                    "status": issue.get('status', 'unresolved'),
+                    "level": issue.get('level', 'error'),
+                    "lastSeen": issue.get('lastSeen'),
+                    "permalink": issue.get('permalink', '')
+                }
+            }
+            alerts.append(alert)
+        
+        return HttpResponse(json.dumps(alerts), content_type="application/json")
+        
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching alerts from Sentry: {e}")
+        return HttpResponseBadRequest(f"Error fetching alerts from Sentry: {e}")
+        
+    except Exception as error:
+        print(f"An unexpected error occurred in get_sentry_alerts: {error}")
+        return HttpResponseBadRequest(f"An unexpected error occurred: {error}")
 
 @api_view(["GET"])
 def get_sentry_integration_status(request, **kwargs):
@@ -132,90 +179,6 @@ def get_sentry_integration_status(request, **kwargs):
 
     data = [sentry_api_status, sentry_webhooks_status]
     return HttpResponse(json.dumps(data), content_type="application/json")
-
-
-# HubSpot API endpoints (placeholder implementations with mock data)
-@api_view(["GET"])
-def get_hubspot_deals(request, **kwargs):
-    """
-    Mock HubSpot deals data for development/demo purposes
-    """
-    mock_deals = [
-        {
-            "id": "deal_001",
-            "title": "Enterprise Software License - TechCorp",
-            "amount": "$125,000",
-            "stage": "Negotiation",
-            "closeDate": "2024-02-15T00:00:00Z",
-            "contact": "John Smith",
-            "company": "TechCorp Inc.",
-            "probability": 75
-        },
-        {
-            "id": "deal_002",
-            "title": "Consulting Services - StartupXYZ",
-            "amount": "$45,000",
-            "stage": "Proposal",
-            "closeDate": "2024-01-30T00:00:00Z",
-            "contact": "Sarah Johnson",
-            "company": "StartupXYZ",
-            "probability": 60
-        },
-        {
-            "id": "deal_003",
-            "title": "Annual Subscription - MegaCorp",
-            "amount": "$200,000",
-            "stage": "Closed Won",
-            "closeDate": "2024-01-10T00:00:00Z",
-            "contact": "Mike Wilson",
-            "company": "MegaCorp Ltd.",
-            "probability": 100
-        }
-    ]
-    return HttpResponse(json.dumps(mock_deals), content_type="application/json")
-
-
-@api_view(["GET"])
-def get_hubspot_activities(request, **kwargs):
-    """
-    Mock HubSpot activities data for development/demo purposes
-    """
-    mock_activities = [
-        {
-            "id": "activity_001",
-            "title": "Follow-up call scheduled",
-            "type": "Call",
-            "timestamp": "2024-01-15T14:30:00Z",
-            "contact": "John Smith",
-            "details": "Discussed pricing options and implementation timeline. Next call scheduled for Friday."
-        },
-        {
-            "id": "activity_002",
-            "title": "Proposal sent",
-            "type": "Email",
-            "timestamp": "2024-01-14T09:15:00Z",
-            "contact": "Sarah Johnson",
-            "details": "Sent detailed proposal including scope of work and pricing breakdown."
-        },
-        {
-            "id": "activity_003",
-            "title": "Demo completed",
-            "type": "Meeting",
-            "timestamp": "2024-01-12T16:00:00Z",
-            "contact": "Mike Wilson",
-            "details": "Conducted product demo focusing on enterprise features and security capabilities."
-        },
-        {
-            "id": "activity_004",
-            "title": "Contract signed",
-            "type": "Deal",
-            "timestamp": "2024-01-10T11:45:00Z",
-            "contact": "Mike Wilson",
-            "details": "Annual subscription contract signed. Implementation to begin next week."
-        }
-    ]
-    return HttpResponse(json.dumps(mock_activities), content_type="application/json")
-
 
 @api_view(["GET"])
 def get_hubspot_integration_status(request, **kwargs):
