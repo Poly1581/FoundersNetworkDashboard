@@ -42,4 +42,5 @@ def make_request(request):
     except Exception as exception:
         error_message = f"Unexpected error on {method} request to {uri} with {params}: {exception}"
     print(error_message)
+    print(response)
     return HttpResponseBadRequest(error_message)

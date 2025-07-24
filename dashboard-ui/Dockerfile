@@ -1,20 +1,13 @@
-# Use node as base image
-FROM node:24-bookworm-slim
-
-# Set working directory
-WORKDIR /app
-
-# Copy dependencies
- COPY package*.json .
-
- # Install dependencies
- RUN npm install
-
-# Copy project files
+FROM node:24-bookworm-slim AS base
+WORKDIR /dashboard-frontend
+COPY package*.json .
+RUN npm install
 COPY . .
 
-# Expose port
-EXPOSE 3000
+FROM base AS test
+WORKDIR /dashboard-frontend
+# RUN ["npm", "test"] # NOT WORKING CURRENTLY - SEE DUSAN MESSAGE IN SLACK
 
-# Start project
+FROM test as final
+EXPOSE 3000
 CMD ["npm", "start"]

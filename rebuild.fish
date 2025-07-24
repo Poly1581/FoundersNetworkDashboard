@@ -1,21 +1,25 @@
 #!/usr/bin/fish
-set USAGE "Usage: ./rebuild.sh ?[OPTION]\nOPTION may be one of the following\n\t- frontend OR f\n\t- backend OR b"
+set USAGE "Usage: ./rebuild.sh ?[ frontend / f / backend / b]"
+
+# Stop and rebuild
 if test (count $argv) -eq 0
     docker compose stop
-    docker compose build --no-cache
+    docker compose build --progress=plain
 else if test (count $argv) -eq 1
     if string match -q $argv[1] "frontend"; or string match -q $argv[1] "f"
-        docker compose stop frontend
-        docker compose build frontend
+		set SERVICE "frontend"
     else if string match -q $argv[1] "backend"; or string match -q $argv[1] "b"
-        docker compose stop backend
-        docker compose build --no-cache backend
+		set SERVICE "backend"
     else 
         echo -e $USAGE
         exit 0
     end
+	docker compose stop $SERVICE
+	docker compose build $SERVICE
 else
     echo -e $USAGE
     exit 0
 end
+
+# Restart
 docker compose up -d

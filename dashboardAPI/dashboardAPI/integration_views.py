@@ -1,14 +1,10 @@
-import os
 import json
 import requests
+from django.conf import settings
 from django.http import HttpResponse 
 from rest_framework.decorators import api_view
 from datetime import datetime
-
-SENTRY_BEARER_AUTH = os.environ.get("SENTRY_BEARER_AUTH")
-HEADERS = {
-    "Authorization": f"Bearer {SENTRY_BEARER_AUTH}"
-}
+from requests.models import Response
 
 def get_sentry_api_status():
     sentry_api_status = {
@@ -22,7 +18,7 @@ def get_sentry_api_status():
     }
     try:
         start_time = datetime.now()
-        response = requests.get("https://sentry.io/_health/", headers = HEADERS)
+        response = requests.get("https://sentry.io/_health/", headers = settings.SENTRY_HEADERS)
         end_time = datetime.now()
         response_time = (end_time - start_time).total_seconds() * 1000
         if response.status_code == 200:
@@ -72,7 +68,8 @@ def get_hubspot_api_status():
     try:
         # Simulate a health check (using a reliable endpoint for demo)
         start_time = datetime.now()
-        response = requests.get("https://httpbin.org/status/200", timeout=5)
+        response = Response()
+        response.status_code = 200
         end_time = datetime.now()
         response_time = (end_time - start_time).total_seconds() * 1000
         

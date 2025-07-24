@@ -25,6 +25,20 @@ env = environ.Env(
 # Read .env file
 environ.Env.read_env(BASE_DIR / '.env')
 
+SENTRY_ORGANIZATION_SLUG = env("SENTRY_ORGANIZATION_SLUG")
+SENTRY_PROJECT_ID = env("SENTRY_PROJECT_ID")
+SENTRY_BEARER_AUTH = env("SENTRY_BEARER_AUTH")
+SENTRY_BASE_URI = "https://sentry.io/api/0"
+SENTRY_BEARER_AUTH = env("SENTRY_BEARER_AUTH")
+SENTRY_HEADERS = {
+    "Authorization": f"Bearer {SENTRY_BEARER_AUTH}"
+}
+
+MAILGUN_API_NAME = env("MAILGUN_API_NAME")
+MAILGUN_API_KEY = env("MAILGUN_API_KEY")
+MAILGUN_BASE_URI = "https://api.mailgun.net"
+MAILGUN_AUTH = ('api', f"{MAILGUN_API_KEY}")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 

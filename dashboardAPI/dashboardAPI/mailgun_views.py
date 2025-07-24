@@ -1,11 +1,6 @@
-import os
 from rest_framework.decorators import api_view
 from .helpers import make_request, filter_request_data
-
-API_NAME = os.environ.get("MAILGUN_API_NAME")
-API_KEY = os.environ.get("MAILGUN_API_KEY")
-BASE_URI = "https://api.mailgun.net"
-AUTH = ('api', f"{API_KEY}")
+from django.conf import settings
 
 @api_view(["GET"])
 def get_queue_status(request, **kwargs):
@@ -14,9 +9,9 @@ def get_queue_status(request, **kwargs):
         See https://documentation.mailgun.com/docs/mailgun/api-reference/openapi-final/messages/get-v3-domains--name--sending-queues
     '''
     return make_request({
-        "uri": f"{BASE_URI}/v3/domains/{API_NAME}/sending_queues",
+        "uri": f"{settings.MAILGUN_BASE_URI}/v3/domains/{settings.MAILGUN_API_NAME}/sending_queues",
         "method": "get",
-        "auth": AUTH,
+        "auth": settings.MAILGUN_AUTH,
     })
 
 @api_view(["PUT"])
@@ -26,9 +21,9 @@ def get_account_metrics(request, **kwargs):
         See: https://documentation.mailgun.com/docs/mailgun/api-reference/openapi-final/metrics/post-v1-analytics-metrics
     '''
     return make_request({
-        "uri": f"{BASE_URI}/v1/analytics/metrics",
+        "uri": f"{settings.MAILGUN_BASE_URI}/v1/analytics/metrics",
         "method": "post",
-        "auth": AUTH,
+        "auth": settings.MAILGUN_AUTH,
         "json": filter_request_data(request.data, "get_account_metrics"),
     })
 
@@ -39,9 +34,9 @@ def get_account_usage_metrics(request, **kwargs):
         See: https://documentation.mailgun.com/docs/mailgun/api-reference/openapi-final/metrics/post-v1-analytics-usage-metrics
     '''
     return make_request({
-        "uri": f"{BASE_URI}/v1/analytics/usage/metrics",
+        "uri": f"{settings.MAILGUN_BASE_URI}/v1/analytics/usage/metrics",
         "method": "post",
-        "auth": AUTH,
+        "auth": settings.MAILGUN_AUTH,
         "json": filter_request_data(request.data, "get_account_usage_metrics"),
     })
 
@@ -52,9 +47,9 @@ def get_logs(request, **kwargs):
         See: https://documentation.mailgun.com/docs/mailgun/api-reference/openapi-final/logs/post-v1-analytics-logs
     '''
     return make_request({
-        "uri": f"{BASE_URI}/v1/analytics/logs",
+        "uri": f"{settings.MAILGUN_BASE_URI}/v1/analytics/logs",
         "method": "post",
-        "auth": AUTH,
+        "auth": settings.MAILGUN_AUTH,
         "json": filter_request_data(request.data, "get_logs"),
     })
 
@@ -65,9 +60,9 @@ def get_stat_totals(request, **kwargs):
         See: https://documentation.mailgun.com/docs/mailgun/api-reference/openapi-final/stats/get-v3-stats-total
     '''
     return make_request({
-        "uri": f"{BASE_URI}/v3/stats/total",
+        "uri": f"{settings.MAILGUN_BASE_URI}/v3/stats/total",
         "method": "get",
-        "auth": AUTH,
+        "auth": settings.MAILGUN_AUTH,
         "params": filter_request_data(request.data, "get_stat_totals"),
     })
 
@@ -78,9 +73,9 @@ def get_filtered_grouped_stats(request, **kwargs):
         See https://documentation.mailgun.com/docs/mailgun/api-reference/openapi-final/stats/get-v3-stats-filter
     '''
     return make_request({
-        "uri": f"{BASE_URI}/v3/stats/filter",
+        "uri": f"{settings.MAILGUN_BASE_URI}/v3/stats/filter",
         "method": "get",
-        "auth": AUTH,
+        "auth": settings.MAILGUN_AUTH,
         "params": filter_request_data(request.data, "get_filtered_grouped_stats"),
     })
 
@@ -91,9 +86,9 @@ def get_mailing_lists(request, **kwargs):
         See https://documentation.mailgun.com/docs/mailgun/api-reference/openapi-final/mailing-lists/get-v3-lists
     '''
     return make_request({
-        "uri": f"{BASE_URI}/v3/lists/",
+        "uri": f"{settings.MAILGUN_BASE_URI}/v3/lists/",
         "method": "get",
-        "auth": AUTH,
+        "auth": settings.MAILGUN_AUTH,
         "params": filter_request_data(request.data, "get_mailing_lists"),
     })
 
@@ -104,8 +99,8 @@ def get_mailing_list_members(request, **kwargs):
         See https://documentation.mailgun.com/docs/mailgun/api-reference/openapi-final/mailing-lists/get-lists-string:list_address-members
     '''
     return make_request({
-        "uri": f"{BASE_URI}/v3/lists/{kwargs.get("list_address")}/members/",
+        "uri": f"{settings.MAILGUN_BASE_URI}/v3/lists/{kwargs.get("list_address")}/members/",
         "method": "get",
-        "auth": AUTH,
+        "auth": settings.MAILGUN_AUTH,
         "params": filter_request_data(request.data, "get_mailing_lists"),
     })
