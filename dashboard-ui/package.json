@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@babel/core": "^7.28.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.1.2",
@@ -16,6 +17,10 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "axios": "^1.10.0",
+    "babel-jest": "^29.7.0",
+    "jest": "^27.5.1",
+    "jest-css-modules": "^2.1.0",
+    "next": "^15.4.3",
     "python": "^0.0.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -26,7 +31,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "jest",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -34,6 +39,19 @@
       "react-app",
       "react-app/jest"
     ]
+  },
+  "jest": {
+	"testEnvironment": "jsdom",
+    "transform": {
+      "^.+\\.(js|jsx|ts|tsx|mjs)$": "babel-jest"
+    },
+	"transformIgnorePatterns": [
+		"/node_modules/(?!axios).+\\.js$"
+	],
+    "moduleNameMapper": {
+		"\\.(css|less|scss|sss|styl)$": "<rootDir>/node_modules/jest-css-modules",
+		"^axios$": "axios/dist/node/axios.cjs"
+    }
   },
   "browserslist": {
     "production": [

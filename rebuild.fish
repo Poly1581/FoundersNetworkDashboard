@@ -15,11 +15,11 @@ else if test (count $argv) -eq 1
         exit 0
     end
 	docker compose stop $SERVICE
-	docker compose build $SERVICE
+	docker compose build $SERVICE --progress=plain
 else
     echo -e $USAGE
     exit 0
 end
 
-# Restart
+# Rebuild
 docker compose up -d

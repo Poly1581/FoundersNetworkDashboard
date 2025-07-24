@@ -6,8 +6,8 @@ COPY . .
 
 FROM base AS test
 WORKDIR /dashboard-frontend
-# RUN ["npm", "test"] # NOT WORKING CURRENTLY - SEE DUSAN MESSAGE IN SLACK
+EXPOSE 3000
+RUN ["npm", "test"]
 
 FROM test as final
-EXPOSE 3000
 CMD ["npm", "start"]

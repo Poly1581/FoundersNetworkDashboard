@@ -8,9 +8,9 @@ COPY . .
 
 FROM base AS test
 WORKDIR /dashboard-backend
-RUN ["python", "manage.py", "test"]
+EXPOSE 8000
+RUN ["python", "manage.py", "test", "--parallel"]
 
 
 from test AS final
-EXPOSE 8000
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

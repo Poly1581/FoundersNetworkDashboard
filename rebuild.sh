@@ -3,7 +3,7 @@ USAGE="Usage: ./rebuild.sh ?[ frontend / f / backend / b]"
 # Stop and rebuild
 if [ "$#" -eq 0 ]; then
     docker compose stop
-    docker compose build
+    docker compose build --progress=plain
 elif [ "$#" -eq 1 ]; then
     if [ $1 = "frontend" ] || [ $1 = "f" ]; then
 		!./rebuild.fish
@@ -15,7 +15,7 @@ elif [ "$#" -eq 1 ]; then
         exit 0
     fi
 	docker stop $SERVICE
-	docker compose build $SERVICE
+	docker compose build $SERVICE --progress=plain
 else
     echo -e $USAGE
     exit 0

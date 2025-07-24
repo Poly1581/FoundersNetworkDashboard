@@ -4,9 +4,11 @@ class SentryTest(TestCase):
     def setUp(self):
         self.client = Client(enforce_csrf_checks=True)
 
+    # Need issue_id to call properly
     # def test_get_issue_events(self):
         # api/sentry/issues/<int:issue_id>/events/
 
+    # Need issue_id to call properly
     # def update_issue_status(self):
         # api/sentry/issues/<int:issue_id>/
 
