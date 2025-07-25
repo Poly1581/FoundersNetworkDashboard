@@ -12,7 +12,6 @@ request_params = {
     "get_logs": ("start", "end", "events", "metric_events", "filter", "include_subaccounts", "include_totals", "pagination"),
     "get_stat_totals": ("start", "end", "resolution", "duration", "event"),
     "get_filtered_grouped_stats": ("start", "end", "resolution", "duration", "event", "filter", "group"),
-    "get_mailing_lists": ("limit", "skip", "address"),
     "get_mailing_list_members": ("address", "subscribed", "limit", "skip")
 }
 

@@ -80,19 +80,6 @@ def get_filtered_grouped_stats(request, **kwargs):
     })
 
 @api_view(["PUT"])
-def get_mailing_lists(request, **kwargs):
-    '''
-        Endpoint to access mailgun mailing lists
-        See https://documentation.mailgun.com/docs/mailgun/api-reference/openapi-final/mailing-lists/get-v3-lists
-    '''
-    return make_request({
-        "uri": f"{settings.MAILGUN_BASE_URI}/v3/lists/",
-        "method": "get",
-        "auth": settings.MAILGUN_AUTH,
-        "params": filter_request_data(request.data, "get_mailing_lists"),
-    })
-
-@api_view(["PUT"])
 def get_mailing_list_members(request, **kwargs):
     '''
         Endpoint to access mailgun mailing list members
