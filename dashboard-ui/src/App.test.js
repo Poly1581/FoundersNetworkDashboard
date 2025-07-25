@@ -29,4 +29,5 @@ test('Loads sentry properly', async () => {
 		// console.log(error);
 	}
 	expect(screen.queryByText("Loading Sentry Data")).toBe(null);
+	expect(screen.queryByText("Live Data")).not.toBe(null);
 });
