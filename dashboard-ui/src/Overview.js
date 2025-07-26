@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { Box, Typography, Card, CardContent } from '@mui/material';
+import React, {useState} from 'react';
+import {Box, Card, CardContent, Typography} from '@mui/material';
 import UnifiedStackedBarChart from './UnifiedStackedBarChart';
 import IntegrationStatusList from './IntegrationStatusList';
-
 
 
 export default function Overview({ allIntegrations, allEventsForChart, hubspotEvents = [], mailgunEvents = [], issues = [] }) {

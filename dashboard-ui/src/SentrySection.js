@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { CircularProgress, Typography, Box, Card, CardContent, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {CircularProgress, Typography} from '@mui/material';
 import IntegrationDetailsSection from './IntegrationDetailsSection';
 import ActiveIssuesSection from './ActiveIssuesSection';
-import { updateIssueStatus } from './api';
+import {updateIssueStatus} from './api';
 import CollapsibleSection from './CollapsibleSection';
-import { filterLiveDataByTimeRange } from './utils/dataFilters';
+import {filterLiveDataByTimeRange} from './utils/dataFilters';
 
 const textContent = {
     sentry: {

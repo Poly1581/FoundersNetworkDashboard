@@ -1,6 +1,21 @@
-import React, { useState } from 'react';
-import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Collapse, CircularProgress, Link, Menu, MenuItem } from '@mui/material';
-import { MoreVert as MoreVertIcon } from '@mui/icons-material';
+import React, {useState} from 'react';
+import {
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Collapse,
+    Link,
+    Menu,
+    MenuItem,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
+    Typography
+} from '@mui/material';
+import {MoreVert as MoreVertIcon} from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
 
 export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, textContent, selectedIssue }) {

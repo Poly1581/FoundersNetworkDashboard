@@ -1,6 +1,6 @@
 import React from 'react';
-import { Drawer, List, ListItemButton, ListItemIcon, ListItemText, Typography, Divider } from '@mui/material';
-import { BarChart as BarChartIcon, Dashboard as DashboardIcon } from '@mui/icons-material';
+import {Divider, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Typography} from '@mui/material';
+import {BarChart as BarChartIcon, Dashboard as DashboardIcon} from '@mui/icons-material';
 
 const drawerWidth = 240;
 const textContent = {

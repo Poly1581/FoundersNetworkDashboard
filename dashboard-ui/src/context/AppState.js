@@ -1,8 +1,21 @@
-import React, { useReducer, startTransition, useCallback, useMemo } from 'react';
+import React, {startTransition, useCallback, useMemo, useReducer} from 'react';
 import AppContext from './AppContext';
-import { appReducer, FETCH_DATA_START, FETCH_DATA_SUCCESS, FETCH_DATA_FAILURE, UPDATE_FILTERED_DATA, SET_LIVE_DATA_FILTER } from './AppReducer';
-import { fetchIssues, fetchEventsForIssue, fetchSentryIntegrationStatus, fetchHubSpotData, fetchMailgunData } from '../api';
-import { filterEventsByTimeRange, filterIssuesByTimeRange, createMemoizedFilter } from '../utils/dataFilters';
+import {
+    appReducer,
+    FETCH_DATA_FAILURE,
+    FETCH_DATA_START,
+    FETCH_DATA_SUCCESS,
+    SET_LIVE_DATA_FILTER,
+    UPDATE_FILTERED_DATA
+} from './AppReducer';
+import {
+    fetchEventsForIssue,
+    fetchHubSpotData,
+    fetchIssues,
+    fetchMailgunData,
+    fetchSentryIntegrationStatus
+} from '../api';
+import {createMemoizedFilter, filterEventsByTimeRange, filterIssuesByTimeRange} from '../utils/dataFilters';
 
 // Utility function from App.js
 function getTimeOffsetFromNow(timestampStr) {

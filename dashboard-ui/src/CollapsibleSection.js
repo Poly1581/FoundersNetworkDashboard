@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Box, Typography, Card, CardContent, Collapse, IconButton } from '@mui/material';
-import { KeyboardArrowDown as ArrowDownIcon, KeyboardArrowRight as ArrowRightIcon } from '@mui/icons-material';
+import React, {useState} from 'react';
+import {Box, Card, CardContent, Collapse, IconButton, Typography} from '@mui/material';
+import {KeyboardArrowDown as ArrowDownIcon, KeyboardArrowRight as ArrowRightIcon} from '@mui/icons-material';
 
 export default function CollapsibleSection({ title, children, defaultOpen = true }) {
     const [open, setOpen] = useState(defaultOpen);

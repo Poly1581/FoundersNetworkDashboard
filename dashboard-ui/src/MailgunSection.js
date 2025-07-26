@@ -1,6 +1,22 @@
-import React, { useState, useContext } from 'react';
-import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Collapse, List, ListItem, ListItemText, Card, CardContent } from '@mui/material';
-import { Info as InfoIcon, KeyboardArrowDown as ArrowDownIcon, KeyboardArrowRight as ArrowRightIcon } from '@mui/icons-material';
+import React, {useContext, useState} from 'react';
+import {
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    Collapse,
+    List,
+    ListItem,
+    ListItemText,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
+    Typography
+} from '@mui/material';
+import {Info as InfoIcon} from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
 import IntegrationDetailsSection from './IntegrationDetailsSection';
 import AppContext from './context/AppContext';

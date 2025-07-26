@@ -1,6 +1,6 @@
 import React from 'react';
-import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Collapse } from '@mui/material';
-import { Info as InfoIcon } from '@mui/icons-material';
+import {Box, Button, Chip, Collapse, Table, TableBody, TableCell, TableHead, TableRow, Typography} from '@mui/material';
+import {Info as InfoIcon} from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
 
 export default function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails, expandedIntegrations }) {

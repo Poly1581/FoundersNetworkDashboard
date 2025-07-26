@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { fetchAllHubSpotData } from './api/hubspotApi';
-import { fetchAllMailgunData } from './api/mailgunApi';
+import {fetchAllHubSpotData} from './api/hubspotApi';
+import {fetchAllMailgunData} from './api/mailgunApi';
 
 const handleError = (type, error) => {
     if (error.response) {

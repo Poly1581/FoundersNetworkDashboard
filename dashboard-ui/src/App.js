@@ -1,9 +1,20 @@
-import React, { useEffect, useContext, Suspense, useCallback, useTransition, useRef } from 'react';
+import React, {Suspense, useCallback, useContext, useEffect, useRef, useTransition} from 'react';
 import AppContext from './context/AppContext';
-import { SET_ACTIVE_PAGE, SET_TIME_RANGE, SET_ALL_EXPANDED } from './context/AppReducer';
+import {SET_ACTIVE_PAGE, SET_ALL_EXPANDED, SET_TIME_RANGE} from './context/AppReducer';
 import Sidebar from './Sidebar';
 import './App.css';
-import { Container, Box, CircularProgress, Alert, Snackbar, Backdrop, AppBar, Toolbar, Typography, Button } from '@mui/material';
+import {
+    Alert,
+    AppBar,
+    Backdrop,
+    Box,
+    Button,
+    CircularProgress,
+    Container,
+    Snackbar,
+    Toolbar,
+    Typography
+} from '@mui/material';
 
 const Overview = React.lazy(() => import('./Overview'));
 const LiveData = React.lazy(() => import('./LiveData'));

@@ -1,5 +1,16 @@
 import React from 'react';
-import { Card, CardContent, Typography, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Chip } from '@mui/material';
+import {
+    Card,
+    CardContent,
+    Chip,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography
+} from '@mui/material';
 
 const IntegrationStatusList = React.memo(({ integrations }) => {
     return (

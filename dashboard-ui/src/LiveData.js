@@ -1,5 +1,15 @@
-import React, { Suspense, useContext, useCallback, useState } from 'react';
-import { Box, Typography, Button, CircularProgress, ToggleButtonGroup, ToggleButton, Paper, Card, CardContent } from '@mui/material';
+import React, {Suspense, useCallback, useContext} from 'react';
+import {
+    Box,
+    Button,
+    Card,
+    CardContent,
+    CircularProgress,
+    Paper,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography
+} from '@mui/material';
 import AppContext from './context/AppContext';
 import SentrySection from './SentrySection';
 import HubSpotSection from './HubSpotSection';

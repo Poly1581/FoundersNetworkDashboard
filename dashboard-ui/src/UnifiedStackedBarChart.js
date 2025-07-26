@@ -1,8 +1,27 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { Box, Typography, Chip, Card, CardContent, List, ListItem, ListItemText, Divider, IconButton, Button, Menu, MenuItem, CircularProgress, FormControl, InputLabel, Select, ToggleButtonGroup, ToggleButton } from '@mui/material';
-import { Close as CloseIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
-import { resolveIssue, ignoreIssue, archiveIssue, bookmarkIssue, assignIssue } from './api';
-import { BarChart } from '@mui/x-charts/BarChart';
+import React, {useEffect, useMemo, useState} from 'react';
+import {
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    CircularProgress,
+    Divider,
+    FormControl,
+    IconButton,
+    InputLabel,
+    List,
+    ListItem,
+    Menu,
+    MenuItem,
+    Select,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography
+} from '@mui/material';
+import {Close as CloseIcon, MoreVert as MoreVertIcon} from '@mui/icons-material';
+import {archiveIssue, assignIssue, bookmarkIssue, ignoreIssue, resolveIssue} from './api';
+import {BarChart} from '@mui/x-charts/BarChart';
 
 
 export default function UnifiedStackedBarChart({
