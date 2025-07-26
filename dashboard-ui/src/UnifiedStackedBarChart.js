@@ -5,11 +5,11 @@ import { resolveIssue, ignoreIssue, archiveIssue, bookmarkIssue, assignIssue } f
 import { BarChart } from '@mui/x-charts/BarChart';
 
 
-export default function UnifiedStackedBarChart({ 
-    events = [], 
+export default function UnifiedStackedBarChart({
+    events = [],
     hubspotEvents = [],
     mailgunEvents = [],
-    timeRange: initialTimeRange = '30d', 
+    timeRange: initialTimeRange = '30d',
     title = 'Error Trends Over Time',
     onFilterChange,
     selectedFilter = null,
@@ -25,29 +25,29 @@ export default function UnifiedStackedBarChart({
     const [selectedErrorTypes, setSelectedErrorTypes] = useState(new Set()); // Multi-select error types
     const [timeRange, setTimeRange] = useState(initialTimeRange); // Internal time range state
     const [patternsSvgId] = useState(`chart-patterns-${Math.random().toString(36).substr(2, 9)}`); // Unique ID for SVG patterns
-    
+
     const chartData = useMemo(() => {
         // Create color mapping first
         const allErrorTypesForMapping = new Set();
-        
+
         // Collect all unique error types from both APIs for color mapping
         events?.forEach(event => {
             const errorType = event.issueCategory || event.type || 'Unknown Error';
             allErrorTypesForMapping.add(errorType);
         });
-        
+
         hubspotEvents?.forEach(event => {
             const errorType = event.issueCategory || event.category || event.type || 'Unknown Error';
             allErrorTypesForMapping.add(errorType);
         });
-        
+
         mailgunEvents?.forEach(event => {
             const errorType = event.issueCategory || event.category || event.type || 'Unknown Error';
             allErrorTypesForMapping.add(errorType);
         });
-        
+
         const sortedErrorTypesForMapping = Array.from(allErrorTypesForMapping).sort();
-        
+
         // Accessible colors with high contrast and distinct hues for colorblind users
         // Each color meets WCAG AA contrast ratio (4.5:1) against white backgrounds
         const accessibleColors = [
@@ -68,7 +68,7 @@ export default function UnifiedStackedBarChart({
             '#8B5CF6', // Violet - lighter purple
             '#EC4899'  // Pink - distinct magenta
         ];
-        
+
         // Pattern definitions for texture overlays to help distinguish colors
         const texturePatterns = [
             'none',           // Solid fill
@@ -88,14 +88,14 @@ export default function UnifiedStackedBarChart({
             'plus',          // Plus sign pattern
             'x-pattern'      // X pattern
         ];
-        
+
         // Helper function to convert hex color to numerical value for ordering
         const hexToOrderValue = (hexColor) => {
             // Remove # if present and convert to integer
             const hex = hexColor.replace('#', '');
             return parseInt(hex, 16);
         };
-        
+
         // Create mapping from error type to accessible color and texture pattern
         const localColorMap = {};
         const localPatternMap = {};
@@ -109,13 +109,13 @@ export default function UnifiedStackedBarChart({
             // Use hex value for ordering instead of array index
             localColorOrder[errorType] = hexToOrderValue(assignedColor);
         });
-        
+
         const getLocalColorOrder = (errorType) => {
             return localColorOrder[errorType] || 999999999; // Use large number as fallback for hex values
         };
         const now = new Date();
         let timeRangeMs;
-        
+
         switch (timeRange) {
             case '1d':
                 timeRangeMs = 24 * 60 * 60 * 1000;
@@ -128,25 +128,25 @@ export default function UnifiedStackedBarChart({
                 timeRangeMs = 30 * 24 * 60 * 60 * 1000;
                 break;
         }
-        
+
         const startTime = new Date(now.getTime() - timeRangeMs);
-        
+
         // Create time buckets
         const bucketSize = timeRange === '1d' ? 2 * 60 * 60 * 1000 : // 2 hour buckets for 1 day
-                          timeRange === '7d' ? 12 * 60 * 60 * 1000 : // 12 hour buckets for 1 week
-                          24 * 60 * 60 * 1000; // 1 day buckets for 1 month
-        
+            timeRange === '7d' ? 12 * 60 * 60 * 1000 : // 12 hour buckets for 1 week
+                24 * 60 * 60 * 1000; // 1 day buckets for 1 month
+
         const buckets = new Map();
-        
+
         // Initialize buckets
         for (let time = startTime.getTime(); time <= now.getTime(); time += bucketSize) {
             const bucketKey = Math.floor(time / bucketSize) * bucketSize;
             buckets.set(bucketKey, { timestamp: new Date(bucketKey) });
         }
-        
+
         if (showAPIComparison) {
             // API comparison mode - show all actual Sentry error types + HubSpot as separate groups
-            
+
             // Get all unique issue categories from actual Sentry events (using real API data)
             const allSentryTypes = new Set();
             events?.forEach(event => {
@@ -154,21 +154,21 @@ export default function UnifiedStackedBarChart({
                 const errorType = event.issueCategory || event.type || 'Unknown Error';
                 allSentryTypes.add(errorType);
             });
-            
+
             // Get all unique issue categories from HubSpot events  
             const allHubSpotTypes = new Set();
             hubspotEvents?.forEach(event => {
                 const errorType = event.issueCategory || event.category || event.type || 'Unknown Error';
                 allHubSpotTypes.add(errorType);
             });
-            
+
             // Get all unique issue categories from Mailgun events
             const allMailgunTypes = new Set();
             mailgunEvents?.forEach(event => {
                 const errorType = event.issueCategory || event.category || event.type || 'Unknown Error';
                 allMailgunTypes.add(errorType);
             });
-            
+
             // Initialize buckets with all discovered error types based on selected API
             buckets.forEach(bucket => {
                 if (selectedAPI === 'sentry') {
@@ -188,7 +188,7 @@ export default function UnifiedStackedBarChart({
                     });
                 }
             });
-            
+
             // Process events based on selected API
             if (selectedAPI === 'sentry') {
                 // Process Sentry events using actual API data structure
@@ -201,7 +201,7 @@ export default function UnifiedStackedBarChart({
                             const bucket = buckets.get(bucketKey);
                             // Use issueCategory from processed data (derived from issue.metadata.type || issue.type)
                             const errorType = event.issueCategory || event.type || 'Unknown Error';
-                            
+
                             // Only process if no error type filter is set, or if this error type is selected
                             if (selectedErrorTypes.size === 0 || selectedErrorTypes.has(errorType)) {
                                 const sentryKey = `sentry_${errorType}`;
@@ -219,7 +219,7 @@ export default function UnifiedStackedBarChart({
                         if (buckets.has(bucketKey)) {
                             const bucket = buckets.get(bucketKey);
                             const errorType = event.issueCategory || event.category || event.type || 'Unknown Error';
-                            
+
                             // Only process if no error type filter is set, or if this error type is selected
                             if (selectedErrorTypes.size === 0 || selectedErrorTypes.has(errorType)) {
                                 const hubspotKey = `hubspot_${errorType}`;
@@ -237,7 +237,7 @@ export default function UnifiedStackedBarChart({
                         if (buckets.has(bucketKey)) {
                             const bucket = buckets.get(bucketKey);
                             const errorType = event.issueCategory || event.category || event.type || 'Unknown Error';
-                            
+
                             // Only process if no error type filter is set, or if this error type is selected
                             if (selectedErrorTypes.size === 0 || selectedErrorTypes.has(errorType)) {
                                 const mailgunKey = `mailgun_${errorType}`;
@@ -247,11 +247,11 @@ export default function UnifiedStackedBarChart({
                     }
                 });
             }
-            
+
             let sentryErrorTypes = Array.from(allSentryTypes).map(type => `sentry_${type}`);
             let hubspotErrorTypes = Array.from(allHubSpotTypes).map(type => `hubspot_${type}`);
             let mailgunErrorTypes = Array.from(allMailgunTypes).map(type => `mailgun_${type}`);
-            
+
             // Filter error types based on selection
             if (selectedErrorTypes.size > 0) {
                 sentryErrorTypes = sentryErrorTypes.filter(type => {
@@ -267,7 +267,7 @@ export default function UnifiedStackedBarChart({
                     return selectedErrorTypes.has(errorType);
                 });
             }
-            
+
             // Filter by selected API
             if (selectedAPI === 'sentry') {
                 hubspotErrorTypes = [];
@@ -279,26 +279,26 @@ export default function UnifiedStackedBarChart({
                 sentryErrorTypes = [];
                 hubspotErrorTypes = [];
             }
-            
+
             // Sort error types by hex color order for consistent stacking (highest hex = top)
             sentryErrorTypes.sort((a, b) => {
                 const errorTypeA = a.replace('sentry_', '');
                 const errorTypeB = b.replace('sentry_', '');
                 return getLocalColorOrder(errorTypeB) - getLocalColorOrder(errorTypeA); // Highest hex on top
             });
-            
+
             hubspotErrorTypes.sort((a, b) => {
                 const errorTypeA = a.replace('hubspot_', '');
                 const errorTypeB = b.replace('hubspot_', '');
                 return getLocalColorOrder(errorTypeB) - getLocalColorOrder(errorTypeA); // Highest hex on top
             });
-            
+
             mailgunErrorTypes.sort((a, b) => {
                 const errorTypeA = a.replace('mailgun_', '');
                 const errorTypeB = b.replace('mailgun_', '');
                 return getLocalColorOrder(errorTypeB) - getLocalColorOrder(errorTypeA); // Highest hex on top
             });
-            
+
             return {
                 data: Array.from(buckets.values()).sort((a, b) => a.timestamp - b.timestamp),
                 sentryErrorTypes,
@@ -312,7 +312,7 @@ export default function UnifiedStackedBarChart({
         } else {
             // Error type breakdown mode
             const errorTypes = new Set();
-            
+
             // Process events and categorize by error type/level
             events?.forEach(event => {
                 const eventTime = new Date(event.timestamp || event.dateCreated || event.lastSeen);
@@ -322,7 +322,7 @@ export default function UnifiedStackedBarChart({
                         const bucket = buckets.get(bucketKey);
                         const errorType = event.level || event.type || 'error';
                         errorTypes.add(errorType);
-                        
+
                         if (!bucket[errorType]) {
                             bucket[errorType] = 0;
                         }
@@ -330,7 +330,7 @@ export default function UnifiedStackedBarChart({
                     }
                 }
             });
-            
+
             // Fill missing error types with 0
             buckets.forEach(bucket => {
                 errorTypes.forEach(type => {
@@ -339,7 +339,7 @@ export default function UnifiedStackedBarChart({
                     }
                 });
             });
-            
+
             return {
                 data: Array.from(buckets.values()).sort((a, b) => a.timestamp - b.timestamp),
                 errorTypes: Array.from(errorTypes),
@@ -349,13 +349,13 @@ export default function UnifiedStackedBarChart({
             };
         }
     }, [events, hubspotEvents, mailgunEvents, timeRange, showAPIComparison, selectedAPI, selectedErrorTypes]);
-    
+
     const errorTypeButtons = useMemo(() => {
         if (!showAPIComparison) return [];
-        
+
         // Dynamically collect error types based on selected API
         const allErrorTypes = new Set();
-        
+
         if (selectedAPI === 'sentry') {
             // Get Sentry error types from events
             events?.forEach(event => {
@@ -375,15 +375,15 @@ export default function UnifiedStackedBarChart({
                 allErrorTypes.add(errorType);
             });
         }
-        
+
         // Convert to array and sort alphabetically first
         return Array.from(allErrorTypes).sort();
     }, [events, hubspotEvents, mailgunEvents, showAPIComparison, selectedAPI]);
-    
+
     // Sort error type buttons by hex color value order after chartData is available (highest hex = first)
     const sortedErrorTypeButtons = useMemo(() => {
         if (!chartData.colorOrder) return errorTypeButtons;
-        
+
         return [...errorTypeButtons].sort((a, b) => {
             const orderA = chartData.colorOrder[a] || 999999999;
             const orderB = chartData.colorOrder[b] || 999999999;
@@ -395,16 +395,16 @@ export default function UnifiedStackedBarChart({
     const getColorForErrorTypeButton = (errorType, index) => {
         return getConsistentColorForErrorType(errorType);
     };
-    
+
     // Function to create inline SVG pattern for buttons (since they can't use external patterns)
     const getInlinePatternStyle = (errorType) => {
         const pattern = getPatternForErrorType(errorType);
         const color = getConsistentColorForErrorType(errorType);
-        
+
         if (pattern === 'none') {
             return { backgroundColor: color, backgroundImage: 'none' };
         }
-        
+
         // Create CSS background patterns for buttons
         const patterns = {
             'diagonal-lines': `linear-gradient(45deg, ${color} 25%, transparent 25%, transparent 75%, ${color} 75%), linear-gradient(45deg, ${color} 25%, transparent 25%, transparent 75%, ${color} 75%)`,
@@ -414,59 +414,59 @@ export default function UnifiedStackedBarChart({
             'cross-hatch': `repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px), repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)`,
             'grid': `repeating-linear-gradient(0deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 1px, transparent 1px, transparent 8px), repeating-linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 1px, transparent 1px, transparent 8px)`
         };
-        
+
         return {
             backgroundColor: color,
             backgroundImage: patterns[pattern] || 'none',
             backgroundSize: pattern === 'dots' ? '10px 10px' : 'auto'
         };
     };
-    
+
     const getColorForErrorType = (errorType) => {
         // For non-API comparison mode, still use the pattern system
         return getColorWithPattern(errorType);
     };
-    
+
     const getConsistentColorForErrorType = (errorType) => {
         return chartData.colorMap?.[errorType] || '#757575';
     };
-    
+
     const getPatternForErrorType = (errorType) => {
         return chartData.patternMap?.[errorType] || 'none';
     };
-    
+
     const getPatternIdForErrorType = (errorType) => {
         const pattern = getPatternForErrorType(errorType);
         return pattern === 'none' ? null : `${patternsSvgId}-${errorType.replace(/[^a-zA-Z0-9]/g, '-')}`;
     };
-    
+
     const getColorWithPattern = (errorType) => {
         // For MUI X Charts, we need to use solid colors and apply patterns via CSS
         return getConsistentColorForErrorType(errorType);
     };
-    
+
     const getPatternDataAttribute = (errorType) => {
         const pattern = getPatternForErrorType(errorType);
         return pattern !== 'none' ? pattern : null;
     };
-    
-    
+
+
     // Apply patterns to chart bars after rendering
     useEffect(() => {
         if (!chartData.patternMap) return;
-        
+
         const timer = setTimeout(() => {
             // Find all bar elements in the chart
             const chartContainer = document.querySelector('.MuiBarChart-root');
             if (!chartContainer) return;
-            
+
             const bars = chartContainer.querySelectorAll('rect');
             bars.forEach((bar, index) => {
                 // Skip non-data bars (axes, etc.)
                 if (!bar.getAttribute('fill') || bar.getAttribute('fill') === 'none') return;
-                
+
                 const fillColor = bar.getAttribute('fill');
-                
+
                 // Find matching error type by color
                 let matchingErrorType = null;
                 Object.keys(chartData.colorMap).forEach(errorType => {
@@ -474,46 +474,46 @@ export default function UnifiedStackedBarChart({
                         matchingErrorType = errorType;
                     }
                 });
-                
+
                 if (matchingErrorType && chartData.patternMap[matchingErrorType] !== 'none') {
                     // Create pattern overlay
                     const patternType = chartData.patternMap[matchingErrorType];
                     const patternOverlay = createPatternOverlay(bar, patternType, fillColor);
-                    
+
                     if (patternOverlay) {
                         bar.parentNode.insertBefore(patternOverlay, bar.nextSibling);
                     }
                 }
             });
         }, 100); // Small delay to ensure chart is rendered
-        
+
         return () => clearTimeout(timer);
     }, [chartData.data, chartData.colorMap, chartData.patternMap]);
-    
+
     const createPatternOverlay = (barElement, patternType, baseColor) => {
         const rect = barElement.getBoundingClientRect();
         const chartContainer = document.querySelector('.MuiBarChart-root');
         const chartRect = chartContainer.getBoundingClientRect();
-        
+
         // Get bar dimensions and position relative to chart
         const x = parseFloat(barElement.getAttribute('x') || 0);
         const y = parseFloat(barElement.getAttribute('y') || 0);
         const width = parseFloat(barElement.getAttribute('width') || 0);
         const height = parseFloat(barElement.getAttribute('height') || 0);
-        
+
         if (width <= 0 || height <= 0) return null;
-        
+
         // Create pattern definition if it doesn't exist
         let defs = chartContainer.querySelector('defs');
         if (!defs) {
             defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
             chartContainer.appendChild(defs);
         }
-        
+
         const patternId = `pattern-${patternType}-${Math.random().toString(36).substr(2, 9)}`;
         const pattern = createSVGPatternElement(patternId, patternType, baseColor);
         defs.appendChild(pattern);
-        
+
         // Create overlay rectangle with pattern
         const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         overlay.setAttribute('x', x);
@@ -522,15 +522,15 @@ export default function UnifiedStackedBarChart({
         overlay.setAttribute('height', height);
         overlay.setAttribute('fill', `url(#${patternId})`);
         overlay.setAttribute('pointer-events', 'none');
-        
+
         return overlay;
     };
-    
+
     const createSVGPatternElement = (patternId, patternType, baseColor) => {
         const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
         pattern.setAttribute('id', patternId);
         pattern.setAttribute('patternUnits', 'userSpaceOnUse');
-        
+
         switch (patternType) {
             case 'diagonal-lines':
                 pattern.setAttribute('width', '8');
@@ -641,68 +641,68 @@ export default function UnifiedStackedBarChart({
                 pattern.setAttribute('height', '8');
                 pattern.innerHTML = `<rect width="8" height="8" fill="${baseColor}"/>`;
         }
-        
+
         return pattern;
     };
-    
+
     const getColorOrder = (errorType) => {
         return chartData.colorOrder?.[errorType] || 999999999; // Use large number as fallback for hex values
     };
-    
+
     const getRainbowColor = (index, total) => {
         // This is now deprecated in favor of getConsistentColorForErrorType
         const rainbowColors = [
-            '#e53e3e', '#dd6b20', '#d69e2e', '#38a169', '#319795', 
+            '#e53e3e', '#dd6b20', '#d69e2e', '#38a169', '#319795',
             '#3182ce', '#805ad5', '#d53f8c', '#f56500', '#ecc94b',
             '#48bb78', '#4fd1c7', '#4299e1', '#9f7aea', '#ed64a6'
         ];
         return rainbowColors[index % rainbowColors.length];
     };
-    
+
     const getColorForAPIErrorType = (apiErrorType, errorIndex = 0) => {
         // Extract the error type from the API-specific prefix
         const errorType = apiErrorType.replace('sentry_', '').replace('hubspot_', '');
         return getColorWithPattern(errorType);
     };
-    
+
     const handleBarClick = (event, dataIndex, seriesId) => {
         if (dataIndex !== undefined && seriesId && showAPIComparison) {
             const clickedBucket = chartData.data[dataIndex];
             const timestamp = clickedBucket.timestamp;
-            
+
             // Determine which API and error type was clicked
             const api = seriesId.startsWith('sentry_') ? 'sentry' : 'hubspot';
             const errorType = seriesId.replace('sentry_', '').replace('hubspot_', '');
-            
+
             // Get the specific events for this time bucket and error type
-            const bucketSize = timeRange === '1d' ? 2 * 60 * 60 * 1000 : 
-                              timeRange === '7d' ? 12 * 60 * 60 * 1000 : 
-                              24 * 60 * 60 * 1000;
-            
+            const bucketSize = timeRange === '1d' ? 2 * 60 * 60 * 1000 :
+                timeRange === '7d' ? 12 * 60 * 60 * 1000 :
+                    24 * 60 * 60 * 1000;
+
             const bucketStart = new Date(timestamp);
             const bucketEnd = new Date(timestamp.getTime() + bucketSize);
-            
+
             let relevantEvents = [];
-            
+
             if (api === 'sentry') {
                 relevantEvents = events?.filter(event => {
                     // Use consistent timestamp field as in data processing
                     const eventTime = new Date(event.dateCreated || event.timestamp || event.lastSeen);
                     const eventType = event.issueCategory || event.type || 'Unknown Error';
-                    return eventTime >= bucketStart && 
-                           eventTime < bucketEnd && 
-                           eventType === errorType;
+                    return eventTime >= bucketStart &&
+                        eventTime < bucketEnd &&
+                        eventType === errorType;
                 }) || [];
             } else if (api === 'hubspot') {
                 relevantEvents = hubspotEvents?.filter(event => {
                     const eventTime = new Date(event.timestamp || event.created_at || event.dateCreated);
                     const eventType = event.issueCategory || event.category || event.type || 'Unknown Error';
-                    return eventTime >= bucketStart && 
-                           eventTime < bucketEnd && 
-                           eventType === errorType;
+                    return eventTime >= bucketStart &&
+                        eventTime < bucketEnd &&
+                        eventType === errorType;
                 }) || [];
             }
-            
+
             const newInvestigationData = {
                 api,
                 errorType,
@@ -712,25 +712,25 @@ export default function UnifiedStackedBarChart({
                 events: relevantEvents,
                 seriesId
             };
-            
+
             setInvestigationData(newInvestigationData);
-            
+
             // Communicate investigation data to parent component
             if (onInvestigationChange) {
                 onInvestigationChange(newInvestigationData);
             }
         }
-        
+
         if (onFilterChange && dataIndex !== undefined) {
             const clickedData = chartData.data[dataIndex];
             onFilterChange(clickedData);
         }
     };
-    
+
     const handleLegendClick = (seriesId) => {
         const newHighlighted = highlightedSeries === seriesId ? null : seriesId;
         setHighlightedSeries(newHighlighted);
-        
+
         if (onFilterChange) {
             onFilterChange(newHighlighted ? { errorType: seriesId } : null);
         }
@@ -749,7 +749,7 @@ export default function UnifiedStackedBarChart({
 
     const handleResolve = async () => {
         if (!selectedEventForMenu?.id) return;
-        
+
         setLoadingAction('resolve');
         try {
             await resolveIssue(selectedEventForMenu.id);
@@ -766,7 +766,7 @@ export default function UnifiedStackedBarChart({
 
     const handleIgnore = async () => {
         if (!selectedEventForMenu?.id) return;
-        
+
         setLoadingAction('ignore');
         try {
             await ignoreIssue(selectedEventForMenu.id);
@@ -782,7 +782,7 @@ export default function UnifiedStackedBarChart({
 
     const handleArchive = async () => {
         if (!selectedEventForMenu?.id) return;
-        
+
         setLoadingAction('archive');
         try {
             await archiveIssue(selectedEventForMenu.id);
@@ -798,7 +798,7 @@ export default function UnifiedStackedBarChart({
 
     const handleBookmark = async () => {
         if (!selectedEventForMenu?.id) return;
-        
+
         setLoadingAction('bookmark');
         try {
             await bookmarkIssue(selectedEventForMenu.id);
@@ -814,7 +814,7 @@ export default function UnifiedStackedBarChart({
 
     const handleAssign = async () => {
         if (!selectedEventForMenu?.id) return;
-        
+
         // For now, assign to current user - could be enhanced with user selection dialog
         setLoadingAction('assign');
         try {
@@ -828,7 +828,7 @@ export default function UnifiedStackedBarChart({
             handleMenuClose();
         }
     };
-    
+
     if (!chartData.data.length || (!chartData.errorTypes?.length && !chartData.allErrorTypes?.length)) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" height={400}>
@@ -843,7 +843,7 @@ export default function UnifiedStackedBarChart({
             setSelectedErrorTypes(new Set());
             return;
         }
-        
+
         const newSelectedTypes = new Set(selectedErrorTypes);
         if (newSelectedTypes.has(errorType)) {
             newSelectedTypes.delete(errorType);
@@ -852,31 +852,31 @@ export default function UnifiedStackedBarChart({
         }
         setSelectedErrorTypes(newSelectedTypes);
     };
-    
+
     const handleErrorTypeClick = (errorType) => {
         // Find all events of this type regardless of time
         const allSentryEvents = events?.filter(event => {
             const eventType = event.issueCategory || event.type || 'Unknown Error';
             return eventType === errorType;
         }) || [];
-        
+
         const allHubSpotEvents = hubspotEvents?.filter(event => {
             const eventType = event.issueCategory || event.category || event.type || 'Unknown Error';
             return eventType === errorType;
         }) || [];
-        
+
         const allMailgunEvents = mailgunEvents?.filter(event => {
             const eventType = event.issueCategory || event.category || event.type || 'Unknown Error';
             return eventType === errorType;
         }) || [];
-        
+
         const combinedEvents = [...allSentryEvents, ...allHubSpotEvents, ...allMailgunEvents];
-        
+
         if (combinedEvents.length > 0) {
             // Determine primary API - show which has more events, if tie then prefer Sentry > HubSpot > Mailgun
             let api, seriesId;
             const maxCount = Math.max(allSentryEvents.length, allHubSpotEvents.length, allMailgunEvents.length);
-            
+
             if (allSentryEvents.length === maxCount && allSentryEvents.length > 0) {
                 api = 'sentry';
                 seriesId = `sentry_${errorType}`;
@@ -887,10 +887,10 @@ export default function UnifiedStackedBarChart({
                 api = 'mailgun';
                 seriesId = `mailgun_${errorType}`;
             }
-            
+
             // Determine if mixed API (more than one API has events)
             const activeAPIs = [allSentryEvents.length > 0, allHubSpotEvents.length > 0, allMailgunEvents.length > 0].filter(Boolean).length;
-            
+
             const newInvestigationData = {
                 api: activeAPIs > 1 ? 'mixed' : api, // Show mixed if multiple APIs have this error
                 errorType,
@@ -904,9 +904,9 @@ export default function UnifiedStackedBarChart({
                 hubspotCount: allHubSpotEvents.length,
                 mailgunCount: allMailgunEvents.length
             };
-            
+
             setInvestigationData(newInvestigationData);
-            
+
             if (onInvestigationChange) {
                 onInvestigationChange(newInvestigationData);
             }
@@ -920,7 +920,7 @@ export default function UnifiedStackedBarChart({
             setInvestigationData({ ...investigationData, timeRangeChanged: true });
         }
     };
-    
+
     const updateInvestigationAPI = (newAPI) => {
         setSelectedAPI(newAPI);
         // Clear selected error types when switching APIs to prevent "No data available" bug
@@ -937,7 +937,7 @@ export default function UnifiedStackedBarChart({
     return (
         <Box>
             <Typography variant="h6" gutterBottom>{title}</Typography>
-            
+
             {/* API and Time Range Controls */}
             {showAPIComparison && (
                 <Box mb={2}>
@@ -954,7 +954,7 @@ export default function UnifiedStackedBarChart({
                                 <MenuItem value="mailgun">Mailgun</MenuItem>
                             </Select>
                         </FormControl>
-                        
+
                         <ToggleButtonGroup
                             value={timeRange}
                             exclusive
@@ -966,11 +966,11 @@ export default function UnifiedStackedBarChart({
                             <ToggleButton value="7d" aria-label="7 days">1 wk</ToggleButton>
                             <ToggleButton value="30d" aria-label="30 days">1 mo</ToggleButton>
                         </ToggleButtonGroup>
-                        
+
                         {selectedErrorTypes.size > 0 && (
-                            <Button 
-                                size="small" 
-                                variant="outlined" 
+                            <Button
+                                size="small"
+                                variant="outlined"
                                 onClick={() => setSelectedErrorTypes(new Set())}
                                 sx={{ minWidth: 'auto', px: 1 }}
                             >
@@ -978,7 +978,7 @@ export default function UnifiedStackedBarChart({
                             </Button>
                         )}
                     </Box>
-                    
+
                     <Typography variant="body2" color="text.secondary" mb={1}>
                         Error Types (multi-select with latching - click to toggle, alt+click to clear all):
                     </Typography>
@@ -993,7 +993,7 @@ export default function UnifiedStackedBarChart({
                                     label={errorType}
                                     onClick={(event) => handleErrorTypeToggle(errorType, event)}
                                     size="small"
-                                    sx={{ 
+                                    sx={{
                                         cursor: 'pointer',
                                         backgroundColor: isSelected ? patternStyle.backgroundColor : 'transparent',
                                         backgroundImage: isSelected ? patternStyle.backgroundImage : 'none',
@@ -1019,10 +1019,10 @@ export default function UnifiedStackedBarChart({
                             );
                         })}
                     </Box>
-                    
+
                 </Box>
             )}
-            
+
             {/* Filter chips */}
             {selectedFilter && (
                 <Box mb={2}>
@@ -1034,7 +1034,7 @@ export default function UnifiedStackedBarChart({
                     />
                 </Box>
             )}
-            
+
             <Box height={566}> {/* 400 * 1.414 = 566 */}
                 <BarChart
                     dataset={chartData.data}
@@ -1060,7 +1060,7 @@ export default function UnifiedStackedBarChart({
                             return '';
                         }
                     }]}
-                    series={showAPIComparison ? 
+                    series={showAPIComparison ?
                         [
                             // Sentry error types with stack group 'sentry'
                             ...chartData.sentryErrorTypes.map((errorType, index) => ({
@@ -1099,27 +1099,33 @@ export default function UnifiedStackedBarChart({
                             handleBarClick(event, d.dataIndex, d.seriesId);
                         }
                     }}
+                    slots={{
+                        legend: () => null,
+                    }}
                     slotProps={{
-                        legend: { hidden: false },
                         tooltip: {
                             content: ({ active, payload, label }) => {
                                 // console.log("Tooltip Payload:", payload);
                                 if (active && payload && payload.length) {
                                     // Filter out entries with value 0 or undefined, and ensure value > 0
                                     const nonZeroPayload = payload.filter(entry => {
-                                        return entry && 
-                                               entry.value !== undefined && 
-                                               entry.value !== null && 
-                                               Number(entry.value) > 0;
+                                        // More robust filtering for zero values
+                                        if (!entry || entry.value === undefined || entry.value === null) {
+                                            return false;
+                                        }
+
+                                        // Convert to number and check if it's greater than 0
+                                        const numValue = Number(entry.value);
+                                        return !isNaN(numValue) && numValue > 0;
                                     });
-                                    
+
                                     if (nonZeroPayload.length === 0) {
                                         return null;
                                     }
-                                    
+
                                     return (
-                                        <Box 
-                                            sx={{ 
+                                        <Box
+                                            sx={{
                                                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
                                                 border: '1px solid #ccc',
                                                 borderRadius: 1,
@@ -1133,20 +1139,20 @@ export default function UnifiedStackedBarChart({
                                             {nonZeroPayload
                                                 .sort((a, b) => Number(b.value) - Number(a.value)) // Sort by value descending
                                                 .map((entry, index) => (
-                                                <Box key={index} display="flex" alignItems="center" gap={1}>
-                                                    <Box
-                                                        sx={{
-                                                            width: 12,
-                                                            height: 12,
-                                                            backgroundColor: entry.color,
-                                                            borderRadius: '2px'
-                                                        }}
-                                                    />
-                                                    <Typography variant="body2">
-                                                        {entry.name?.replace('sentry_', '').replace('hubspot_', '')}: {entry.value}
-                                                    </Typography>
-                                                </Box>
-                                            ))}
+                                                    <Box key={index} display="flex" alignItems="center" gap={1}>
+                                                        <Box
+                                                            sx={{
+                                                                width: 12,
+                                                                height: 12,
+                                                                backgroundColor: entry.color,
+                                                                borderRadius: '2px'
+                                                            }}
+                                                        />
+                                                        <Typography variant="body2">
+                                                            {entry.name?.replace('sentry_', '').replace('hubspot_', '')}: {entry.value}
+                                                        </Typography>
+                                                    </Box>
+                                                ))}
                                         </Box>
                                     );
                                 }
@@ -1156,7 +1162,7 @@ export default function UnifiedStackedBarChart({
                     }}
                 />
             </Box>
-            
+
             {/* Investigation Panel */}
             {investigationData && (
                 <Card sx={{ mt: 3, border: `2px solid ${getConsistentColorForErrorType(investigationData.errorType)}` }}>
@@ -1178,7 +1184,7 @@ export default function UnifiedStackedBarChart({
                                         <MenuItem value="mailgun">Mailgun</MenuItem>
                                     </Select>
                                 </FormControl>
-                                
+
                                 <ToggleButtonGroup
                                     value={timeRange}
                                     exclusive
@@ -1190,7 +1196,7 @@ export default function UnifiedStackedBarChart({
                                     <ToggleButton value="7d" aria-label="7 days">1 wk</ToggleButton>
                                     <ToggleButton value="30d" aria-label="30 days">1 mo</ToggleButton>
                                 </ToggleButtonGroup>
-                                
+
                                 <IconButton size="small" onClick={() => {
                                     setInvestigationData(null);
                                     if (onInvestigationChange) {
@@ -1201,23 +1207,23 @@ export default function UnifiedStackedBarChart({
                                 </IconButton>
                             </Box>
                         </Box>
-                        
+
                         <Box mb={2}>
                             {!investigationData.isGlobalFilter ? (
-                                <Chip 
+                                <Chip
                                     label={`Time Range: ${investigationData.bucketStart.toLocaleString()} - ${investigationData.bucketEnd.toLocaleString()}`}
                                     variant="outlined"
                                     sx={{ mr: 1, mb: 1 }}
                                 />
                             ) : (
-                                <Chip 
+                                <Chip
                                     label="All Time - Global Filter"
                                     color="secondary"
                                     variant="outlined"
                                     sx={{ mr: 1, mb: 1 }}
                                 />
                             )}
-                            <Chip 
+                            <Chip
                                 label={`${investigationData.events.length} events found`}
                                 color="primary"
                                 variant="outlined"
@@ -1225,43 +1231,43 @@ export default function UnifiedStackedBarChart({
                             />
                             {investigationData.api === 'mixed' ? (
                                 <>
-                                    <Chip 
+                                    <Chip
                                         label={`SENTRY: ${investigationData.sentryCount} events`}
-                                        sx={{ 
+                                        sx={{
                                             backgroundColor: getConsistentColorForErrorType(investigationData.errorType),
                                             color: 'white',
-                                            mr: 1, mb: 1 
+                                            mr: 1, mb: 1
                                         }}
                                     />
-                                    <Chip 
+                                    <Chip
                                         label={`HUBSPOT: ${investigationData.hubspotCount} events`}
-                                        sx={{ 
+                                        sx={{
                                             backgroundColor: getConsistentColorForErrorType(investigationData.errorType),
                                             color: 'white',
-                                            mr: 1, mb: 1 
+                                            mr: 1, mb: 1
                                         }}
                                     />
-                                    <Chip 
+                                    <Chip
                                         label={`MAILGUN: ${investigationData.mailgunCount} events`}
-                                        sx={{ 
+                                        sx={{
                                             backgroundColor: getConsistentColorForErrorType(investigationData.errorType),
                                             color: 'white',
-                                            mr: 1, mb: 1 
+                                            mr: 1, mb: 1
                                         }}
                                     />
                                 </>
                             ) : (
-                                <Chip 
+                                <Chip
                                     label={`API: ${investigationData.api.toUpperCase()}`}
-                                    sx={{ 
+                                    sx={{
                                         backgroundColor: getConsistentColorForErrorType(investigationData.errorType),
                                         color: 'white',
-                                        mr: 1, mb: 1 
+                                        mr: 1, mb: 1
                                     }}
                                 />
                             )}
                         </Box>
-                        
+
                         {investigationData.events.length > 0 ? (
                             <List sx={{ maxHeight: 300, overflow: 'auto' }}>
                                 {investigationData.events
@@ -1272,61 +1278,61 @@ export default function UnifiedStackedBarChart({
                                     })
                                     .sort((a, b) => new Date(b.dateCreated || b.timestamp || b.lastSeen) - new Date(a.dateCreated || a.timestamp || a.lastSeen))
                                     .map((event, index) => (
-                                    <React.Fragment key={event.id || index}>
-                                        <ListItem alignItems="flex-start">
-                                            <Box sx={{ width: '100%' }}>
-                                                {/* Primary content */}
-                                                <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-                                                    <Box display="flex" alignItems="center" gap={1}>
-                                                        <Chip 
-                                                            label={investigationData.errorType}
+                                        <React.Fragment key={event.id || index}>
+                                            <ListItem alignItems="flex-start">
+                                                <Box sx={{ width: '100%' }}>
+                                                    {/* Primary content */}
+                                                    <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+                                                        <Box display="flex" alignItems="center" gap={1}>
+                                                            <Chip
+                                                                label={investigationData.errorType}
+                                                                size="small"
+                                                                sx={{
+                                                                    backgroundColor: getConsistentColorForErrorType(investigationData.errorType),
+                                                                    color: 'white'
+                                                                }}
+                                                            />
+                                                            <Typography variant="body1" component="div" sx={{ fontSize: '1.1rem', fontWeight: 500 }}>
+                                                                {event.title || event.message || 'Unknown Error'}
+                                                            </Typography>
+                                                        </Box>
+                                                        <Button
                                                             size="small"
-                                                            sx={{ 
-                                                                backgroundColor: getConsistentColorForErrorType(investigationData.errorType),
-                                                                color: 'white'
-                                                            }}
-                                                        />
-                                                        <Typography variant="body1" component="div" sx={{ fontSize: '1.1rem', fontWeight: 500 }}>
-                                                            {event.title || event.message || 'Unknown Error'}
-                                                        </Typography>
+                                                            startIcon={<MoreVertIcon />}
+                                                            onClick={(e) => handleMenuClick(e, event)}
+                                                            variant="outlined"
+                                                            sx={{ minWidth: 'auto' }}
+                                                        >
+                                                            Actions
+                                                        </Button>
                                                     </Box>
-                                                    <Button 
-                                                        size="small" 
-                                                        startIcon={<MoreVertIcon />} 
-                                                        onClick={(e) => handleMenuClick(e, event)}
-                                                        variant="outlined"
-                                                        sx={{ minWidth: 'auto' }}
-                                                    >
-                                                        Actions
-                                                    </Button>
+
+                                                    {/* Secondary content */}
+                                                    <Box>
+                                                        <Typography variant="body2" color="text.secondary" component="div" sx={{ fontSize: '0.95rem', mb: 0.5 }}>
+                                                            {new Date(event.timestamp || event.dateCreated || event.lastSeen).toLocaleString()}
+                                                        </Typography>
+                                                        {event.culprit && (
+                                                            <Typography variant="body2" color="text.secondary" component="div" sx={{ fontSize: '0.9rem', mb: 0.5 }}>
+                                                                Location: {event.culprit}
+                                                            </Typography>
+                                                        )}
+                                                        {event.count && (
+                                                            <Typography variant="body2" color="text.secondary" component="div" sx={{ fontSize: '0.9rem', mb: 0.5 }}>
+                                                                Count: {event.count}
+                                                            </Typography>
+                                                        )}
+                                                        {event.shortId && (
+                                                            <Typography variant="body2" color="text.secondary" component="div" sx={{ fontSize: '0.9rem' }}>
+                                                                Issue ID: {event.shortId}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
                                                 </Box>
-                                                
-                                                {/* Secondary content */}
-                                                <Box>
-                                                    <Typography variant="body2" color="text.secondary" component="div" sx={{ fontSize: '0.95rem', mb: 0.5 }}>
-                                                        {new Date(event.timestamp || event.dateCreated || event.lastSeen).toLocaleString()}
-                                                    </Typography>
-                                                    {event.culprit && (
-                                                        <Typography variant="body2" color="text.secondary" component="div" sx={{ fontSize: '0.9rem', mb: 0.5 }}>
-                                                            Location: {event.culprit}
-                                                        </Typography>
-                                                    )}
-                                                    {event.count && (
-                                                        <Typography variant="body2" color="text.secondary" component="div" sx={{ fontSize: '0.9rem', mb: 0.5 }}>
-                                                            Count: {event.count}
-                                                        </Typography>
-                                                    )}
-                                                    {event.shortId && (
-                                                        <Typography variant="body2" color="text.secondary" component="div" sx={{ fontSize: '0.9rem' }}>
-                                                            Issue ID: {event.shortId}
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-                                            </Box>
-                                        </ListItem>
-                                        {index < investigationData.events.length - 1 && <Divider />}
-                                    </React.Fragment>
-                                ))}
+                                            </ListItem>
+                                            {index < investigationData.events.length - 1 && <Divider />}
+                                        </React.Fragment>
+                                    ))}
                             </List>
                         ) : (
                             <Typography color="text.secondary" textAlign="center" py={2}>
