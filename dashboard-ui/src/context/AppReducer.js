@@ -25,13 +25,29 @@ export const appReducer = (state, action) => {
                 rawSentryIssues: action.payload.sentryIssues,
                 rawAllEventsData: action.payload.allEventsData,
                 rawAllEventsForChart: action.payload.allEventsForChart,
+                rawHubSpotData: action.payload.hubspotData,
+                rawMailgunData: action.payload.mailgunData,
                 // Filtered data (initially same as raw)
                 sentryIssues: action.payload.sentryIssues,
                 sentryIntegrations: action.payload.sentryIntegrations,
                 allEventsData: action.payload.allEventsData,
                 allEventsForChart: action.payload.allEventsForChart,
+                // HubSpot data
+                hubspotIssues: action.payload.hubspotIssues,
                 hubspotIntegrations: action.payload.hubspotIntegrations,
-                allIntegrations: [...action.payload.sentryIntegrations, ...action.payload.hubspotIntegrations],
+                hubspotDeals: action.payload.hubspotDeals,
+                hubspotContacts: action.payload.hubspotContacts,
+                // Mailgun data
+                mailgunEvents: action.payload.mailgunEvents,
+                mailgunIntegrations: action.payload.mailgunIntegrations,
+                mailgunStats: action.payload.mailgunStats,
+                mailgunDomains: action.payload.mailgunDomains,
+                // All integrations combined
+                allIntegrations: [
+                    ...action.payload.sentryIntegrations,
+                    ...action.payload.hubspotIntegrations,
+                    ...action.payload.mailgunIntegrations
+                ],
             };
         case FETCH_DATA_FAILURE:
             return {

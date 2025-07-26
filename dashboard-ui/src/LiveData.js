@@ -3,6 +3,7 @@ import { Box, Typography, Button, CircularProgress, ToggleButtonGroup, ToggleBut
 import AppContext from './context/AppContext';
 import SentrySection from './SentrySection';
 import HubSpotSection from './HubSpotSection';
+import MailgunSection from './MailgunSection';
 
 const LIVE_DATA_FILTERS = [
     { value: '1h', label: '1 hr' },
@@ -93,13 +94,10 @@ export default function LiveData({ allExpanded, onRefresh, onExpandAll, sentryPr
                         />
                     </Suspense>
                     <Suspense fallback={<CircularProgress />}>
-                        <HubSpotSection 
-                            {...hubspotProps}
-                            allExpanded={allExpanded}
-                            liveDataFilter={liveDataFilter}
-                            timeRange={timeRange}
-                            onTimeRangeChange={onTimeRangeChange}
-                        />
+                        <HubSpotSection />
+                    </Suspense>
+                    <Suspense fallback={<CircularProgress />}>
+                        <MailgunSection />
                     </Suspense>
                 </>
             )}

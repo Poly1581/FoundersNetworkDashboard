@@ -1,7 +1,7 @@
 import React, { useReducer, startTransition, useCallback, useMemo } from 'react';
 import AppContext from './AppContext';
 import { appReducer, FETCH_DATA_START, FETCH_DATA_SUCCESS, FETCH_DATA_FAILURE, UPDATE_FILTERED_DATA, SET_LIVE_DATA_FILTER } from './AppReducer';
-import { fetchIssues, fetchEventsForIssue, fetchSentryIntegrationStatus } from '../api';
+import { fetchIssues, fetchEventsForIssue, fetchSentryIntegrationStatus, fetchHubSpotData, fetchMailgunData } from '../api';
 import { filterEventsByTimeRange, filterIssuesByTimeRange, createMemoizedFilter } from '../utils/dataFilters';
 
 // Utility function from App.js
@@ -27,9 +27,14 @@ const AppState = ({ children }) => {
         allEventsData: {},
         allEventsForChart: [],
         sentryIntegrations: [],
-        hubspotIntegrations: [
-            { name: 'HubSpot API', category: 'CRM', status: 'Healthy', responseTime: '120ms', lastSuccess: 'Just now', uptime: '99.99%', issue: null },
-        ],
+        // HubSpot data
+        rawHubSpotData: {},
+        hubspotIssues: [],
+        hubspotIntegrations: [],
+        // Mailgun data
+        rawMailgunData: {},
+        mailgunEvents: [],
+        mailgunIntegrations: [],
         allIntegrations: [],
         loading: false,
         error: null,
@@ -41,15 +46,17 @@ const AppState = ({ children }) => {
     const memoizedEventFilter = useMemo(() => createMemoizedFilter(), []);
     const memoizedIssueFilter = useMemo(() => createMemoizedFilter(), []);
 
-    const loadSentryData = useCallback(async () => {
+    const loadAllData = useCallback(async () => {
         startTransition(() => {
             dispatch({ type: FETCH_DATA_START });
         });
 
         try {
-            const [fetchedIssues, fetchedSentryIntegrations] = await Promise.all([
+            const [fetchedIssues, fetchedSentryIntegrations, hubspotData, mailgunData] = await Promise.all([
                 fetchIssues(),
                 fetchSentryIntegrationStatus(),
+                fetchHubSpotData(),
+                fetchMailgunData(),
             ]);
 
             const eventPromises = fetchedIssues.map(async (issue) => {
@@ -86,9 +93,14 @@ const AppState = ({ children }) => {
                         sentryIntegrations: fetchedSentryIntegrations,
                         allEventsData: eventsDataMap,
                         allEventsForChart: flattenedEvents,
-                        hubspotIntegrations: [
-                            { name: 'HubSpot API', category: 'CRM', status: 'Healthy', responseTime: '120ms', lastSuccess: 'Just now', uptime: '99.99%', issue: null },
-                        ], // Keep mock data
+                        // HubSpot data
+                        hubspotData: hubspotData,
+                        hubspotIssues: hubspotData?.issues || [],
+                        hubspotIntegrations: hubspotData?.integrations || [],
+                        // Mailgun data
+                        mailgunData: mailgunData,
+                        mailgunEvents: mailgunData?.events || [],
+                        mailgunIntegrations: mailgunData?.integrations || [],
                     }
                 });
             });
@@ -168,7 +180,7 @@ const AppState = ({ children }) => {
         <AppContext.Provider value={{ 
             state, 
             dispatch, 
-            loadSentryData, 
+            loadSentryData: loadAllData, 
             updateFilteredData,
             setLiveDataFilter 
         }}>

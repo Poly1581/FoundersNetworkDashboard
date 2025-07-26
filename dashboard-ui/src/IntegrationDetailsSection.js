@@ -1,9 +1,24 @@
 import React from 'react';
 import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Collapse } from '@mui/material';
+import { Info as InfoIcon } from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
 
 export default function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails, expandedIntegrations }) {
     if (!integrations) return null;
+
+    const getRowColor = (status) => {
+        switch (status) {
+            case 'Healthy':
+                return '#e8f5e8'; // light green
+            case 'Degraded':
+                return '#fff3e0'; // light orange
+            case 'Down':
+                return '#ffebee'; // light red
+            default:
+                return 'inherit';
+        }
+    };
+    
     return (
         <CollapsibleSection title={textContent.heading}>
             {integrations.length === 0 ? <Typography>No integration data.</Typography> :
@@ -19,7 +34,7 @@ export default function IntegrationDetailsSection({ integrations, textContent, o
                     <TableBody>
                         {integrations.map((i, index) => (
                             <React.Fragment key={i.name}>
-                                <TableRow>
+                                <TableRow sx={{ backgroundColor: getRowColor(i.status) }}>
                                     <TableCell>{i.name}</TableCell>
                                     <TableCell>{i.category}</TableCell>
                                     <TableCell>
@@ -34,19 +49,29 @@ export default function IntegrationDetailsSection({ integrations, textContent, o
                                     <TableCell>{i.uptime}</TableCell>
                                     <TableCell>{i.issue || '—'}</TableCell>
                                     <TableCell align="right">
-                                        <Button size="small" onClick={() => onAndViewDetails(index)}>{textContent.viewDetails}</Button>
+                                        <Button size="small" startIcon={<InfoIcon />} onClick={() => onAndViewDetails(index)}>
+                                            {textContent.viewDetails}
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
                                         <Collapse in={expandedIntegrations.includes(index)} timeout="auto" unmountOnExit>
-                                            <Box sx={{ margin: 1 }}>
-                                                <Typography variant="h6" gutterBottom component="div">
-                                                    Integration Details
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Service: {i.name} | Category: {i.category} | Status: {i.status} | Response Time: {i.responseTime} | Last Success: {i.lastSuccess} | Uptime: {i.uptime} | Issue: {i.issue || '—'}
-                                                </Typography>
+                                            <Box sx={{ margin: 1, p: 2, backgroundColor: '#f5f5f5' }}>
+                                                <Box sx={{ ml: 2 }}>
+                                                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                        ○ Connected user: {i.connectedUser || 'admin@foundersnetwork.com'}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                        ○ Authorization: {i.authorization || 'Bearer ****...a8f2 (OAuth token)'}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                        ○ Last failure: {i.lastFailure || 'Rate limit exceeded - 2024-12-15 14:23:45'}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                        ○ Last success: {i.lastSuccess}
+                                                    </Typography>
+                                                </Box>
                                             </Box>
                                         </Collapse>
                                     </TableCell>

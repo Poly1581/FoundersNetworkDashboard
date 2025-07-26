@@ -7,6 +7,17 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedIssueForMenu, setSelectedIssueForMenu] = useState(null);
 
+    const getRowColorForIssue = (status) => {
+        switch (status) {
+            case 'unresolved':
+                return '#ffebee'; // light red
+            case 'resolved':
+                return '#e8f5e8'; // light green
+            default:
+                return 'inherit';
+        }
+    };
+
     const handleMenuClick = (event, issue) => {
         event.stopPropagation();
         setAnchorEl(event.currentTarget);
@@ -53,7 +64,7 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                                 hover
                                 sx={{ 
                                     cursor: 'pointer',
-                                    backgroundColor: selectedIssue?.id === issue.id ? 'action.selected' : 'inherit',
+                                    backgroundColor: selectedIssue?.id === issue.id ? 'action.selected' : getRowColorForIssue(issue.status),
                                     '&:hover': {
                                         backgroundColor: 'action.hover'
                                     }

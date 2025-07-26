@@ -8,6 +8,7 @@ import { BarChart } from '@mui/x-charts/BarChart';
 export default function UnifiedStackedBarChart({ 
     events = [], 
     hubspotEvents = [],
+    mailgunEvents = [],
     timeRange: initialTimeRange = '30d', 
     title = 'Error Trends Over Time',
     onFilterChange,
@@ -20,7 +21,7 @@ export default function UnifiedStackedBarChart({
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedEventForMenu, setSelectedEventForMenu] = useState(null);
     const [loadingAction, setLoadingAction] = useState(null);
-    const [selectedAPI, setSelectedAPI] = useState('sentry'); // 'sentry', 'hubspot'
+    const [selectedAPI, setSelectedAPI] = useState('sentry'); // 'sentry', 'hubspot', 'mailgun'
     const [selectedErrorTypes, setSelectedErrorTypes] = useState(new Set()); // Multi-select error types
     const [timeRange, setTimeRange] = useState(initialTimeRange); // Internal time range state
     const [patternsSvgId] = useState(`chart-patterns-${Math.random().toString(36).substr(2, 9)}`); // Unique ID for SVG patterns
@@ -36,6 +37,11 @@ export default function UnifiedStackedBarChart({
         });
         
         hubspotEvents?.forEach(event => {
+            const errorType = event.issueCategory || event.category || event.type || 'Unknown Error';
+            allErrorTypesForMapping.add(errorType);
+        });
+        
+        mailgunEvents?.forEach(event => {
             const errorType = event.issueCategory || event.category || event.type || 'Unknown Error';
             allErrorTypesForMapping.add(errorType);
         });
@@ -156,6 +162,13 @@ export default function UnifiedStackedBarChart({
                 allHubSpotTypes.add(errorType);
             });
             
+            // Get all unique issue categories from Mailgun events
+            const allMailgunTypes = new Set();
+            mailgunEvents?.forEach(event => {
+                const errorType = event.issueCategory || event.category || event.type || 'Unknown Error';
+                allMailgunTypes.add(errorType);
+            });
+            
             // Initialize buckets with all discovered error types based on selected API
             buckets.forEach(bucket => {
                 if (selectedAPI === 'sentry') {
@@ -167,6 +180,11 @@ export default function UnifiedStackedBarChart({
                     // Initialize only HubSpot error type counters
                     allHubSpotTypes.forEach(type => {
                         bucket[`hubspot_${type}`] = 0;
+                    });
+                } else if (selectedAPI === 'mailgun') {
+                    // Initialize only Mailgun error type counters
+                    allMailgunTypes.forEach(type => {
+                        bucket[`mailgun_${type}`] = 0;
                     });
                 }
             });
@@ -210,10 +228,29 @@ export default function UnifiedStackedBarChart({
                         }
                     }
                 });
+            } else if (selectedAPI === 'mailgun') {
+                // Process Mailgun events using issueCategory
+                mailgunEvents?.forEach(event => {
+                    const eventTime = new Date(event.timestamp || event.created_at || event.dateCreated);
+                    if (eventTime >= startTime) {
+                        const bucketKey = Math.floor(eventTime.getTime() / bucketSize) * bucketSize;
+                        if (buckets.has(bucketKey)) {
+                            const bucket = buckets.get(bucketKey);
+                            const errorType = event.issueCategory || event.category || event.type || 'Unknown Error';
+                            
+                            // Only process if no error type filter is set, or if this error type is selected
+                            if (selectedErrorTypes.size === 0 || selectedErrorTypes.has(errorType)) {
+                                const mailgunKey = `mailgun_${errorType}`;
+                                bucket[mailgunKey]++;
+                            }
+                        }
+                    }
+                });
             }
             
             let sentryErrorTypes = Array.from(allSentryTypes).map(type => `sentry_${type}`);
             let hubspotErrorTypes = Array.from(allHubSpotTypes).map(type => `hubspot_${type}`);
+            let mailgunErrorTypes = Array.from(allMailgunTypes).map(type => `mailgun_${type}`);
             
             // Filter error types based on selection
             if (selectedErrorTypes.size > 0) {
@@ -225,13 +262,22 @@ export default function UnifiedStackedBarChart({
                     const errorType = type.replace('hubspot_', '');
                     return selectedErrorTypes.has(errorType);
                 });
+                mailgunErrorTypes = mailgunErrorTypes.filter(type => {
+                    const errorType = type.replace('mailgun_', '');
+                    return selectedErrorTypes.has(errorType);
+                });
             }
             
             // Filter by selected API
             if (selectedAPI === 'sentry') {
                 hubspotErrorTypes = [];
+                mailgunErrorTypes = [];
             } else if (selectedAPI === 'hubspot') {
                 sentryErrorTypes = [];
+                mailgunErrorTypes = [];
+            } else if (selectedAPI === 'mailgun') {
+                sentryErrorTypes = [];
+                hubspotErrorTypes = [];
             }
             
             // Sort error types by hex color order for consistent stacking (highest hex = top)
@@ -247,11 +293,18 @@ export default function UnifiedStackedBarChart({
                 return getLocalColorOrder(errorTypeB) - getLocalColorOrder(errorTypeA); // Highest hex on top
             });
             
+            mailgunErrorTypes.sort((a, b) => {
+                const errorTypeA = a.replace('mailgun_', '');
+                const errorTypeB = b.replace('mailgun_', '');
+                return getLocalColorOrder(errorTypeB) - getLocalColorOrder(errorTypeA); // Highest hex on top
+            });
+            
             return {
                 data: Array.from(buckets.values()).sort((a, b) => a.timestamp - b.timestamp),
                 sentryErrorTypes,
                 hubspotErrorTypes,
-                allErrorTypes: [...sentryErrorTypes, ...hubspotErrorTypes],
+                mailgunErrorTypes,
+                allErrorTypes: [...sentryErrorTypes, ...hubspotErrorTypes, ...mailgunErrorTypes],
                 colorMap: localColorMap,
                 patternMap: localPatternMap,
                 colorOrder: localColorOrder
@@ -295,7 +348,7 @@ export default function UnifiedStackedBarChart({
                 colorOrder: localColorOrder
             };
         }
-    }, [events, hubspotEvents, timeRange, showAPIComparison, selectedAPI, selectedErrorTypes]);
+    }, [events, hubspotEvents, mailgunEvents, timeRange, showAPIComparison, selectedAPI, selectedErrorTypes]);
     
     const errorTypeButtons = useMemo(() => {
         if (!showAPIComparison) return [];
@@ -315,11 +368,17 @@ export default function UnifiedStackedBarChart({
                 const errorType = event.issueCategory || event.category || event.type || 'Unknown Error';
                 allErrorTypes.add(errorType);
             });
+        } else if (selectedAPI === 'mailgun') {
+            // Get Mailgun error types from mailgunEvents
+            mailgunEvents?.forEach(event => {
+                const errorType = event.issueCategory || event.category || event.type || 'Unknown Error';
+                allErrorTypes.add(errorType);
+            });
         }
         
         // Convert to array and sort alphabetically first
         return Array.from(allErrorTypes).sort();
-    }, [events, hubspotEvents, showAPIComparison, selectedAPI]);
+    }, [events, hubspotEvents, mailgunEvents, showAPIComparison, selectedAPI]);
     
     // Sort error type buttons by hex color value order after chartData is available (highest hex = first)
     const sortedErrorTypeButtons = useMemo(() => {
@@ -806,28 +865,34 @@ export default function UnifiedStackedBarChart({
             return eventType === errorType;
         }) || [];
         
-        const combinedEvents = [...allSentryEvents, ...allHubSpotEvents];
+        const allMailgunEvents = mailgunEvents?.filter(event => {
+            const eventType = event.issueCategory || event.category || event.type || 'Unknown Error';
+            return eventType === errorType;
+        }) || [];
+        
+        const combinedEvents = [...allSentryEvents, ...allHubSpotEvents, ...allMailgunEvents];
         
         if (combinedEvents.length > 0) {
-            // Determine primary API - if exists in both, show which has more events, if tie then prefer Sentry
+            // Determine primary API - show which has more events, if tie then prefer Sentry > HubSpot > Mailgun
             let api, seriesId;
-            if (allSentryEvents.length > allHubSpotEvents.length) {
+            const maxCount = Math.max(allSentryEvents.length, allHubSpotEvents.length, allMailgunEvents.length);
+            
+            if (allSentryEvents.length === maxCount && allSentryEvents.length > 0) {
                 api = 'sentry';
                 seriesId = `sentry_${errorType}`;
-            } else if (allHubSpotEvents.length > allSentryEvents.length) {
+            } else if (allHubSpotEvents.length === maxCount && allHubSpotEvents.length > 0) {
                 api = 'hubspot';
                 seriesId = `hubspot_${errorType}`;
-            } else if (allSentryEvents.length > 0) {
-                // Tie or equal, prefer Sentry
-                api = 'sentry';
-                seriesId = `sentry_${errorType}`;
             } else {
-                api = 'hubspot';
-                seriesId = `hubspot_${errorType}`;
+                api = 'mailgun';
+                seriesId = `mailgun_${errorType}`;
             }
             
+            // Determine if mixed API (more than one API has events)
+            const activeAPIs = [allSentryEvents.length > 0, allHubSpotEvents.length > 0, allMailgunEvents.length > 0].filter(Boolean).length;
+            
             const newInvestigationData = {
-                api: allSentryEvents.length > 0 && allHubSpotEvents.length > 0 ? 'mixed' : api, // Show mixed if both APIs have this error
+                api: activeAPIs > 1 ? 'mixed' : api, // Show mixed if multiple APIs have this error
                 errorType,
                 timestamp: new Date(),
                 bucketStart: new Date(0), // Start of time
@@ -836,7 +901,8 @@ export default function UnifiedStackedBarChart({
                 seriesId,
                 isGlobalFilter: true,
                 sentryCount: allSentryEvents.length,
-                hubspotCount: allHubSpotEvents.length
+                hubspotCount: allHubSpotEvents.length,
+                mailgunCount: allMailgunEvents.length
             };
             
             setInvestigationData(newInvestigationData);
@@ -885,6 +951,7 @@ export default function UnifiedStackedBarChart({
                             >
                                 <MenuItem value="sentry">Sentry</MenuItem>
                                 <MenuItem value="hubspot">HubSpot</MenuItem>
+                                <MenuItem value="mailgun">Mailgun</MenuItem>
                             </Select>
                         </FormControl>
                         
@@ -1108,6 +1175,7 @@ export default function UnifiedStackedBarChart({
                                     >
                                         <MenuItem value="sentry">Sentry</MenuItem>
                                         <MenuItem value="hubspot">HubSpot</MenuItem>
+                                        <MenuItem value="mailgun">Mailgun</MenuItem>
                                     </Select>
                                 </FormControl>
                                 
@@ -1167,6 +1235,14 @@ export default function UnifiedStackedBarChart({
                                     />
                                     <Chip 
                                         label={`HUBSPOT: ${investigationData.hubspotCount} events`}
+                                        sx={{ 
+                                            backgroundColor: getConsistentColorForErrorType(investigationData.errorType),
+                                            color: 'white',
+                                            mr: 1, mb: 1 
+                                        }}
+                                    />
+                                    <Chip 
+                                        label={`MAILGUN: ${investigationData.mailgunCount} events`}
                                         sx={{ 
                                             backgroundColor: getConsistentColorForErrorType(investigationData.errorType),
                                             color: 'white',

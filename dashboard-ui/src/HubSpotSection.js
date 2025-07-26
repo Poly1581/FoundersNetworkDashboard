@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Card, CardContent, Collapse, IconButton, Table, TableHead, TableRow, TableCell, TableBody, Chip, List, ListItem, ListItemText, Button, CircularProgress, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import React, { useState, useContext } from 'react';
+import { Box, Typography, Card, CardContent, Collapse, IconButton, Table, TableHead, TableRow, TableCell, TableBody, Chip, List, ListItem, ListItemText, Button, CircularProgress } from '@mui/material';
 import { KeyboardArrowDown as ArrowDownIcon, KeyboardArrowRight as ArrowRightIcon, Info as InfoIcon } from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
 import IntegrationDetailsSection from './IntegrationDetailsSection';
-
-import HubSpotPieChart from './HubSpotPieChart';
-import HubSpotBarChart from './HubSpotBarChart';
-import { useData } from './hooks/useData';
+import AppContext from './context/AppContext';
 
 const textContent = {
     hubspot: {
@@ -49,34 +46,31 @@ const textContent = {
     }
 };
 
-// Mock API functions for HubSpot
-const fetchHubSpotData = async () => {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve({
-                deals: [
-                    { id: 1, title: 'New Deal with Acme Corp', stage: 'Discovery', amount: '$50,000' },
-                    { id: 2, title: 'Expansion with Globex Inc', stage: 'Proposal', amount: '$120,000' },
-                ],
-                activities: [
-                    { id: 1, type: 'Email', summary: 'Follow-up with Jane Doe', time: '2 hours ago' },
-                    { id: 2, type: 'Call', summary: 'Initial call with John Smith', time: 'Yesterday' },
-                ],
-                issues: [
-                    { id: 'hs-001', title: 'Contact sync failing for large batches', status: 'unresolved', level: 'error', lastSeen: new Date(Date.now() - 3600000).toISOString(), category: 'Contact Sync Error' },
-                    { id: 'hs-002', title: 'Deal pipeline updates delayed', status: 'unresolved', level: 'warning', lastSeen: new Date(Date.now() - 7200000).toISOString(), category: 'Pipeline Sync Error' },
-                    { id: 'hs-003', title: 'Property mapping conflicts detected', status: 'resolved', level: 'error', lastSeen: new Date(Date.now() - 14400000).toISOString(), category: 'Property Mapping Error' },
-                ],
-                integrations: [
-                    { name: 'HubSpot API', category: 'CRM', status: 'Healthy', responseTime: '120ms', lastSuccess: 'Just now', uptime: '99.99%', issue: null },
-                ]
-            });
-        }, 800); // Simulate network delay
-    });
+// Chart color scheme for consistent categorization
+const getConsistentColorForCategory = (category) => {
+    const colorMap = {
+        'API Rate Limit': '#DC2626',
+        'Connection Error': '#EA580C', 
+        'Reputation Issue': '#CA8A04',
+        'Delivery Issue': '#16A34A',
+        'Pipeline Sync Error': '#0284C7',
+        'Contact Sync Error': '#7C3AED',
+        'Unknown Error': '#757575'
+    };
+    return colorMap[category] || '#757575';
 };
 
 
-function ActiveDealsSection({ deals, textContent }) {
+
+function ActiveDealsSection({ deals, textContent, onViewDetails, expandedDeals }) {
+    if (!deals || deals.length === 0) {
+        return (
+            <CollapsibleSection title={textContent.heading}>
+                <Typography>No deals available.</Typography>
+            </CollapsibleSection>
+        );
+    }
+
     return (
         <CollapsibleSection title={textContent.heading}>
             <Table>
@@ -85,19 +79,45 @@ function ActiveDealsSection({ deals, textContent }) {
                         <TableCell>Title</TableCell>
                         <TableCell>Stage</TableCell>
                         <TableCell>Amount</TableCell>
-                        <TableCell align="right"></TableCell>
+                        <TableCell align="right">Actions</TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
                     {deals.map(deal => (
-                        <TableRow key={deal.id}>
-                            <TableCell>{deal.title}</TableCell>
-                            <TableCell>{deal.stage}</TableCell>
-                            <TableCell>{deal.amount}</TableCell>
-                            <TableCell align="right">
-                                <Button size="small">{textContent.viewDeal}</Button>
-                            </TableCell>
-                        </TableRow>
+                        <React.Fragment key={deal.id}>
+                            <TableRow>
+                                <TableCell>{deal.title || deal.name}</TableCell>
+                                <TableCell>{deal.stage || deal.dealstage}</TableCell>
+                                <TableCell>{deal.amount || deal.value || 'N/A'}</TableCell>
+                                <TableCell align="right">
+                                    <Button size="small" startIcon={<InfoIcon />} onClick={() => onViewDetails && onViewDetails(deal.id)}>
+                                        {textContent.viewDeal}
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                            {expandedDeals && expandedDeals.includes(deal.id) && (
+                                <TableRow>
+                                    <TableCell colSpan={4}>
+                                        <Collapse in={true} timeout="auto" unmountOnExit>
+                                            <Box sx={{ margin: 1, p: 2, backgroundColor: '#f5f5f5' }}>
+                                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                    ○ Deal ID: {deal.id}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                    ○ Created: {deal.createdate ? new Date(deal.createdate).toLocaleDateString() : 'N/A'}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                    ○ Close Date: {deal.closedate ? new Date(deal.closedate).toLocaleDateString() : 'N/A'}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                                    ○ Owner: {deal.hubspot_owner_id || 'Unassigned'}
+                                                </Typography>
+                                            </Box>
+                                        </Collapse>
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </React.Fragment>
                     ))}
                 </TableBody>
             </Table>
@@ -135,7 +155,24 @@ function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, expandedRo
                     {issues.map(issue => (
                         <React.Fragment key={issue.id}>
                             <TableRow>
-                                <TableCell>{issue.title}</TableCell>
+                                <TableCell>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography variant="body2">
+                                            {issue.title}
+                                        </Typography>
+                                        {issue.issueCategory && (
+                                            <Chip 
+                                                label={issue.issueCategory}
+                                                size="small"
+                                                sx={{ 
+                                                    backgroundColor: getConsistentColorForCategory(issue.issueCategory),
+                                                    color: 'white',
+                                                    fontSize: '0.75rem'
+                                                }}
+                                            />
+                                        )}
+                                    </Box>
+                                </TableCell>
                                 <TableCell>
                                     <Chip label={issue.status} size="small" color={issue.status === 'unresolved' ? 'error' : 'success'} />
                                 </TableCell>
@@ -218,103 +255,53 @@ function RecentAlertsSection({ alerts, showFilter, toggleFilter, filter, onFilte
     );
 }
 
-export default function HubSpotSection({ allExpanded, timeRange, onTimeRangeChange }) {
-    const { data, loading, error } = useData('hubspotData', fetchHubSpotData);
+export default function HubSpotSection() {
+    const { state } = useContext(AppContext);
+    const { hubspotIntegrations, hubspotIssues, hubspotDeals, hubspotContacts, loading } = state;
     const [expandedIntegrations, setExpandedIntegrations] = useState([]);
-    const [expandedRows, setExpandedRows] = useState([]);
-    const [expandedAlertDetails, setExpandedAlertDetails] = useState([]);
-    const [hiddenIssueIDs, setHiddenIssueIDs] = useState([]);
-    const [hubspotAlerts, setHubspotAlerts] = useState([]);
+    const [expandedDeals, setExpandedDeals] = useState([]);
 
-    useEffect(() => {
-        if (allExpanded && data) {
-            setExpandedIntegrations(data.integrations.map((_, index) => index));
-            setExpandedRows(data.issues ? data.issues.map(issue => issue.id) : []);
-            setExpandedAlertDetails(hubspotAlerts.map((_, index) => index));
-        } else {
-            setExpandedIntegrations([]);
-            setExpandedRows([]);
-            setExpandedAlertDetails([]);
-        }
-    }, [allExpanded, data, hubspotAlerts]);
-
-    useEffect(() => {
-        if (data?.issues) {
-            const transformedAlerts = data.issues.map(issue => ({
-                severity: issue.level === 'error' ? 'Error' : 'Warning',
-                message: issue.title,
-                time: new Date(issue.lastSeen).toLocaleString(),
-                details: `Category: ${issue.category} | Status: ${issue.status}`,
-                originalIssue: issue
-            }));
-            setHubspotAlerts(transformedAlerts);
-        }
-    }, [data]);
-
-    const handleViewIntegrationDetails = useCallback((index) => {
+    const handleViewIntegrationDetails = (index) => {
         const newExpandedIntegrations = expandedIntegrations.includes(index)
             ? expandedIntegrations.filter(i => i !== index)
             : [...expandedIntegrations, index];
         setExpandedIntegrations(newExpandedIntegrations);
-    }, [expandedIntegrations]);
+    };
 
-    const handleViewDetails = useCallback((issueId) => {
-        const newExpandedRows = expandedRows.includes(issueId)
-            ? expandedRows.filter(id => id !== issueId)
-            : [...expandedRows, issueId];
-        setExpandedRows(newExpandedRows);
-    }, [expandedRows]);
-
-    const handleViewAlertDetails = useCallback((index) => {
-        const newExpandedAlertDetails = expandedAlertDetails.includes(index)
-            ? expandedAlertDetails.filter(i => i !== index)
-            : [...expandedAlertDetails, index];
-        setExpandedAlertDetails(newExpandedAlertDetails);
-    }, [expandedAlertDetails]);
-
-    const handleResolveIssue = useCallback(async (issueId) => {
-        setHiddenIssueIDs(prev => [...prev, issueId]);
-        // Mock resolve - in real app would call API
-        console.log('Resolving HubSpot issue:', issueId);
-    }, []);
+    const handleViewDealDetails = (dealId) => {
+        const newExpandedDeals = expandedDeals.includes(dealId)
+            ? expandedDeals.filter(id => id !== dealId)
+            : [...expandedDeals, dealId];
+        setExpandedDeals(newExpandedDeals);
+    };
 
     if (loading) {
-        return <CollapsibleSection title={textContent.hubspot.title}><CircularProgress /></CollapsibleSection>;
+        return (
+            <CollapsibleSection title={textContent.hubspot.title}>
+                <Typography>Loading HubSpot data...</Typography>
+            </CollapsibleSection>
+        );
     }
-
-    if (error) {
-        return <CollapsibleSection title={textContent.hubspot.title}><Typography color="error">Error fetching HubSpot data: {error.message}</Typography></CollapsibleSection>;
-    }
-
-    const visibleIssues = data?.issues ? data.issues.filter(issue => !hiddenIssueIDs.includes(issue.id)) : [];
 
     return (
-        <CollapsibleSection title={textContent.hubspot.title}>
+        <Box>
+            <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+                {textContent.hubspot.title}
+            </Typography>
+            
             <IntegrationDetailsSection 
-                integrations={data?.integrations || []} 
+                integrations={hubspotIntegrations} 
                 textContent={textContent.hubspot.integrationDetails} 
                 onAndViewDetails={handleViewIntegrationDetails} 
                 expandedIntegrations={expandedIntegrations} 
             />
-            <ActiveIssuesSection 
-                issues={visibleIssues} 
-                onViewDetails={handleViewDetails} 
-                onResolveIssue={handleResolveIssue} 
-                expandedRows={expandedRows} 
-                textContent={textContent.hubspot.activeIssues} 
+            
+            <ActiveDealsSection 
+                deals={hubspotDeals} 
+                textContent={textContent.hubspot.activeDeals}
+                onViewDetails={handleViewDealDetails}
+                expandedDeals={expandedDeals}
             />
-            <RecentAlertsSection 
-                alerts={hubspotAlerts} 
-                showFilter={false} 
-                toggleFilter={() => {}} 
-                filter={{}} 
-                onFilterChange={() => {}} 
-                expandedAlertDetails={expandedAlertDetails} 
-                onViewAlertDetails={handleViewAlertDetails} 
-                textContent={textContent.hubspot.recentAlerts} 
-            />
-            <ActiveDealsSection deals={data?.deals || []} textContent={textContent.hubspot.activeDeals} />
-            <RecentActivitiesSection activities={data?.activities || []} textContent={textContent.hubspot.recentActivities} />
-        </CollapsibleSection>
+        </Box>
     );
 }

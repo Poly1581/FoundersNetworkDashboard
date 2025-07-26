@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Box, Typography, Card, CardContent, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Box, Typography, Card, CardContent } from '@mui/material';
 import UnifiedStackedBarChart from './UnifiedStackedBarChart';
 import IntegrationStatusList from './IntegrationStatusList';
 
 
 
-export default function Overview({ allIntegrations, allEventsForChart, hubspotEvents = [], issues = [] }) {
+export default function Overview({ allIntegrations, allEventsForChart, hubspotEvents = [], mailgunEvents = [], issues = [] }) {
     const hasData = allEventsForChart?.length > 0 || allIntegrations?.length > 0;
     
     // Unified time range for all charts
@@ -41,6 +41,7 @@ export default function Overview({ allIntegrations, allEventsForChart, hubspotEv
                             <UnifiedStackedBarChart 
                                 events={allEventsForChart}
                                 hubspotEvents={hubspotEvents}
+                                mailgunEvents={mailgunEvents}
                                 timeRange={timeRange}
                                 title=""
                                 onFilterChange={setChartFilter}
