@@ -64,7 +64,7 @@ export default function HubSpotBarChart({ timeRange, title }) {
                 series={chartData.series.map(s => ({ ...s, valueFormatter: (value) => value === 0 ? null : value }))}
                 layout="horizontal"
                 slotProps={{
-                    legend: { hidden: true },
+                   // legend: { hidden: true },
                 }}
                 sx={{
                     [`.${axisClasses.left} .${axisClasses.label}`]: {

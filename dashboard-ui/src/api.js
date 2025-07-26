@@ -51,6 +51,39 @@ export const updateIssueStatus = async (issueId, status) => {
     }
 };
 
+// Sentry-specific action functions
+export const resolveIssue = async (issueId) => {
+    return updateIssueStatus(issueId, 'resolved');
+};
+
+export const ignoreIssue = async (issueId) => {
+    return updateIssueStatus(issueId, 'ignored');
+};
+
+export const archiveIssue = async (issueId) => {
+    // Sentry doesn't have a direct "archive" - typically uses "ignored" or "resolved"
+    return updateIssueStatus(issueId, 'ignored');
+};
+
+export const bookmarkIssue = async (issueId) => {
+    try {
+        // For bookmark, we'll use a generic API call that could be extended
+        const response = await backendApi.put(`/issues/${issueId}`, { isBookmarked: true });
+        return response.data;
+    } catch (error) {
+        handleError("bookmarking issue", error);
+    }
+};
+
+export const assignIssue = async (issueId, assignee = null) => {
+    try {
+        const response = await backendApi.put(`/issues/${issueId}`, { assignedTo: assignee });
+        return response.data;
+    } catch (error) {
+        handleError("assigning issue", error);
+    }
+};
+
 export const fetchSentryIntegrationStatus = async () => {
     try {
         const response = await backendApi.get("/integration-status/");

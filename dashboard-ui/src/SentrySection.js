@@ -2,10 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CircularProgress, Typography, Box, Card, CardContent, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import IntegrationDetailsSection from './IntegrationDetailsSection';
 import ActiveIssuesSection from './ActiveIssuesSection';
-import RecentAlertsSection from './RecentAlertsSection';
-import SentryLineChart from './SentryLineChart';
-import SentryPieChart from './SentryPieChart';
-import SentryBarChart from './SentryBarChart';
 import { updateIssueStatus } from './api';
 import CollapsibleSection from './CollapsibleSection';
 import { filterLiveDataByTimeRange } from './utils/dataFilters';
@@ -59,6 +55,7 @@ export default function SentrySection({ issues, integrations, loading, error, al
     const [expandedRows, setExpandedRows] = useState([]);
     const [expandedAlertDetails, setExpandedAlertDetails] = useState([]);
     const [expandedIntegrations, setExpandedIntegrations] = useState([]);
+    const [selectedIssue, setSelectedIssue] = useState(null);
 
     useEffect(() => {
         if (allExpanded) {
@@ -148,11 +145,18 @@ export default function SentrySection({ issues, integrations, loading, error, al
     }, [refreshIssues]);
 
     const handleViewDetails = useCallback((issueId) => {
+        const issue = issues.find(i => i.id === issueId);
+        if (selectedIssue?.id === issueId) {
+            setSelectedIssue(null);
+        } else {
+            setSelectedIssue(issue);
+        }
+        
         const newExpandedRows = expandedRows.includes(issueId)
             ? expandedRows.filter(id => id !== issueId)
             : [...expandedRows, issueId];
         setExpandedRows(newExpandedRows);
-    }, [expandedRows]);
+    }, [expandedRows, issues, selectedIssue]);
 
     const handleViewAlertDetails = useCallback((index) => {
         const newExpandedAlertDetails = expandedAlertDetails.includes(index)
@@ -167,6 +171,7 @@ export default function SentrySection({ issues, integrations, loading, error, al
             : [...expandedIntegrations, index];
         setExpandedIntegrations(newExpandedIntegrations);
     }, [expandedIntegrations]);
+
 
     // Apply live data filtering to issues and integrations as well
     const liveFilteredIssues = useMemo(() => {
@@ -189,12 +194,7 @@ export default function SentrySection({ issues, integrations, loading, error, al
 
     return (
         <CollapsibleSection title={textContent.sentry.title}>
-            <IntegrationDetailsSection 
-                integrations={liveFilteredIntegrations || []} 
-                textContent={textContent.sentry.integrationDetails} 
-                onAndViewDetails={handleViewIntegrationDetails} 
-                expandedIntegrations={expandedIntegrations} 
-            />
+
             <ActiveIssuesSection 
                 issues={visibleIssues} 
                 onViewDetails={handleViewDetails} 
@@ -202,16 +202,15 @@ export default function SentrySection({ issues, integrations, loading, error, al
                 allEventsData={{}} 
                 expandedRows={expandedRows} 
                 textContent={textContent.sentry.activeIssues} 
+                selectedIssue={selectedIssue}
             />
-            <RecentAlertsSection 
-                alerts={filteredAlerts} 
-                showFilter={showFilter} 
-                toggleFilter={() => setShowFilter(prev => !prev)} 
-                filter={filter} 
-                onFilterChange={setFilter} 
-                expandedAlertDetails={expandedAlertDetails} 
-                onViewAlertDetails={handleViewAlertDetails} 
-                textContent={textContent.sentry.recentAlerts} 
+
+
+            <IntegrationDetailsSection 
+                integrations={liveFilteredIntegrations || []} 
+                textContent={textContent.sentry.integrationDetails} 
+                onAndViewDetails={handleViewIntegrationDetails} 
+                expandedIntegrations={expandedIntegrations} 
             />
         </CollapsibleSection>
     );

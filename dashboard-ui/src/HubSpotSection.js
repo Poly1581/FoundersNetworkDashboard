@@ -3,7 +3,7 @@ import { Box, Typography, Card, CardContent, Collapse, IconButton, Table, TableH
 import { KeyboardArrowDown as ArrowDownIcon, KeyboardArrowRight as ArrowRightIcon, Info as InfoIcon } from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
 import IntegrationDetailsSection from './IntegrationDetailsSection';
-import HubSpotLineChart from './HubSpotLineChart';
+
 import HubSpotPieChart from './HubSpotPieChart';
 import HubSpotBarChart from './HubSpotBarChart';
 import { useData } from './hooks/useData';
