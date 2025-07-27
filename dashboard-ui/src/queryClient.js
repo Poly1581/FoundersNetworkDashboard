@@ -1,7 +1,7 @@
 /**
  * React Query client configuration
  */
-
+// TODO: Externalize into a .env code and reference it with variables instead of "magic numbers"
 import { QueryClient } from '@tanstack/react-query';
 
 export const queryClient = new QueryClient({
