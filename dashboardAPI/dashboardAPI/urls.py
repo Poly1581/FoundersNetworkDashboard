@@ -23,14 +23,6 @@ from . import mailgun_views as mailgun
 
 urlpatterns = [
     # Sentry API endpoints
-<<<<<<< HEAD
-    path("issues/<str:issue_id>/events/", views.get_issue_events, name="get issue events"),
-    path("issues/<str:issue_id>/", views.update_issue_status, name="update issue status"),
-    path("issues/", views.get_issues, name="get issues"),
-    path("events/", views.get_events, name="get events"),
-    path("integration-status/", views.get_sentry_integration_status, name="get sentry integration status"),
-    path("stats/endpoints/", views.get_sentry_endpoint_stats, name="get sentry endpoint stats"),
-=======
     path("api/sentry/issues/<int:issue_id>/events/", sentry.get_issue_events, name="get issue events"),
     path("api/sentry/issues/<int:issue_id>/", sentry.update_issue_status, name="update issue status"),
     path("api/sentry/issues/", sentry.get_issues, name="get issues"),
@@ -50,5 +42,4 @@ urlpatterns = [
     path("api/mailgun/stats/filter", mailgun.get_filtered_grouped_stats, name = "get filtered mailgun stats"),
     path("api/mailgun/mailing-lists/", mailgun.get_mailing_lists, name = "get mailing lists"),
     path("api/mailgun/mailing-list-members/<str:list_address>/", mailgun.get_mailing_list_members, name = "get mailing list members"),
->>>>>>> main
 ]
