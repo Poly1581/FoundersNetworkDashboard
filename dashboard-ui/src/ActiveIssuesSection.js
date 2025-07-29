@@ -2,10 +2,22 @@ import React, { useState } from 'react';
 import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Collapse, CircularProgress, Link, Menu, MenuItem } from '@mui/material';
 import { MoreVert as MoreVertIcon } from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
+import { ignoreIssue, archiveIssue, bookmarkIssue, assignIssue } from './api';
 
 export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, textContent, selectedIssue }) {
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedIssueForMenu, setSelectedIssueForMenu] = useState(null);
+
+    const getRowColorForIssue = (status) => {
+        switch (status) {
+            case 'unresolved':
+                return '#ffebee'; // light red
+            case 'resolved':
+                return '#e8f5e8'; // light green
+            default:
+                return 'inherit';
+        }
+    };
 
     const handleMenuClick = (event, issue) => {
         event.stopPropagation();
@@ -25,15 +37,29 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
         handleMenuClose();
     };
 
-    const handleIgnore = () => {
-        // TODO: Implement ignore functionality
-        console.log('Ignore issue:', selectedIssueForMenu?.id);
+    const handleIgnore = async () => {
+        if (selectedIssueForMenu) {
+            try {
+                await ignoreIssue(selectedIssueForMenu.id);
+                console.log('Successfully ignored issue:', selectedIssueForMenu.id);
+            } catch (error) {
+                console.error('Failed to ignore issue:', error);
+                alert(`Failed to ignore issue: ${error.message}`);
+            }
+        }
         handleMenuClose();
     };
 
-    const handleArchive = () => {
-        // TODO: Implement archive functionality
-        console.log('Archive issue:', selectedIssueForMenu?.id);
+    const handleArchive = async () => {
+        if (selectedIssueForMenu) {
+            try {
+                await archiveIssue(selectedIssueForMenu.id);
+                console.log('Successfully archived issue:', selectedIssueForMenu.id);
+            } catch (error) {
+                console.error('Failed to archive issue:', error);
+                alert(`Failed to archive issue: ${error.message}`);
+            }
+        }
         handleMenuClose();
     };
     return (
@@ -53,7 +79,7 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                                 hover
                                 sx={{ 
                                     cursor: 'pointer',
-                                    backgroundColor: selectedIssue?.id === issue.id ? 'action.selected' : 'inherit',
+                                    backgroundColor: selectedIssue?.id === issue.id ? 'action.selected' : getRowColorForIssue(issue.status),
                                     '&:hover': {
                                         backgroundColor: 'action.hover'
                                     }
@@ -137,16 +163,30 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                 <MenuItem onClick={handleArchive}>
                     Archive
                 </MenuItem>
-                <MenuItem onClick={() => {
-                    // TODO: Implement bookmark functionality
-                    console.log('Bookmark issue:', selectedIssueForMenu?.id);
+                <MenuItem onClick={async () => {
+                    if (selectedIssueForMenu) {
+                        try {
+                            await bookmarkIssue(selectedIssueForMenu.id);
+                            console.log('Successfully bookmarked issue:', selectedIssueForMenu.id);
+                        } catch (error) {
+                            console.error('Failed to bookmark issue:', error);
+                            alert(`Failed to bookmark issue: ${error.message}`);
+                        }
+                    }
                     handleMenuClose();
                 }}>
                     Bookmark
                 </MenuItem>
-                <MenuItem onClick={() => {
-                    // TODO: Implement assign functionality
-                    console.log('Assign issue:', selectedIssueForMenu?.id);
+                <MenuItem onClick={async () => {
+                    if (selectedIssueForMenu) {
+                        try {
+                            await assignIssue(selectedIssueForMenu.id, 'current-user');
+                            console.log('Successfully assigned issue:', selectedIssueForMenu.id);
+                        } catch (error) {
+                            console.error('Failed to assign issue:', error);
+                            alert(`Failed to assign issue: ${error.message}`);
+                        }
+                    }
                     handleMenuClose();
                 }}>
                     Assign
