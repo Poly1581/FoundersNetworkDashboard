@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { CircularProgress, Typography, Box, Card, CardContent, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { CircularProgress, Typography, Box, Card, CardContent } from '@mui/material';
 import IntegrationDetailsSection from './IntegrationDetailsSection';
 import ActiveIssuesSection from './ActiveIssuesSection';
 import { updateIssueStatus } from './api';
 import CollapsibleSection from './CollapsibleSection';
-import { filterLiveDataByTimeRange } from './utils/dataFilters';
+import { filterLiveDataByTimeRange, filterByGlobalTimeRange } from './utils/dataFilters';
 
 const textContent = {
     sentry: {
@@ -83,10 +83,14 @@ export default function SentrySection({ issues, integrations, loading, error, al
     }, [issues]);
 
 
-    // Apply live data filtering first, then local filtering
+    // Apply global time filtering first, then live data filtering, then local filtering
+    const globalTimeFilteredAlerts = useMemo(() => {
+        return filterByGlobalTimeRange(sentryAlerts, timeRange);
+    }, [sentryAlerts, timeRange]);
+    
     const liveFilteredAlerts = useMemo(() => {
-        return filterLiveDataByTimeRange(sentryAlerts, null, liveDataFilter);
-    }, [sentryAlerts, liveDataFilter]);
+        return filterLiveDataByTimeRange(globalTimeFilteredAlerts, null, liveDataFilter);
+    }, [globalTimeFilteredAlerts, liveDataFilter]);
 
     const filteredAlerts = useMemo(() => liveFilteredAlerts.filter(alert => {
         const originalIssue = alert.originalIssue;
@@ -173,14 +177,22 @@ export default function SentrySection({ issues, integrations, loading, error, al
     }, [expandedIntegrations]);
 
 
-    // Apply live data filtering to issues and integrations as well
+    // Apply global time filtering first, then live data filtering to issues and integrations
+    const globalTimeFilteredIssues = useMemo(() => {
+        return filterByGlobalTimeRange(issues, timeRange);
+    }, [issues, timeRange]);
+    
     const liveFilteredIssues = useMemo(() => {
-        return filterLiveDataByTimeRange(issues, null, liveDataFilter);
-    }, [issues, liveDataFilter]);
+        return filterLiveDataByTimeRange(globalTimeFilteredIssues, null, liveDataFilter);
+    }, [globalTimeFilteredIssues, liveDataFilter]);
 
+    const globalTimeFilteredIntegrations = useMemo(() => {
+        return filterByGlobalTimeRange(integrations, timeRange);
+    }, [integrations, timeRange]);
+    
     const liveFilteredIntegrations = useMemo(() => {
-        return filterLiveDataByTimeRange(integrations, null, liveDataFilter);
-    }, [integrations, liveDataFilter]);
+        return filterLiveDataByTimeRange(globalTimeFilteredIntegrations, null, liveDataFilter);
+    }, [globalTimeFilteredIntegrations, liveDataFilter]);
 
     if (loading) {
         return <CollapsibleSection title={textContent.sentry.title}><CircularProgress /></CollapsibleSection>;

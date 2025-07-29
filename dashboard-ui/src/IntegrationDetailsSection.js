@@ -1,9 +1,23 @@
 import React from 'react';
 import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Collapse } from '@mui/material';
+import { Info as InfoIcon } from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
 
 export default function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails, expandedIntegrations }) {
     if (!integrations) return null;
+
+    const getRowColor = (status) => {
+        switch (status) {
+            case 'Healthy':
+                return '#e8f5e8'; // light green
+            case 'Degraded':
+                return '#fff3e0'; // light orange
+            case 'Down':
+                return '#ffebee'; // light red
+            default:
+                return 'inherit';
+        }
+    };
     return (
         <CollapsibleSection title={textContent.heading}>
             {integrations.length === 0 ? <Typography>No integration data.</Typography> :
@@ -19,7 +33,7 @@ export default function IntegrationDetailsSection({ integrations, textContent, o
                     <TableBody>
                         {integrations.map((i, index) => (
                             <React.Fragment key={i.name}>
-                                <TableRow>
+                                <TableRow sx={{ backgroundColor: getRowColor(i.status) }}>
                                     <TableCell>{i.name}</TableCell>
                                     <TableCell>{i.category}</TableCell>
                                     <TableCell>

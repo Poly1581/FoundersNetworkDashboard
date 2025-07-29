@@ -77,6 +77,35 @@ export const filterLiveDataByTimeRange = (data, timeRange, filterType = 'all') =
   return data;
 };
 
+// Unified global time range filter for all API integrations
+// USE THIS FUNCTION for all new API integrations to ensure they respect the global time filter
+export const filterByGlobalTimeRange = (data, timeRange) => {
+  if (!data || !timeRange) return data;
+  
+  // Global time ranges that match the UI
+  const globalTimeRanges = {
+    '1d': { hours: 24, label: '1 Day' },
+    '7d': { hours: 24 * 7, label: '7 Days' },
+    '30d': { hours: 24 * 30, label: '30 Days' },
+    '90d': { hours: 24 * 90, label: '90 Days' }
+  };
+  
+  if (!globalTimeRanges[timeRange]) {
+    return data; // Return all data if time range not recognized
+  }
+  
+  const cutoff = new Date(Date.now() - (globalTimeRanges[timeRange].hours * 60 * 60 * 1000));
+  
+  if (Array.isArray(data)) {
+    return data.filter(item => {
+      const timestamp = item.dateCreated || item.timestamp || item.lastSeen || item.lastSuccess || item.time;
+      return timestamp && new Date(timestamp) >= cutoff;
+    });
+  }
+  
+  return data;
+};
+
 // Aggregate data by time buckets for chart performance
 export const aggregateDataByTimeBucket = (events, timeRange) => {
   if (!events || !Array.isArray(events)) return [];

@@ -1,6 +1,6 @@
 import React, { useReducer, startTransition, useCallback, useMemo } from 'react';
 import AppContext from './AppContext';
-import { appReducer, FETCH_DATA_START, FETCH_DATA_SUCCESS, FETCH_DATA_FAILURE, UPDATE_FILTERED_DATA, SET_LIVE_DATA_FILTER } from './AppReducer';
+import { appReducer, FETCH_DATA_START, FETCH_DATA_SUCCESS, FETCH_DATA_FAILURE, UPDATE_FILTERED_DATA, SET_LIVE_DATA_FILTER, SET_GLOBAL_TIME_RANGE } from './AppReducer';
 import { fetchIssues, fetchEventsForIssue, fetchSentryIntegrationStatus } from '../api';
 import { filterEventsByTimeRange, filterIssuesByTimeRange, createMemoizedFilter } from '../utils/dataFilters';
 
@@ -17,6 +17,7 @@ const AppState = ({ children }) => {
         allExpanded: false,
         activePage: 'overview',
         timeRange: '30d',
+        globalTimeRange: '30d',
         liveDataFilter: 'all',
         // Raw data (always 1-month window)
         rawSentryIssues: [],
@@ -27,9 +28,12 @@ const AppState = ({ children }) => {
         allEventsData: {},
         allEventsForChart: [],
         sentryIntegrations: [],
-        hubspotIntegrations: [
-            { name: 'HubSpot API', category: 'CRM', status: 'Healthy', responseTime: '120ms', lastSuccess: 'Just now', uptime: '99.99%', issue: null },
+        mailgunIntegrations: [
+            { name: 'Mailgun API', category: 'Email Service', status: 'Healthy', responseTime: '85ms', lastSuccess: 'Just now', uptime: '99.98%', issue: null },
         ],
+        mailgunEvents: [],
+        mailgunStats: [],
+        mailgunDomains: [],
         allIntegrations: [],
         loading: false,
         error: null,
@@ -86,9 +90,13 @@ const AppState = ({ children }) => {
                         sentryIntegrations: fetchedSentryIntegrations,
                         allEventsData: eventsDataMap,
                         allEventsForChart: flattenedEvents,
-                        hubspotIntegrations: [
-                            { name: 'HubSpot API', category: 'CRM', status: 'Healthy', responseTime: '120ms', lastSuccess: 'Just now', uptime: '99.99%', issue: null },
+                        mailgunIntegrations: [
+                            { name: 'Mailgun API', category: 'Email Service', status: 'Healthy', responseTime: '85ms', lastSuccess: 'Just now', uptime: '99.98%', issue: null },
                         ], // Keep mock data
+                        mailgunEvents: [],
+                        mailgunStats: [],
+                        mailgunDomains: [],
+                        mailgunData: {}
                     }
                 });
             });
@@ -162,6 +170,11 @@ const AppState = ({ children }) => {
         dispatch({ type: SET_LIVE_DATA_FILTER, payload: filterValue });
     }, [dispatch]);
 
+    // Global time range setter
+    const setGlobalTimeRange = useCallback((timeRange) => {
+        dispatch({ type: SET_GLOBAL_TIME_RANGE, payload: timeRange });
+    }, [dispatch]);
+
     // Apply initial filtering when raw data becomes available (removed to prevent infinite loop)
 
     return (
@@ -170,7 +183,8 @@ const AppState = ({ children }) => {
             dispatch, 
             loadSentryData, 
             updateFilteredData,
-            setLiveDataFilter 
+            setLiveDataFilter,
+            setGlobalTimeRange 
         }}>
             {children}
         </AppContext.Provider>
