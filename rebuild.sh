@@ -23,3 +23,5 @@ fi
 
 # Relaunch
 docker compose up -d
+
+
