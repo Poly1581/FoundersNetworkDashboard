@@ -23,3 +23,5 @@ end
 
 # Rebuild
 docker compose up -d
+
+
