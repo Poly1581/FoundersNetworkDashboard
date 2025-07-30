@@ -1,6 +1,5 @@
-import json
 import requests
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, JsonResponse
 
 request_params = {
     # Sentry:
@@ -12,7 +11,6 @@ request_params = {
     "get_logs": ("start", "end", "events", "metric_events", "filter", "include_subaccounts", "include_totals", "pagination"),
     "get_stat_totals": ("start", "end", "resolution", "duration", "event"),
     "get_filtered_grouped_stats": ("start", "end", "resolution", "duration", "event", "filter", "group"),
-    "get_mailing_lists": ("limit", "skip", "address"),
     "get_mailing_list_members": ("address", "subscribed", "limit", "skip")
 }
 
@@ -36,10 +34,11 @@ def make_request(request):
             case _:
                 raise Exception("Invalid request type (only \"get\", \"put\", and \"post\" are allowed)")
         response.raise_for_status()
-        return HttpResponse(json.dumps(response.json()))
+        return JsonResponse(response.json(), safe=False)
     except requests.exceptions.RequestException as request_exception:
         error_message = f"Request error on {method} request to {uri} with {params}: {request_exception}"
     except Exception as exception:
         error_message = f"Unexpected error on {method} request to {uri} with {params}: {exception}"
     print(error_message)
+    print(response)
     return HttpResponseBadRequest(error_message)

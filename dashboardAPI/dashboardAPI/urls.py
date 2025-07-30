@@ -14,7 +14,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
 from django.urls import path
 
 from . import sentry_views as sentry
@@ -39,8 +38,7 @@ urlpatterns = [
     path("api/mailgun/account-metrics/", mailgun.get_account_metrics, name="get mailgun account metrics"),
     path("api/mailgun/account-usage-metrics/", mailgun.get_account_usage_metrics, name="get mailgun account usage metrics"),
     path("api/mailgun/logs/", mailgun.get_logs, name="get mailgun logs"),
-    path("api/mailgun/stats/totals", mailgun.get_stat_totals, name = "get mailgun stat totals"),
-    path("api/mailgun/stats/filter", mailgun.get_filtered_grouped_stats, name = "get filtered mailgun stats"),
-    path("api/mailgun/mailing-lists/", mailgun.get_mailing_lists, name = "get mailing lists"),
+    path("api/mailgun/stats/totals/", mailgun.get_stat_totals, name = "get mailgun stat totals"),
+    path("api/mailgun/stats/filter/", mailgun.get_filtered_grouped_stats, name = "get filtered mailgun stats"),
     path("api/mailgun/mailing-list-members/<str:list_address>/", mailgun.get_mailing_list_members, name = "get mailing list members"),
 ]
