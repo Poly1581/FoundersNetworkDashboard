@@ -2,6 +2,19 @@ import React from 'react';
 import { Card, CardContent, Typography, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Chip } from '@mui/material';
 
 const IntegrationStatusList = React.memo(({ integrations }) => {
+    const getRowColor = (status) => {
+        switch (status) {
+            case 'Healthy':
+                return '#e8f5e8'; // light green
+            case 'Degraded':
+                return '#fff3e0'; // light orange
+            case 'Down':
+                return '#ffebee'; // light red
+            default:
+                return 'inherit';
+        }
+    };
+
     return (
         <Card>
             <CardContent>
@@ -17,7 +30,7 @@ const IntegrationStatusList = React.memo(({ integrations }) => {
                         </TableHead>
                         <TableBody>
                             {integrations.map((integration, index) => (
-                                <TableRow key={index}>
+                                <TableRow key={index} sx={{ backgroundColor: getRowColor(integration.status) }}>
                                     <TableCell>{integration.name}</TableCell>
                                     <TableCell>
                                         <Chip

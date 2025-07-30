@@ -23,11 +23,12 @@ from . import mailgun_views as mailgun
 
 urlpatterns = [
     # Sentry API endpoints
-    path("api/sentry/issues/<int:issue_id>/events/", sentry.get_issue_events, name="get issue events"),
-    path("api/sentry/issues/<int:issue_id>/", sentry.update_issue_status, name="update issue status"),
+    path("api/sentry/issues/<str:issue_id>/events/", sentry.get_issue_events, name="get issue events"),
+    path("api/sentry/issues/<str:issue_id>/", sentry.update_issue_status, name="update issue status"),
     path("api/sentry/issues/", sentry.get_issues, name="get issues"),
     path("api/sentry/events/", sentry.get_events, name="get events"),
     path("api/sentry/alerts/", sentry.get_sentry_alerts, name="get alerts"),
+    path("api/sentry/members/", sentry.get_organization_members, name="get organization members"),
 
     # Integration API endpoints
     path("api/sentry/integration-status/", integration.get_sentry_integration_status, name="get sentry integration status"),
