@@ -1419,42 +1419,42 @@ export default function App() {
     };
 
     return (
-		<Box sx={{ display: 'flex' }}>
-			<Sidebar activePage={activePage} onPageChange={handlePageChange} />
-			<Box component="main" sx={{ flexGrow: 1, bgcolor: 'white', p: 3 }}>
-				{/* User Profile Section */}
-				<Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
-					<Typography variant="body1" sx={{ mr: 1, fontWeight: 500 }}>
-						Admin User
-					</Typography>
-					<Box sx={{
-						width: 32,
-						height: 32,
-						borderRadius: '50%',
-						backgroundColor: '#9e9e9e',
-						display: 'flex',
-						alignItems: 'center',
-						justifyContent: 'center'
-					}}>
-						{/* Gray circle placeholder for profile picture */}
-					</Box>
+	<Box sx={{ display: 'flex' }}>
+		<Sidebar activePage={activePage} onPageChange={handlePageChange} />
+		<Box component="main" sx={{ flexGrow: 1, bgcolor: 'white', p: 3 }}>
+			{/* User Profile Section */}
+			<Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
+				<Typography variant="body1" sx={{ mr: 1, fontWeight: 500 }}>
+					Admin User
+				</Typography>
+				<Box sx={{
+					width: 32,
+					height: 32,
+					borderRadius: '50%',
+					backgroundColor: '#9e9e9e',
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center'
+				}}>
+					{/* Gray circle placeholder for profile picture */}
 				</Box>
-
-				<Container maxWidth="xl" sx={{ p: 0 }}>
-					{activePage === 'overview' && <Overview integrationStatus={integrationStatus} integrationSystems={integrationSystems} />}
-					{activePage === 'liveData' && (
-						<LiveData
-							onRefresh={handleRefreshAll}
-							onExpandAll={handleExpandAll}
-							sentryOpen={sentryOpen}
-							hubspotOpen={hubspotOpen}
-							onSentryToggle={handleSentryToggle}
-							onHubspotToggle={handleHubspotToggle}
-							lastFetchTime={lastFetchTime}
-						/>
-					)}
-				</Container>
 			</Box>
+
+			<Container maxWidth="xl" sx={{ p: 0 }}>
+				{activePage === 'overview' && <Overview integrationStatus={integrationStatus} integrationSystems={integrationSystems} />}
+				{activePage === 'liveData' && (
+					<LiveData
+						onRefresh={handleRefreshAll}
+						onExpandAll={handleExpandAll}
+						sentryOpen={sentryOpen}
+						hubspotOpen={hubspotOpen}
+						onSentryToggle={handleSentryToggle}
+						onHubspotToggle={handleHubspotToggle}
+						lastFetchTime={lastFetchTime}
+					/>
+				)}
+			</Container>
 		</Box>
+	</Box>
     );
 }

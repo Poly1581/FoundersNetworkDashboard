@@ -1,6 +1,5 @@
-import json
 import requests
-from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponseBadRequest, JsonResponse
 
 request_params = {
     # Sentry:

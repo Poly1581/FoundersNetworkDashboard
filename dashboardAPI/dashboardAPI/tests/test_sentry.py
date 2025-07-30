@@ -23,4 +23,3 @@ class SentryTest(TestCase):
     def test_get_sentry_alerts(self):
         response = self.client.get("/api/sentry/alerts/")
         self.assertEqual(response.status_code, 200)
-
