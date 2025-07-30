@@ -81,7 +81,7 @@ const ChartControls = React.memo(({ selectedAPI, onApiChange, sortedErrorTypeBut
                 <Button size="small" variant="outlined" onClick={onClearSelection} sx={{ minWidth: 'auto', px: 1 }}>Clear All</Button>
             )}
         </Box>
-        <Typography variant="body2" color="text.secondary" mb={1}>Error Types (click to toggle filter, double-click to investigate, alt+click to clear all):</Typography>
+        <Typography variant="body2" color="text.secondary" mb={1}>Error Types:</Typography>
         <Box display="flex" flexWrap="wrap" gap={1} mb={1}>
             {sortedErrorTypeButtons.map(errorType => {
                 const buttonColor = colorMap[errorType] || '#757575';
