@@ -18,7 +18,7 @@ def get_issue_events(request, **kwargs):
         "headers": settings.SENTRY_HEADERS,
     })
 
-@api_view(["PATCH"])
+@api_view(["PUT"])
 def update_issue_status(request, **kwargs):
     '''
         Endpoint to update sentry issue status
@@ -101,4 +101,43 @@ def get_sentry_alerts(request, **kwargs):
         
     except Exception as error:
         print(f"An unexpected error occurred in get_sentry_alerts: {error}")
+        return HttpResponseBadRequest(f"An unexpected error occurred: {error}")
+
+@api_view(["GET"])
+def get_organization_members(request, **kwargs):
+    """
+    Fetch organization members from Sentry for issue assignment
+    See: https://docs.sentry.io/api/organizations/list-an-organizations-members/
+    """
+    try:
+        members_uri = f"{BASE_URI}/organizations/{ORGANIZATION_SLUG}/members/"
+        response = requests.get(members_uri, headers=HEADERS)
+        response.raise_for_status()
+        
+        members = response.json()
+        
+        # Transform members data to include only necessary fields
+        formatted_members = []
+        for member in members:
+            user = member.get('user', {})
+            formatted_member = {
+                "id": user.get('id'),
+                "email": user.get('email'),
+                "name": user.get('name') or user.get('username', user.get('email', 'Unknown')),
+                "username": user.get('username'),
+                "role": member.get('role'),
+                "isActive": user.get('isActive', True)
+            }
+            # Only include active members
+            if formatted_member['isActive']:
+                formatted_members.append(formatted_member)
+        
+        return HttpResponse(json.dumps(formatted_members), content_type="application/json")
+        
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching organization members from Sentry: {e}")
+        return HttpResponseBadRequest(f"Error fetching organization members from Sentry: {e}")
+        
+    except Exception as error:
+        print(f"An unexpected error occurred in get_organization_members: {error}")
         return HttpResponseBadRequest(f"An unexpected error occurred: {error}")

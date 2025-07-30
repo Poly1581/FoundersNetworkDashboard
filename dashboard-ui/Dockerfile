@@ -7,6 +7,9 @@ RUN npm install
 COPY . .
 
 FROM base AS test
+ENV WATCHPACK_POLLING=true
+ENV WDS_SOCKET_HOST=localhost
+ENV WDS_SOCKET_PORT=3000
 WORKDIR /dashboard-frontend
 EXPOSE 3000
 RUN ["npm", "test"]

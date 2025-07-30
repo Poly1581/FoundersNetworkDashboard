@@ -5,6 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import CssBaseline from '@mui/material/CssBaseline';
 import { queryClient } from './queryClient';
+import AppState from './context/AppState';
 
 global.ResizeObserver = jest.fn().mockImplementation(() => ({
 	observe: jest.fn(),
@@ -15,9 +16,11 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
 test('Loads sentry properly', async () => {
 	render(
 		<QueryClientProvider client={queryClient}>
+		  <AppState>
 			<CssBaseline />
 			<App />
 			<ReactQueryDevtools initialIsOpen={false} />
+		  </AppState>
 		</QueryClientProvider>
 	);
 	await waitFor(() => {
