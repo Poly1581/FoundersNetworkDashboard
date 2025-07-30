@@ -66,7 +66,8 @@ def get_sentry_alerts(request, **kwargs):
         response = requests.get(issues_uri, headers=settings.SENTRY_HEADERS, params={'statsPeriod': '24h'})
         response.raise_for_status()
         
-        issues = response.json() alerts = []
+        issues = response.json()
+        alerts = []
         # Transform recent issues into alerts format
         for issue in issues[:10]:  # Limit to 10 most recent
             # Determine severity based on issue level
