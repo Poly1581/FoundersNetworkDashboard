@@ -1,12 +1,31 @@
-import React, { useState } from 'react';
-import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Collapse, CircularProgress, Link, Menu, MenuItem } from '@mui/material';
-import { MoreVert as MoreVertIcon } from '@mui/icons-material';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Collapse, CircularProgress, Link, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Avatar } from '@mui/material';
+import { MoreVert as MoreVertIcon, Person as PersonIcon, PersonOff as PersonOffIcon } from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
-import { ignoreIssue, archiveIssue, bookmarkIssue, assignIssue } from './api';
+import { ignoreIssue, archiveIssue, bookmarkIssue, assignIssue, fetchSentryMembers } from './api';
 
 export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, textContent, selectedIssue }) {
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedIssueForMenu, setSelectedIssueForMenu] = useState(null);
+    const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+    const [sentryMembers, setSentryMembers] = useState([]);
+    const [membersLoading, setMembersLoading] = useState(false);
+
+    useEffect(() => {
+        const loadSentryMembers = async () => {
+            try {
+                setMembersLoading(true);
+                const members = await fetchSentryMembers();
+                setSentryMembers(members);
+            } catch (error) {
+                console.error('Failed to fetch Sentry members:', error);
+            } finally {
+                setMembersLoading(false);
+            }
+        };
+
+        loadSentryMembers();
+    }, []);
 
     const getRowColorForIssue = (status) => {
         switch (status) {
@@ -61,6 +80,42 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
             }
         }
         handleMenuClose();
+    };
+
+    const handleAssignClick = () => {
+        setAssignDialogOpen(true);
+        handleMenuClose();
+    };
+
+    const handleAssignDialogClose = () => {
+        setAssignDialogOpen(false);
+    };
+
+    const handleAssignToUser = async (userId) => {
+        if (selectedIssueForMenu) {
+            try {
+                await assignIssue(selectedIssueForMenu.id, userId);
+                console.log('Successfully assigned issue to user:', userId);
+                // Optionally refresh the issues list or show success message
+            } catch (error) {
+                console.error('Failed to assign issue:', error);
+                alert(`Failed to assign issue: ${error.message}`);
+            }
+        }
+        setAssignDialogOpen(false);
+    };
+
+    const handleUnassign = async () => {
+        if (selectedIssueForMenu) {
+            try {
+                await assignIssue(selectedIssueForMenu.id, null);
+                console.log('Successfully unassigned issue:', selectedIssueForMenu.id);
+            } catch (error) {
+                console.error('Failed to unassign issue:', error);
+                alert(`Failed to unassign issue: ${error.message}`);
+            }
+        }
+        setAssignDialogOpen(false);
     };
     return (
         <CollapsibleSection title={textContent.heading}>
@@ -177,21 +232,75 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                 }}>
                     Bookmark
                 </MenuItem>
-                <MenuItem onClick={async () => {
-                    if (selectedIssueForMenu) {
-                        try {
-                            await assignIssue(selectedIssueForMenu.id, 'current-user');
-                            console.log('Successfully assigned issue:', selectedIssueForMenu.id);
-                        } catch (error) {
-                            console.error('Failed to assign issue:', error);
-                            alert(`Failed to assign issue: ${error.message}`);
-                        }
-                    }
-                    handleMenuClose();
-                }}>
+                <MenuItem onClick={handleAssignClick}>
                     Assign
                 </MenuItem>
             </Menu>
+
+            {/* Assignment Dialog */}
+            <Dialog 
+                open={assignDialogOpen} 
+                onClose={handleAssignDialogClose}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    Assign Issue: {selectedIssueForMenu?.title}
+                </DialogTitle>
+                <DialogContent>
+                    {membersLoading ? (
+                        <Box display="flex" justifyContent="center" p={2}>
+                            <CircularProgress />
+                        </Box>
+                    ) : (
+                        <List>
+                            {/* Unassign option */}
+                            <ListItem disablePadding>
+                                <ListItemButton onClick={handleUnassign}>
+                                    <ListItemIcon>
+                                        <PersonOffIcon />
+                                    </ListItemIcon>
+                                    <ListItemText 
+                                        primary="Unassign" 
+                                        secondary="Remove current assignment"
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                            
+                            {/* Member list */}
+                            {sentryMembers.map((member) => (
+                                <ListItem key={member.id} disablePadding>
+                                    <ListItemButton onClick={() => handleAssignToUser(member.id)}>
+                                        <ListItemIcon>
+                                            <Avatar sx={{ width: 32, height: 32 }}>
+                                                {member.name?.charAt(0) || <PersonIcon />}
+                                            </Avatar>
+                                        </ListItemIcon>
+                                        <ListItemText 
+                                            primary={member.name} 
+                                            secondary={member.email}
+                                        />
+                                    </ListItemButton>
+                                </ListItem>
+                            ))}
+                            
+                            {sentryMembers.length === 0 && !membersLoading && (
+                                <ListItem>
+                                    <ListItemText 
+                                        primary="No members found" 
+                                        secondary="Unable to load organization members"
+                                    />
+                                </ListItem>
+                            )}
+                        </List>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleAssignDialogClose} color="primary">
+                        Cancel
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </CollapsibleSection>
     );
 }

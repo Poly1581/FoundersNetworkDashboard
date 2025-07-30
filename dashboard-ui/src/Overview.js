@@ -35,6 +35,7 @@ export default function Overview({ allIntegrations, allEventsForChart, mailgunEv
 
             {hasData && (
                 <>
+                    <IntegrationStatusList integrations={allIntegrations} />
                     <Card sx={{ mb: 3 }}>
                         <CardContent>
                             <Typography variant="h6" component="div" mb={2}>API Errors Over Time</Typography>
@@ -48,7 +49,6 @@ export default function Overview({ allIntegrations, allEventsForChart, mailgunEv
                             />
                         </CardContent>
                     </Card>
-                    <IntegrationStatusList integrations={allIntegrations} />
                 </>
             )}
         </Box>

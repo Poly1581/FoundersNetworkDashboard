@@ -1,11 +1,12 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import {
     Box, Typography, Chip, Card, CardContent, List, ListItem, Divider,
-    IconButton, Button, Menu, MenuItem, CircularProgress, FormControl, InputLabel, Select, ListItemText
+    IconButton, Button, Menu, MenuItem, CircularProgress, FormControl, InputLabel, Select, ListItemText,
+    Dialog, DialogTitle, DialogContent, DialogActions, ListItemButton, ListItemIcon, Avatar
 } from '@mui/material';
-import { Close as CloseIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
+import { Close as CloseIcon, MoreVert as MoreVertIcon, Person as PersonIcon, PersonOff as PersonOffIcon } from '@mui/icons-material';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { resolveIssue, ignoreIssue, archiveIssue, bookmarkIssue, assignIssue } from './api';
+import { resolveIssue, ignoreIssue, archiveIssue, bookmarkIssue, assignIssue, fetchSentryMembers } from './api';
 
 // --- Constants ---
 const ACCESSIBLE_COLORS = [
@@ -112,6 +113,25 @@ const InvestigationPanel = React.memo(({ data, colorMap, onClose }) => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedEventForMenu, setSelectedEventForMenu] = useState(null);
     const [loadingAction, setLoadingAction] = useState(null);
+    const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+    const [sentryMembers, setSentryMembers] = useState([]);
+    const [membersLoading, setMembersLoading] = useState(false);
+
+    useEffect(() => {
+        const loadSentryMembers = async () => {
+            try {
+                setMembersLoading(true);
+                const members = await fetchSentryMembers();
+                setSentryMembers(members);
+            } catch (error) {
+                console.error('Failed to fetch Sentry members:', error);
+            } finally {
+                setMembersLoading(false);
+            }
+        };
+
+        loadSentryMembers();
+    }, []);
     
     if (!data) return null;
     
@@ -193,19 +213,39 @@ const InvestigationPanel = React.memo(({ data, colorMap, onClose }) => {
         }
     };
 
-    const handleAssign = async () => {
-        if (!selectedEventForMenu?.id) return;
-        setLoadingAction('assign');
-        try {
-            await assignIssue(selectedEventForMenu.id, 'current-user');
-            console.log('Successfully assigned event:', selectedEventForMenu.id);
-        } catch (error) {
-            console.error('Failed to assign event:', error);
-            alert(`Failed to assign issue: ${error.message}`);
-        } finally {
-            setLoadingAction(null);
-            handleMenuClose();
+    const handleAssignClick = () => {
+        setAssignDialogOpen(true);
+        handleMenuClose();
+    };
+
+    const handleAssignDialogClose = () => {
+        setAssignDialogOpen(false);
+    };
+
+    const handleAssignToUser = async (userId) => {
+        if (selectedEventForMenu?.id) {
+            try {
+                await assignIssue(selectedEventForMenu.id, userId);
+                console.log('Successfully assigned issue to user:', userId);
+            } catch (error) {
+                console.error('Failed to assign issue:', error);
+                alert(`Failed to assign issue: ${error.message}`);
+            }
         }
+        setAssignDialogOpen(false);
+    };
+
+    const handleUnassign = async () => {
+        if (selectedEventForMenu?.id) {
+            try {
+                await assignIssue(selectedEventForMenu.id, null);
+                console.log('Successfully unassigned issue:', selectedEventForMenu.id);
+            } catch (error) {
+                console.error('Failed to unassign issue:', error);
+                alert(`Failed to unassign issue: ${error.message}`);
+            }
+        }
+        setAssignDialogOpen(false);
     };
 
     return (
@@ -389,7 +429,7 @@ const InvestigationPanel = React.memo(({ data, colorMap, onClose }) => {
                         'Bookmark'
                     )}
                 </MenuItem>
-                <MenuItem onClick={handleAssign} disabled={loadingAction === 'assign'}>
+                <MenuItem onClick={handleAssignClick}>
                     {loadingAction === 'assign' ? (
                         <Box display="flex" alignItems="center" gap={1}>
                             <CircularProgress size={16} />
@@ -400,6 +440,71 @@ const InvestigationPanel = React.memo(({ data, colorMap, onClose }) => {
                     )}
                 </MenuItem>
             </Menu>
+
+            {/* Assignment Dialog */}
+            <Dialog 
+                open={assignDialogOpen} 
+                onClose={handleAssignDialogClose}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    Assign Issue: {selectedEventForMenu?.title || selectedEventForMenu?.message || 'Issue'}
+                </DialogTitle>
+                <DialogContent>
+                    {membersLoading ? (
+                        <Box display="flex" justifyContent="center" p={2}>
+                            <CircularProgress />
+                        </Box>
+                    ) : (
+                        <List>
+                            {/* Unassign option */}
+                            <ListItem disablePadding>
+                                <ListItemButton onClick={handleUnassign}>
+                                    <ListItemIcon>
+                                        <PersonOffIcon />
+                                    </ListItemIcon>
+                                    <ListItemText 
+                                        primary="Unassign" 
+                                        secondary="Remove current assignment"
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                            
+                            {/* Member list */}
+                            {sentryMembers.map((member) => (
+                                <ListItem key={member.id} disablePadding>
+                                    <ListItemButton onClick={() => handleAssignToUser(member.id)}>
+                                        <ListItemIcon>
+                                            <Avatar sx={{ width: 32, height: 32 }}>
+                                                {member.name?.charAt(0) || <PersonIcon />}
+                                            </Avatar>
+                                        </ListItemIcon>
+                                        <ListItemText 
+                                            primary={member.name} 
+                                            secondary={member.email}
+                                        />
+                                    </ListItemButton>
+                                </ListItem>
+                            ))}
+                            
+                            {sentryMembers.length === 0 && !membersLoading && (
+                                <ListItem>
+                                    <ListItemText 
+                                        primary="No members found" 
+                                        secondary="Unable to load organization members"
+                                    />
+                                </ListItem>
+                            )}
+                        </List>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleAssignDialogClose} color="primary">
+                        Cancel
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 });
