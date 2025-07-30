@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Typography, Card, CardContent } from '@mui/material';
+import { Box, Typography, Card, CardContent, Tooltip, IconButton } from '@mui/material';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import UnifiedStackedBarChart from './UnifiedStackedBarChart';
 import IntegrationStatusList from './IntegrationStatusList';
 
@@ -38,7 +39,25 @@ export default function Overview({ allIntegrations, allEventsForChart, mailgunEv
                     <IntegrationStatusList integrations={allIntegrations} />
                     <Card sx={{ mb: 3 }}>
                         <CardContent>
-                            <Typography variant="h6" component="div" mb={2}>API Errors Over Time</Typography>
+                            <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                                <Typography variant="h6" component="div" mb={2}>API Errors Over Time</Typography>
+                                <Tooltip 
+                                    title={
+                                        <Box>
+                                            <Typography variant="body2">
+                                                This chart shows API error counts over time. Each color represents a different error type. 
+                                                <br />
+                                                <br />
+                                                You can click an error type to toggle its visibility, double-click to investigate it, or Alt+Click to clear all filters.
+                                            </Typography>
+                                        </Box>
+                                    }
+                                >
+                                    <IconButton size="small">
+                                        <HelpOutlineIcon fontSize='small' />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
                             <UnifiedStackedBarChart
                                 events={allEventsForChart}
                                 mailgunEvents={mockMailgunEvents}
