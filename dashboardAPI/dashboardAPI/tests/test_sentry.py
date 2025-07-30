@@ -4,13 +4,13 @@ class SentryTest(TestCase):
     def setUp(self):
         self.client = Client(enforce_csrf_checks=True)
 
-    # Need issue_id to call properly
-    # def test_get_issue_events(self):
-        # api/sentry/issues/<int:issue_id>/events/
-
-    # Need issue_id to call properly
-    # def update_issue_status(self):
-        # api/sentry/issues/<int:issue_id>/
+    def test_get_issue_events(self):
+        issues_response = self.client.get("/api/sentry/issues/")
+        if issues_response.status_code == 200:
+            json = issues_response.json()
+            if json[0]["id"]:
+                response = self.client.get(f"/api/sentry/issues/{json[0]["id"]}/events/")
+                self.assertEqual(response.status_code, 200)
 
     def test_get_issues(self):
         response = self.client.get("/api/sentry/issues/")

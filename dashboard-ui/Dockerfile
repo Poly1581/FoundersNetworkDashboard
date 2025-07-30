@@ -1,3 +1,5 @@
+# check=error=true
+
 FROM node:24-bookworm-slim AS base
 WORKDIR /dashboard-frontend
 COPY package*.json .
@@ -9,5 +11,5 @@ WORKDIR /dashboard-frontend
 EXPOSE 3000
 RUN ["npm", "test"]
 
-FROM test as final
+FROM test AS final
 CMD ["npm", "start"]

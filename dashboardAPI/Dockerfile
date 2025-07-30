@@ -1,3 +1,5 @@
+# check=error=true
+
 FROM python:3.14.0b3-slim AS base
 WORKDIR /dashboard-backend
 COPY ./requirements.txt .
@@ -12,5 +14,5 @@ EXPOSE 8000
 RUN ["python", "manage.py", "test", "--parallel"]
 
 
-from test AS final
+FROM test AS final
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

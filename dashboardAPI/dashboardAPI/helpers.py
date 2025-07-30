@@ -1,6 +1,6 @@
 import json
 import requests
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 
 request_params = {
     # Sentry:
@@ -35,7 +35,7 @@ def make_request(request):
             case _:
                 raise Exception("Invalid request type (only \"get\", \"put\", and \"post\" are allowed)")
         response.raise_for_status()
-        return HttpResponse(json.dumps(response.json()))
+        return JsonResponse(response.json(), safe=False)
     except requests.exceptions.RequestException as request_exception:
         error_message = f"Request error on {method} request to {uri} with {params}: {request_exception}"
     except Exception as exception:
