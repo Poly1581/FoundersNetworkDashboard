@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon, MoreVert as MoreVertIcon, Person as PersonIcon, PersonOff as PersonOffIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { resolveIssue, ignoreIssue, archiveIssue, bookmarkIssue, assignIssue, fetchSentryMembers } from './api';
+import { resolveIssue, ignoreIssue, archiveIssue, bookmarkIssue, assignIssue, unassignIssue, fetchSentryMembers } from './api';
 import AppContext from './context/AppContext';
 import { SET_ACTIVE_PAGE } from './context/AppReducer';
 import { generateAppearanceMaps, DEFAULT_FALLBACK_COLOR } from './utils/colorScheme';
@@ -51,7 +51,7 @@ const createTimeBuckets = (timeRange, allEvents = []) => {
 
 // --- Sub-Components ---
 
-const ChartControls = React.memo(({ selectedAPI, onApiChange, sortedErrorTypeButtons, selectedErrorTypes, onClearSelection, onToggleErrorType, onErrorTypeClick, colorMap }) => (
+const ChartControls = React.memo(({ selectedAPI, onApiChange, sortedErrorTypeButtons, selectedErrorTypes, onClearSelection, onToggleErrorType, onErrorTypeClick, colorMap, errorTypeCounts, totalCount }) => (
     <Box mb={2}>
         <Box display="flex" gap={2} alignItems="center" mb={2}>
             <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -61,6 +61,11 @@ const ChartControls = React.memo(({ selectedAPI, onApiChange, sortedErrorTypeBut
                     <MenuItem value="mailgun">Mailgun</MenuItem>
                 </Select>
             </FormControl>
+            {(totalCount || 0) > 0 && (
+                <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                    Total: {totalCount || 0}
+                </Typography>
+            )}
             {selectedErrorTypes.size > 0 && (
                 <Button size="small" variant="outlined" onClick={onClearSelection} sx={{ minWidth: 'auto', px: 1 }}>Clear All</Button>
             )}
@@ -70,10 +75,12 @@ const ChartControls = React.memo(({ selectedAPI, onApiChange, sortedErrorTypeBut
             {sortedErrorTypeButtons.map(errorType => {
                 const buttonColor = colorMap[errorType] || DEFAULT_FALLBACK_COLOR;
                 const isSelected = selectedErrorTypes.has(errorType);
+                const count = errorTypeCounts?.[errorType] || 0;
+                const label = count > 0 ? `${errorType} (${count})` : errorType;
                 return (
                     <Chip
                         key={errorType}
-                        label={errorType}
+                        label={label}
                         onClick={(event) => onToggleErrorType(errorType, event)}
                         onDoubleClick={() => onErrorTypeClick && onErrorTypeClick(errorType)}
                         size="small"
@@ -490,7 +497,7 @@ const InvestigationPanel = React.memo(({ data, colorMap, onClose }) => {
         try {
             // Unassign each event individually to handle partial failures
             const results = await Promise.allSettled(
-                validEvents.map(event => assignIssue(event.resolveId, null))
+                validEvents.map(event => unassignIssue(event.resolveId))
             );
             
             const successful = results.filter(result => result.status === 'fulfilled').length;
@@ -774,9 +781,26 @@ const InvestigationPanel = React.memo(({ data, colorMap, onClose }) => {
                             Export Event Details to Console
                         </MenuItem>
                         <MenuItem onClick={() => {
-                            // Store the error type to highlight in Live Data
+                            // Store the error type and related events for enhanced Live Data display
                             sessionStorage.setItem('highlightIssueType', errorType);
                             sessionStorage.setItem('highlightFromInvestigation', 'true');
+                            
+                            // Store detailed investigation data for better Live Data display
+                            const investigationContext = {
+                                errorType,
+                                api,
+                                totalEvents: relevantEvents.length,
+                                timeRange: isGlobalFilter ? 'all' : `${bucketStart?.toLocaleString()} - ${bucketEnd?.toLocaleString()}`,
+                                isGlobalFilter,
+                                sampleEvents: relevantEvents.slice(0, 3).map(event => ({
+                                    id: event.id,
+                                    title: event.title || event.message,
+                                    timestamp: event.dateCreated || event.timestamp || event.lastSeen,
+                                    shortId: event.shortId,
+                                    culprit: event.culprit
+                                }))
+                            };
+                            sessionStorage.setItem('investigationContext', JSON.stringify(investigationContext));
                             
                             // Navigate to Live Data page
                             dispatch({ type: SET_ACTIVE_PAGE, payload: 'liveData' });
@@ -823,7 +847,7 @@ const InvestigationPanel = React.memo(({ data, colorMap, onClose }) => {
                             {/* Member list */}
                             {sentryMembers.map((member) => (
                                 <ListItem key={member.id} disablePadding>
-                                    <ListItemButton onClick={() => handleAssignToUser(member.id)}>
+                                    <ListItemButton onClick={() => handleAssignToUser(member.user?.id || member.id)}>
                                         <ListItemIcon>
                                             <Avatar sx={{ width: 32, height: 32 }}>
                                                 {member.name?.charAt(0) || <PersonIcon />}
@@ -902,6 +926,14 @@ export default function UnifiedStackedBarChart({
     const [selectedErrorTypes, setSelectedErrorTypes] = useState(new Set());
 
     const chartData = useMemo(() => {
+        console.log('📊 Chart Data Debug:', {
+            sentryEvents: events?.length || 0,
+            mailgunEvents: mailgunEvents?.length || 0,
+            selectedAPI,
+            mailgunEventSample: mailgunEvents?.slice(0, 2),
+            timeRange
+        });
+        
         const allErrorTypes = new Set();
         (events || []).forEach(e => allErrorTypes.add(e.issueCategory || e.type || 'Unknown Error'));
         (mailgunEvents || []).forEach(e => allErrorTypes.add(e.issueCategory || e.category || e.type || 'Unknown Error'));
@@ -1064,12 +1096,32 @@ export default function UnifiedStackedBarChart({
         });
     }, []);
 
+    // Calculate error type counts and total count for the selected API
+    const { errorTypeCounts, totalCount } = useMemo(() => {
+        const counts = {};
+        let total = 0;
+        
+        const sourceEvents = selectedAPI === 'sentry' ? events : mailgunEvents;
+        
+        sortedErrorTypeButtons.forEach(errorType => {
+            const count = sourceEvents?.filter(event => {
+                const eventType = event.issueCategory || (selectedAPI === 'mailgun' ? event.category : event.type) || 'Unknown Error';
+                return eventType === errorType;
+            }).length || 0;
+            
+            counts[errorType] = count;
+            total += count;
+        });
+        
+        return { errorTypeCounts: counts, totalCount: total };
+    }, [events, mailgunEvents, selectedAPI, sortedErrorTypeButtons]);
+
     const hasData = chartData.data.length > 0 && (chartData.sentryErrorTypes.length > 0 || chartData.mailgunErrorTypes.length > 0);
 
     return (
         <Box>
             {title && <Typography variant="h6" gutterBottom>{title}</Typography>}
-            {showAPIComparison && <ChartControls selectedAPI={selectedAPI} onApiChange={handleApiChange} sortedErrorTypeButtons={sortedErrorTypeButtons} selectedErrorTypes={selectedErrorTypes} onClearSelection={() => setSelectedErrorTypes(new Set())} onToggleErrorType={handleToggleErrorType} onErrorTypeClick={handleErrorTypeClick} colorMap={chartData.colorMap} />}
+            {showAPIComparison && <ChartControls selectedAPI={selectedAPI} onApiChange={handleApiChange} sortedErrorTypeButtons={sortedErrorTypeButtons} selectedErrorTypes={selectedErrorTypes} onClearSelection={() => setSelectedErrorTypes(new Set())} onToggleErrorType={handleToggleErrorType} onErrorTypeClick={handleErrorTypeClick} colorMap={chartData.colorMap} errorTypeCounts={errorTypeCounts} totalCount={totalCount} />}
             <Box height={566}>
                 {hasData ? (
                     <BarChart
@@ -1082,7 +1134,7 @@ export default function UnifiedStackedBarChart({
                                 return date.toLocaleDateString('en-US', opts);
                             }}]}
                         yAxis={[{ tickFormatter: (value) => Number.isInteger(value) ? value.toString() : '' }]}
-                        series={[...chartData.sentryErrorTypes.map(type => ({ id: type, dataKey: type, label: type.replace('sentry_', ''), color: chartData.colorMap[type.replace('sentry_', '')], stack: 'sentry', highlightScope: { highlighted: 'series', faded: 'global' } })), ...chartData.mailgunErrorTypes.map(type => ({ id: type, dataKey: type, label: type.replace('mailgun_', ''), color: chartData.colorMap[type.replace('mailgun_', '')], stack: 'mailgun', highlightScope: { highlighted: 'series', faded: 'global' } }))]}
+                        series={[...chartData.sentryErrorTypes.map(type => ({ id: type, dataKey: type, label: type.replace('sentry_', ''), color: chartData.colorMap[type.replace('sentry_', '')], stack: 'sentry', highlightScope: { highlighted: 'series', faded: 'global' }, valueFormatter: (value) => value === 0 ? null : value })), ...chartData.mailgunErrorTypes.map(type => ({ id: type, dataKey: type, label: type.replace('mailgun_', ''), color: chartData.colorMap[type.replace('mailgun_', '')], stack: 'mailgun', highlightScope: { highlighted: 'series', faded: 'global' }, valueFormatter: (value) => value === 0 ? null : value }))]}
                         height={566}
                         margin={{ left: 60, right: 20, top: 20, bottom: 100 }}
                         onItemClick={(event, d) => {

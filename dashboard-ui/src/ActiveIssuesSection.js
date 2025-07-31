@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Collapse, CircularProgress, Link, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Avatar } from '@mui/material';
+import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Avatar, CircularProgress } from '@mui/material';
 import { MoreVert as MoreVertIcon, Person as PersonIcon, PersonOff as PersonOffIcon } from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
-import { ignoreIssue, archiveIssue, bookmarkIssue, assignIssue, fetchSentryMembers } from './api';
+import { ignoreIssue, archiveIssue, bookmarkIssue, assignIssue, unassignIssue, fetchSentryMembers } from './api';
 import AppContext from './context/AppContext';
 import { getConsistentColorForCategory } from './utils/colorScheme';
 
-export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, textContent, selectedIssue, highlightedIssueType }) {
+export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, setExpandedRows, textContent, selectedIssue, highlightedIssueType, investigationContext }) {
     const { loadSentryData } = useContext(AppContext);
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedIssueForMenu, setSelectedIssueForMenu] = useState(null);
@@ -127,7 +127,7 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
         if (selectedIssueForMenu) {
             try {
                 console.log('Unassigning issue:', selectedIssueForMenu.id);
-                const response = await assignIssue(selectedIssueForMenu.id, null);
+                const response = await unassignIssue(selectedIssueForMenu.id);
                 console.log('Unassignment response:', response);
                 console.log('Successfully unassigned issue:', selectedIssueForMenu.id);
                 
@@ -157,6 +157,7 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
         return 'Assigned';
     };
 
+
     return (
         <CollapsibleSection title={textContent.heading}>
             <Table>
@@ -173,6 +174,7 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                         <React.Fragment key={issue.id}>
                             <TableRow 
                                 hover
+                                data-issue-id={issue.id}
                                 sx={{ 
                                     cursor: 'pointer',
                                     backgroundColor: selectedIssue?.id === issue.id ? 'action.selected' : getRowColorForIssue(issue, issue.status),
@@ -180,7 +182,15 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                                         backgroundColor: 'action.hover'
                                     }
                                 }}
-                                onClick={() => onViewDetails(issue.id)}
+                                onClick={() => {
+                                    onViewDetails(issue.id);
+                                    // Toggle expansion
+                                    if (expandedRows.includes(issue.id)) {
+                                        setExpandedRows(prev => prev.filter(id => id !== issue.id));
+                                    } else {
+                                        setExpandedRows(prev => [...prev, issue.id]);
+                                    }
+                                }}
                             >
                                 <TableCell>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -251,28 +261,242 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                                     </Button>
                                 </TableCell>
                             </TableRow>
-                            <TableRow>
-                                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={3}>
-                                    <Collapse in={expandedRows.includes(issue.id)} timeout="auto" unmountOnExit>
-                                        <Box sx={{ margin: 1 }}>
-                                            <Typography variant="h6" gutterBottom component="div">
-                                                Event Details
+                            {expandedRows.includes(issue.id) && (
+                                <TableRow>
+                                    <TableCell colSpan={4} sx={{ backgroundColor: '#f8f9fa', py: 3, px: 3 }}>
+                                        <Box sx={{ 
+                                            border: '1px solid #e0e0e0',
+                                            borderRadius: 2,
+                                            backgroundColor: 'white',
+                                            p: 3
+                                        }}>
+                                            <Typography variant="h6" gutterBottom sx={{ 
+                                                color: 'primary.main', 
+                                                fontWeight: 600,
+                                                borderBottom: '2px solid #e0e0e0',
+                                                pb: 1,
+                                                mb: 2
+                                            }}>
+                                                Issue Details
                                             </Typography>
-                                            {allEventsData[issue.id] ? (
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Latest Event ID: <Link href={`${issue.permalink}events/${allEventsData[issue.id][0].id}/`} target="_blank" rel="noopener">{allEventsData[issue.id][0].id}</Link>
-                                                    {allEventsData[issue.id][0].message && ` | Message: ${allEventsData[issue.id][0].message}`}
-                                                    {' | Timestamp: '}{new Date(allEventsData[issue.id][0].dateCreated).toLocaleString()}
-                                                </Typography>
-                                            ) : (
-                                                <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                                                    <CircularProgress size={24} />
+                                            
+                                            {/* Main issue information grid */}
+                                            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, mb: 3 }}>
+                                                <Box>
+                                                    <Typography variant="body2" sx={{ mb: 1 }}>
+                                                        <strong>ID:</strong> <span style={{ color: '#666' }}>{issue.shortId || issue.id}</span>
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 1 }}>
+                                                        <strong>Status:</strong> <span style={{ color: issue.status === 'unresolved' ? '#d32f2f' : '#2e7d32' }}>{issue.status}</span>
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 1 }}>
+                                                        <strong>Level:</strong> <span style={{ color: issue.level === 'error' ? '#d32f2f' : issue.level === 'warning' ? '#ed6c02' : '#666' }}>{issue.level}</span>
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 1 }}>
+                                                        <strong>Count:</strong> <span style={{ color: '#666' }}>{issue.count || 'N/A'}</span>
+                                                    </Typography>
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="body2" sx={{ mb: 1 }}>
+                                                        <strong>First Seen:</strong> <span style={{ color: '#666' }}>{issue.firstSeen ? new Date(issue.firstSeen).toLocaleString() : 'N/A'}</span>
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 1 }}>
+                                                        <strong>Last Seen:</strong> <span style={{ color: '#666' }}>{issue.lastSeen ? new Date(issue.lastSeen).toLocaleString() : 'N/A'}</span>
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 1 }}>
+                                                        <strong>Platform:</strong> <span style={{ color: '#666' }}>{issue.platform || 'node'}</span>
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mb: 1 }}>
+                                                        <strong>Project:</strong> <span style={{ color: '#666' }}>{issue.project?.name || 'javascript-react'}</span>
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+
+                                            {/* Error message section */}
+                                            {(issue.title || issue.metadata?.message) && (
+                                                <Box sx={{ 
+                                                    backgroundColor: '#f5f5f5', 
+                                                    p: 2, 
+                                                    borderRadius: 1, 
+                                                    mb: 2,
+                                                    border: '1px solid #e0e0e0'
+                                                }}>
+                                                    <Typography variant="body1" sx={{ fontWeight: 500, mb: 1 }}>
+                                                        Error Message:
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ 
+                                                        fontFamily: 'monospace', 
+                                                        color: '#d32f2f',
+                                                        wordBreak: 'break-word'
+                                                    }}>
+                                                        {issue.title || issue.metadata?.message}
+                                                    </Typography>
                                                 </Box>
                                             )}
+
+                                            {/* Location/Culprit section */}
+                                            {issue.culprit && (
+                                                <Box sx={{ 
+                                                    backgroundColor: '#f5f5f5', 
+                                                    p: 2, 
+                                                    borderRadius: 1, 
+                                                    mb: 2,
+                                                    border: '1px solid #e0e0e0'
+                                                }}>
+                                                    <Typography variant="body1" sx={{ fontWeight: 500, mb: 1 }}>
+                                                        Location:
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ 
+                                                        fontFamily: 'monospace',
+                                                        color: '#666',
+                                                        wordBreak: 'break-word'
+                                                    }}>
+                                                        {issue.culprit}
+                                                    </Typography>
+                                                </Box>
+                                            )}
+
+                                            {/* Actions section */}
+                                            <Box sx={{ 
+                                                display: 'flex', 
+                                                flexDirection: 'column',
+                                                gap: 2, 
+                                                mt: 3,
+                                                pt: 2,
+                                                borderTop: '1px solid #e0e0e0'
+                                            }}>
+                                                {/* Assignee Information */}
+                                                <Box sx={{ 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    gap: 1,
+                                                    pb: 1,
+                                                    borderBottom: '1px solid #f0f0f0'
+                                                }}>
+                                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                        Assigned to:
+                                                    </Typography>
+                                                    {(() => {
+                                                        const assigneeInfo = getAssigneeInfo(issue);
+                                                        return assigneeInfo ? (
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
+                                                                    {assigneeInfo.charAt(0).toUpperCase()}
+                                                                </Avatar>
+                                                                <Typography variant="body2" color="primary.main" sx={{ fontWeight: 500 }}>
+                                                                    {assigneeInfo}
+                                                                </Typography>
+                                                            </Box>
+                                                        ) : (
+                                                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                                                                Unassigned
+                                                            </Typography>
+                                                        );
+                                                    })()}
+                                                </Box>
+                                                
+                                                {/* Action Buttons */}
+                                                <Box sx={{ 
+                                                    display: 'flex', 
+                                                    flexWrap: 'wrap',
+                                                    gap: 1
+                                                }}>
+                                                {issue.permalink && (
+                                                    <Button 
+                                                        variant="contained" 
+                                                        size="small" 
+                                                        href={issue.permalink} 
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    >
+                                                        VIEW IN SENTRY
+                                                    </Button>
+                                                )}
+                                                {issue.status === 'unresolved' && (
+                                                    <Button 
+                                                        variant="outlined" 
+                                                        size="small" 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onResolveIssue(issue.id);
+                                                        }}
+                                                        color="success"
+                                                    >
+                                                        Resolve Issue
+                                                    </Button>
+                                                )}
+                                                <Button 
+                                                    variant="outlined" 
+                                                    size="small" 
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        try {
+                                                            await ignoreIssue(issue.id);
+                                                            console.log('Successfully ignored issue:', issue.id);
+                                                        } catch (error) {
+                                                            console.error('Failed to ignore issue:', error);
+                                                            alert(`Failed to ignore issue: ${error.message}`);
+                                                        }
+                                                    }}
+                                                    color="warning"
+                                                >
+                                                    Ignore
+                                                </Button>
+                                                <Button 
+                                                    variant="outlined" 
+                                                    size="small" 
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        try {
+                                                            await archiveIssue(issue.id);
+                                                            console.log('Successfully archived issue:', issue.id);
+                                                        } catch (error) {
+                                                            console.error('Failed to archive issue:', error);
+                                                            alert(`Failed to archive issue: ${error.message}`);
+                                                        }
+                                                    }}
+                                                    color="secondary"
+                                                >
+                                                    Archive
+                                                </Button>
+                                                <Button 
+                                                    variant="outlined" 
+                                                    size="small" 
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        try {
+                                                            await bookmarkIssue(issue.id);
+                                                            console.log('Successfully bookmarked issue:', issue.id);
+                                                        } catch (error) {
+                                                            console.error('Failed to bookmark issue:', error);
+                                                            alert(`Failed to bookmark issue: ${error.message}`);
+                                                        }
+                                                    }}
+                                                    color="info"
+                                                >
+                                                    Bookmark
+                                                </Button>
+                                                <Button 
+                                                    variant="outlined" 
+                                                    size="small" 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedIssueForMenu(issue);
+                                                        setAssignDialogOpen(true);
+                                                    }}
+                                                    color="primary"
+                                                >
+                                                    {(() => {
+                                                        const assigneeInfo = getAssigneeInfo(issue);
+                                                        return assigneeInfo ? `Reassign (${assigneeInfo})` : 'Assign Issue';
+                                                    })()}
+                                                </Button>
+                                                </Box>
+                                            </Box>
                                         </Box>
-                                    </Collapse>
-                                </TableCell>
-                            </TableRow>
+                                    </TableCell>
+                                </TableRow>
+                            )}
                         </React.Fragment>
                     ))}
                 </TableBody>
@@ -362,7 +586,7 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                             {/* Member list */}
                             {sentryMembers.map((member) => (
                                 <ListItem key={member.id} disablePadding>
-                                    <ListItemButton onClick={() => handleAssignToUser(member.id)}>
+                                    <ListItemButton onClick={() => handleAssignToUser(member.user?.id || member.id)}>
                                         <ListItemIcon>
                                             <Avatar sx={{ width: 32, height: 32 }}>
                                                 {member.name?.charAt(0) || <PersonIcon />}
