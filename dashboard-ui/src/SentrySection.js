@@ -56,6 +56,37 @@ export default function SentrySection({ issues, integrations, loading, error, al
     const [expandedAlertDetails, setExpandedAlertDetails] = useState([]);
     const [expandedIntegrations, setExpandedIntegrations] = useState([]);
     const [selectedIssue, setSelectedIssue] = useState(null);
+    const [highlightedIssueType, setHighlightedIssueType] = useState(null);
+
+    // Check for highlight instructions from investigation panel
+    useEffect(() => {
+        const highlightType = sessionStorage.getItem('highlightIssueType');
+        const fromInvestigation = sessionStorage.getItem('highlightFromInvestigation');
+        
+        if (highlightType && fromInvestigation === 'true') {
+            setHighlightedIssueType(highlightType);
+            
+            // Clear the session storage
+            sessionStorage.removeItem('highlightIssueType');
+            sessionStorage.removeItem('highlightFromInvestigation');
+            
+            // Auto-expand issues of this type
+            const matchingIssues = issues?.filter(issue => 
+                (issue.metadata?.type || issue.type) === highlightType
+            ) || [];
+            
+            if (matchingIssues.length > 0) {
+                setExpandedRows(matchingIssues.map(issue => issue.id));
+                // Select the first matching issue
+                setSelectedIssue(matchingIssues[0]);
+            }
+            
+            // Clear highlight after 5 seconds
+            setTimeout(() => {
+                setHighlightedIssueType(null);
+            }, 5000);
+        }
+    }, [issues]);
 
     useEffect(() => {
         if (allExpanded) {
@@ -215,6 +246,7 @@ export default function SentrySection({ issues, integrations, loading, error, al
                 expandedRows={expandedRows} 
                 textContent={textContent.sentry.activeIssues} 
                 selectedIssue={selectedIssue}
+                highlightedIssueType={highlightedIssueType}
             />
 
 

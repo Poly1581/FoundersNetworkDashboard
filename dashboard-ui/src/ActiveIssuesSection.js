@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Collapse, CircularProgress, Link, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Avatar } from '@mui/material';
 import { MoreVert as MoreVertIcon, Person as PersonIcon, PersonOff as PersonOffIcon } from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
 import { ignoreIssue, archiveIssue, bookmarkIssue, assignIssue, fetchSentryMembers } from './api';
+import AppContext from './context/AppContext';
+import { getConsistentColorForCategory } from './utils/colorScheme';
 
-export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, textContent, selectedIssue }) {
+export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, textContent, selectedIssue, highlightedIssueType }) {
+    const { loadSentryData } = useContext(AppContext);
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedIssueForMenu, setSelectedIssueForMenu] = useState(null);
     const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -27,7 +30,15 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
         loadSentryMembers();
     }, []);
 
-    const getRowColorForIssue = (status) => {
+    const getRowColorForIssue = (issue, status) => {
+        // Check if this issue should be highlighted from investigation
+        const issueType = issue.metadata?.type || issue.type;
+        const isHighlighted = highlightedIssueType && issueType === highlightedIssueType;
+        
+        if (isHighlighted) {
+            return '#fff3cd'; // warm yellow highlight
+        }
+        
         switch (status) {
             case 'unresolved':
                 return '#ffebee'; // light red
@@ -94,9 +105,16 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
     const handleAssignToUser = async (userId) => {
         if (selectedIssueForMenu) {
             try {
-                await assignIssue(selectedIssueForMenu.id, userId);
+                console.log('Assigning issue:', selectedIssueForMenu.id, 'to user:', userId);
+                const response = await assignIssue(selectedIssueForMenu.id, userId);
+                console.log('Assignment response:', response);
                 console.log('Successfully assigned issue to user:', userId);
-                // Optionally refresh the issues list or show success message
+                
+                // Wait a moment then refresh the context data to get updated assignment info
+                setTimeout(() => {
+                    console.log('Refreshing data after assignment...');
+                    loadSentryData();
+                }, 1000);
             } catch (error) {
                 console.error('Failed to assign issue:', error);
                 alert(`Failed to assign issue: ${error.message}`);
@@ -108,8 +126,16 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
     const handleUnassign = async () => {
         if (selectedIssueForMenu) {
             try {
-                await assignIssue(selectedIssueForMenu.id, null);
+                console.log('Unassigning issue:', selectedIssueForMenu.id);
+                const response = await assignIssue(selectedIssueForMenu.id, null);
+                console.log('Unassignment response:', response);
                 console.log('Successfully unassigned issue:', selectedIssueForMenu.id);
+                
+                // Wait a moment then refresh the context data to get updated assignment info
+                setTimeout(() => {
+                    console.log('Refreshing data after unassignment...');
+                    loadSentryData();
+                }, 1000);
             } catch (error) {
                 console.error('Failed to unassign issue:', error);
                 alert(`Failed to unassign issue: ${error.message}`);
@@ -117,6 +143,20 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
         }
         setAssignDialogOpen(false);
     };
+
+    // Helper function to get assignee display info
+    const getAssigneeInfo = (issue) => {
+        const assignee = issue.assignedTo || issue.assignee;
+        if (!assignee) return null;
+        
+        // Handle different assignee data structures
+        if (typeof assignee === 'string') return assignee;
+        if (assignee.name) return assignee.name;
+        if (assignee.email) return assignee.email;
+        if (assignee.username) return assignee.username;
+        return 'Assigned';
+    };
+
     return (
         <CollapsibleSection title={textContent.heading}>
             <Table>
@@ -124,6 +164,7 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                     <TableRow>
                         <TableCell>Title</TableCell>
                         <TableCell>Status</TableCell>
+                        <TableCell>Assignee</TableCell>
                         <TableCell align="right"></TableCell>
                     </TableRow>
                 </TableHead>
@@ -134,7 +175,7 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                                 hover
                                 sx={{ 
                                     cursor: 'pointer',
-                                    backgroundColor: selectedIssue?.id === issue.id ? 'action.selected' : getRowColorForIssue(issue.status),
+                                    backgroundColor: selectedIssue?.id === issue.id ? 'action.selected' : getRowColorForIssue(issue, issue.status),
                                     '&:hover': {
                                         backgroundColor: 'action.hover'
                                     }
@@ -142,15 +183,36 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                                 onClick={() => onViewDetails(issue.id)}
                             >
                                 <TableCell>
-                                    <Typography 
-                                        variant="body2" 
-                                        sx={{ 
-                                            fontWeight: selectedIssue?.id === issue.id ? 'bold' : 'normal',
-                                            color: selectedIssue?.id === issue.id ? 'primary.main' : 'inherit'
-                                        }}
-                                    >
-                                        {issue.title}
-                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography 
+                                            variant="body2" 
+                                            sx={{ 
+                                                fontWeight: selectedIssue?.id === issue.id ? 'bold' : 'normal',
+                                                color: selectedIssue?.id === issue.id ? 'primary.main' : 'inherit'
+                                            }}
+                                        >
+                                            {issue.title}
+                                        </Typography>
+                                        {(() => {
+                                            const issueType = issue.metadata?.type || issue.type || 'Unknown Error';
+                                            const typeColor = getConsistentColorForCategory(issueType);
+                                            return (
+                                                <Chip
+                                                    label={issueType}
+                                                    size="small"
+                                                    sx={{
+                                                        backgroundColor: typeColor,
+                                                        color: 'white',
+                                                        fontSize: '0.75rem',
+                                                        height: '20px',
+                                                        '& .MuiChip-label': {
+                                                            px: 1
+                                                        }
+                                                    }}
+                                                />
+                                            );
+                                        })()}
+                                    </Box>
                                 </TableCell>
                                 <TableCell>
                                     <Chip 
@@ -163,6 +225,20 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                                         }}
                                         sx={{ cursor: 'pointer' }}
                                     />
+                                </TableCell>
+                                <TableCell>
+                                    {(() => {
+                                        const assigneeInfo = getAssigneeInfo(issue);
+                                        return assigneeInfo ? (
+                                            <Typography variant="body2" color="primary.main" sx={{ fontWeight: 500 }}>
+                                                {assigneeInfo}
+                                            </Typography>
+                                        ) : (
+                                            <Typography variant="body2" color="text.secondary">
+                                                Unassigned
+                                            </Typography>
+                                        );
+                                    })()}
                                 </TableCell>
                                 <TableCell align="right">
                                     <Button 
@@ -233,7 +309,23 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                     Bookmark
                 </MenuItem>
                 <MenuItem onClick={handleAssignClick}>
-                    Assign
+                    <Box>
+                        <Typography variant="body2">
+                            Assign Issue
+                        </Typography>
+                        {selectedIssueForMenu && (() => {
+                            const assigneeInfo = getAssigneeInfo(selectedIssueForMenu);
+                            return assigneeInfo ? (
+                                <Typography variant="caption" color="text.secondary">
+                                    Currently: {assigneeInfo}
+                                </Typography>
+                            ) : (
+                                <Typography variant="caption" color="text.secondary">
+                                    Currently: Unassigned
+                                </Typography>
+                            );
+                        })()}
+                    </Box>
                 </MenuItem>
             </Menu>
 
