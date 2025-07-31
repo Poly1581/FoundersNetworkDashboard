@@ -1,25 +1,18 @@
-# Use node as base image
-FROM node:24-bookworm-slim
+# check=error=true
 
-# Set working directory
-WORKDIR /app
-
-# Copy dependencies
- COPY package*.json .
-
- # Install dependencies
- RUN npm install
-
-# Copy project files
+FROM node:24-bookworm-slim AS base
+WORKDIR /dashboard-frontend
+COPY package*.json .
+RUN npm install
 COPY . .
 
-# Expose port
-EXPOSE 3000
-
-# Set environment variables for webpack dev server in Docker
+FROM base AS test
 ENV WATCHPACK_POLLING=true
 ENV WDS_SOCKET_HOST=localhost
 ENV WDS_SOCKET_PORT=3000
+WORKDIR /dashboard-frontend
+EXPOSE 3000
+RUN ["npm", "test"]
 
-# Start project
+FROM test AS final
 CMD ["npm", "start"]

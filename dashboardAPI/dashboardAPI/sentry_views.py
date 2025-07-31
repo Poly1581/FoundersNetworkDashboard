@@ -1,19 +1,10 @@
-import os
 from rest_framework.decorators import api_view
 from .helpers import make_request, filter_request_data
 import json
 import requests
 from django.http import HttpResponse, HttpResponseBadRequest
 from datetime import datetime
-
-
-ORGANIZATION_SLUG = os.environ.get("SENTRY_ORGANIZATION_SLUG")
-PROJECT_ID = os.environ.get("SENTRY_PROJECT_ID")
-BEARER_AUTH = os.environ.get("SENTRY_BEARER_AUTH")
-BASE_URI = "https://sentry.io/api/0"
-HEADERS = {
-    "Authorization": f"Bearer {BEARER_AUTH}"
-}
+from django.conf import settings
 
 @api_view(["GET"])
 def get_issue_events(request, **kwargs):
@@ -22,11 +13,9 @@ def get_issue_events(request, **kwargs):
         See: https://docs.sentry.io/api/events/list-an-issues-events/
     '''
     return make_request({
-        "uri": f"{BASE_URI}/organizations/{ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/events/",
+        "uri": f"{settings.SENTRY_BASE_URI}/organizations/{settings.SENTRY_ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/events/",
         "method": "get",
-        "headers": {
-            "Authorization": f"Bearer {BEARER_AUTH}"
-        },
+        "headers": settings.SENTRY_HEADERS,
     })
 
 @api_view(["PUT"])
@@ -36,11 +25,9 @@ def update_issue_status(request, **kwargs):
         See: https://docs.sentry.io/api/events/update-an-issue/
     '''
     return make_request({
-        "uri": f"{BASE_URI}/organizations/{ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/",
+        "uri": f"{settings.SENTRY_BASE_URI}/organizations/{settings.SENTRY_ORGANIZATION_SLUG}/issues/{kwargs.get("issue_id")}/",
         "method": "put",
-        "headers": {
-            "Authorization": f"Bearer {BEARER_AUTH}"
-        },
+        "headers": settings.SENTRY_HEADERS,
         "json": filter_request_data(request.data, "update_issue_status"),
     })
 
@@ -51,11 +38,9 @@ def get_issues(request, **kwargs):
         See: https://docs.sentry.io/api/events/list-a-projects-issues/
     '''
     return make_request({
-        "uri": f"{BASE_URI}/projects/{ORGANIZATION_SLUG}/{PROJECT_ID}/issues/",
+        "uri": f"{settings.SENTRY_BASE_URI}/projects/{settings.SENTRY_ORGANIZATION_SLUG}/{settings.SENTRY_PROJECT_ID}/issues/",
         "method": "get",
-        "headers": {
-            "Authorization": f"Bearer {BEARER_AUTH}"
-        },
+        "headers": settings.SENTRY_HEADERS,
     })
 
 @api_view(["GET"])
@@ -65,11 +50,9 @@ def get_events(request, **kwargs):
         See: https://docs.sentry.io/api/events/list-a-projects-error-events/
     '''
     return make_request({
-        "uri": f"{BASE_URI}/projects/{ORGANIZATION_SLUG}/{PROJECT_ID}/events",
+        "uri": f"{settings.SENTRY_BASE_URI}/projects/{settings.SENTRY_ORGANIZATION_SLUG}/{settings.SENTRY_PROJECT_ID}/events/",
         "method": "get",
-        "headers": {
-            "Authorization": f"Bearer {BEARER_AUTH}"
-        },
+        "headers": settings.SENTRY_HEADERS,
     })
 
 @api_view(["GET"])
@@ -79,13 +62,12 @@ def get_sentry_alerts(request, **kwargs):
     """
     try:
         # Get recent issues from Sentry
-        issues_uri = f"{BASE_URI}/projects/{ORGANIZATION_SLUG}/{PROJECT_ID}/issues/"
-        response = requests.get(issues_uri, headers=HEADERS, params={'statsPeriod': '24h'})
+        issues_uri = f"{settings.SENTRY_BASE_URI}/projects/{settings.SENTRY_ORGANIZATION_SLUG}/{settings.SENTRY_PROJECT_ID}/issues/"
+        response = requests.get(issues_uri, headers=settings.SENTRY_HEADERS, params={'statsPeriod': '24h'})
         response.raise_for_status()
         
         issues = response.json()
         alerts = []
-        
         # Transform recent issues into alerts format
         for issue in issues[:10]:  # Limit to 10 most recent
             # Determine severity based on issue level
@@ -126,35 +108,8 @@ def get_organization_members(request, **kwargs):
     Fetch organization members from Sentry for issue assignment
     See: https://docs.sentry.io/api/organizations/list-an-organizations-members/
     """
-    try:
-        members_uri = f"{BASE_URI}/organizations/{ORGANIZATION_SLUG}/members/"
-        response = requests.get(members_uri, headers=HEADERS)
-        response.raise_for_status()
-        
-        members = response.json()
-        
-        # Transform members data to include only necessary fields
-        formatted_members = []
-        for member in members:
-            user = member.get('user', {})
-            formatted_member = {
-                "id": user.get('id'),
-                "email": user.get('email'),
-                "name": user.get('name') or user.get('username', user.get('email', 'Unknown')),
-                "username": user.get('username'),
-                "role": member.get('role'),
-                "isActive": user.get('isActive', True)
-            }
-            # Only include active members
-            if formatted_member['isActive']:
-                formatted_members.append(formatted_member)
-        
-        return HttpResponse(json.dumps(formatted_members), content_type="application/json")
-        
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching organization members from Sentry: {e}")
-        return HttpResponseBadRequest(f"Error fetching organization members from Sentry: {e}")
-        
-    except Exception as error:
-        print(f"An unexpected error occurred in get_organization_members: {error}")
-        return HttpResponseBadRequest(f"An unexpected error occurred: {error}")
+    return make_request({
+        "uri": f"{settings.SENTRY_BASE_URI}/organizations/{settings.SENTRY_ORGANIZATION_SLUG}/members/",
+        "method": "get",
+        "headers": settings.SENTRY_HEADERS,
+    })
