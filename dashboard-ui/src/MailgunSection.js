@@ -21,6 +21,7 @@ import CollapsibleSection from './CollapsibleSection';
 import IntegrationDetailsSection from './IntegrationDetailsSection';
 import AppContext from './context/AppContext';
 import { filterByGlobalTimeRange } from './utils/dataFilters';
+import { getConsistentColorForCategory } from './utils/colorScheme';
 
 const textContent = {
     mailgun: {
@@ -61,20 +62,6 @@ const textContent = {
             details: 'Details'
         }
     }
-};
-
-// Chart color scheme for consistent categorization
-const getConsistentColorForCategory = (category) => {
-    const colorMap = {
-        'API Rate Limit': '#DC2626',
-        'Connection Error': '#EA580C', 
-        'Reputation Issue': '#CA8A04',
-        'Delivery Issue': '#16A34A',
-        'Pipeline Sync Error': '#0284C7',
-        'Contact Sync Error': '#7C3AED',
-        'Unknown Error': '#757575'
-    };
-    return colorMap[category] || '#757575';
 };
 
 function EmailStatsSection({ stats, textContent }) {
@@ -145,14 +132,32 @@ function DomainsSection({ domains, textContent }) {
     );
 }
 
-function RecentEventsSection({ events, textContent }) {
-    const [expandedEvents, setExpandedEvents] = useState([]);
+function ActiveEventsSection({ events, textContent }) {
+    const [expandedRows, setExpandedRows] = useState([]);
+    const [selectedEvent, setSelectedEvent] = useState(null);
 
-    const handleViewEventDetails = (index) => {
-        const newExpandedEvents = expandedEvents.includes(index)
-            ? expandedEvents.filter(i => i !== index)
-            : [...expandedEvents, index];
-        setExpandedEvents(newExpandedEvents);
+    const handleViewDetails = (eventId) => {
+        const event = events.find(e => e.id === eventId) || events.find((e, index) => index.toString() === eventId);
+        if (selectedEvent?.id === eventId || selectedEvent === eventId) {
+            setSelectedEvent(null);
+        } else {
+            setSelectedEvent(event || eventId);
+        }
+        
+        const newExpandedRows = expandedRows.includes(eventId)
+            ? expandedRows.filter(id => id !== eventId)
+            : [...expandedRows, eventId];
+        setExpandedRows(newExpandedRows);
+    };
+
+    const getRowColorForEvent = (event, eventType) => {
+        // Highlight failed or error events
+        if (event.level === 'error' || event.event === 'failed' || event.severity === 'failed') {
+            return '#ffebee'; // light red
+        } else if (event.level === 'warning' || event.event === 'bounced' || event.severity === 'warning') {
+            return '#fff3e0'; // light orange
+        }
+        return 'inherit';
     };
 
     if (!events || events.length === 0) {
@@ -165,57 +170,117 @@ function RecentEventsSection({ events, textContent }) {
 
     return (
         <CollapsibleSection title={textContent.heading}>
-            <List>
-                {events.slice(0, 10).map((event, index) => (
-                    <React.Fragment key={index}>
-                        <ListItem
-                            secondaryAction={
-                                <Button size="small" startIcon={<InfoIcon />} onClick={() => handleViewEventDetails(index)}>
-                                    {textContent.details}
-                                </Button>
-                            }
-                        >
-                            <ListItemText
-                                primary={
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Typography variant="body1">
-                                            {`${event.event} - ${event.recipient || 'N/A'}`}
-                                        </Typography>
-                                        {event.issueCategory && (
-                                            <Chip 
-                                                label={event.issueCategory}
-                                                size="small"
+            <Table>
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Event</TableCell>
+                        <TableCell>Recipient</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell align="right"></TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {events.slice(0, 10).map((event, index) => {
+                        const eventId = event.id || index.toString();
+                        return (
+                            <React.Fragment key={eventId}>
+                                <TableRow 
+                                    hover
+                                    sx={{ 
+                                        cursor: 'pointer',
+                                        backgroundColor: selectedEvent?.id === eventId || selectedEvent === eventId ? 'action.selected' : getRowColorForEvent(event, event.event),
+                                        '&:hover': {
+                                            backgroundColor: 'action.hover'
+                                        }
+                                    }}
+                                    onClick={() => handleViewDetails(eventId)}
+                                >
+                                    <TableCell>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Typography 
+                                                variant="body2" 
                                                 sx={{ 
-                                                    backgroundColor: getConsistentColorForCategory(event.issueCategory),
-                                                    color: 'white',
-                                                    fontSize: '0.75rem'
+                                                    fontWeight: selectedEvent?.id === eventId || selectedEvent === eventId ? 'bold' : 'normal',
+                                                    color: selectedEvent?.id === eventId || selectedEvent === eventId ? 'primary.main' : 'inherit'
                                                 }}
-                                            />
-                                        )}
-                                    </Box>
-                                }
-                                secondary={`${new Date(event.timestamp).toLocaleString()} - ${event.message || ''}`}
-                            />
-                        </ListItem>
-                        <Collapse in={expandedEvents.includes(index)} timeout="auto" unmountOnExit>
-                            <Box sx={{ margin: 1, ml: 4, p: 2, backgroundColor: '#f5f5f5' }}>
-                                <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                    ○ Event ID: {event.id || 'N/A'}
-                                </Typography>
-                                <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                    ○ Delivery Status: {event.deliveryStatus || 'N/A'}
-                                </Typography>
-                                <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                    ○ User Variables: {JSON.stringify(event.userVariables || {})}
-                                </Typography>
-                                <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                    ○ Tags: {event.tags ? event.tags.join(', ') : 'None'}
-                                </Typography>
-                            </Box>
-                        </Collapse>
-                    </React.Fragment>
-                ))}
-            </List>
+                                            >
+                                                {event.event || 'Unknown Event'}
+                                            </Typography>
+                                            {event.issueCategory && (
+                                                <Chip
+                                                    label={event.issueCategory}
+                                                    size="small"
+                                                    sx={{
+                                                        backgroundColor: getConsistentColorForCategory(event.issueCategory),
+                                                        color: 'white',
+                                                        fontSize: '0.75rem',
+                                                        height: '20px',
+                                                        '& .MuiChip-label': {
+                                                            px: 1
+                                                        }
+                                                    }}
+                                                />
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2">
+                                            {event.recipient || 'N/A'}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip 
+                                            label={event.level || event.severity || 'info'} 
+                                            size="small" 
+                                            color={
+                                                event.level === 'error' || event.severity === 'failed' ? 'error' : 
+                                                event.level === 'warning' || event.severity === 'warning' ? 'warning' : 'success'
+                                            } 
+                                            sx={{ cursor: 'pointer' }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <Button 
+                                            size="small" 
+                                            startIcon={<InfoIcon />} 
+                                            variant="outlined"
+                                        >
+                                            Details
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
+                                        <Collapse in={expandedRows.includes(eventId)} timeout="auto" unmountOnExit>
+                                            <Box sx={{ margin: 1 }}>
+                                                <Typography variant="h6" gutterBottom component="div">
+                                                    Event Details
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Event ID: {event.id || 'N/A'}
+                                                    {event.message && ` | Message: ${event.message}`}
+                                                    {' | Timestamp: '}{new Date(event.timestamp).toLocaleString()}
+                                                    {event.deliveryStatus && ` | Delivery Status: ${event.deliveryStatus}`}
+                                                </Typography>
+                                                {event.userVariables && Object.keys(event.userVariables).length > 0 && (
+                                                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                                        User Variables: {JSON.stringify(event.userVariables)}
+                                                    </Typography>
+                                                )}
+                                                {event.tags && event.tags.length > 0 && (
+                                                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                                        Tags: {event.tags.join(', ')}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </Collapse>
+                                    </TableCell>
+                                </TableRow>
+                            </React.Fragment>
+                        );
+                    })}
+                </TableBody>
+            </Table>
         </CollapsibleSection>
     );
 }
@@ -258,10 +323,11 @@ export default function MailgunSection({ allExpanded, liveDataFilter, timeRange,
     }
 
     return (
-        <Box>
-            <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-                {textContent.mailgun.title}
-            </Typography>
+        <CollapsibleSection title={textContent.mailgun.title}>
+            <ActiveEventsSection 
+                events={globalTimeFilteredEvents} 
+                textContent={textContent.mailgun.recentEvents} 
+            />
             
             <IntegrationDetailsSection 
                 integrations={globalTimeFilteredIntegrations} 
@@ -279,11 +345,6 @@ export default function MailgunSection({ allExpanded, liveDataFilter, timeRange,
                 domains={globalTimeFilteredDomains} 
                 textContent={textContent.mailgun.domains} 
             />
-            
-            <RecentEventsSection 
-                events={globalTimeFilteredEvents} 
-                textContent={textContent.mailgun.recentEvents} 
-            />
-        </Box>
+        </CollapsibleSection>
     );
 }

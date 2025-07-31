@@ -4,15 +4,7 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import UnifiedStackedBarChart from './UnifiedStackedBarChart';
 import IntegrationStatusList from './IntegrationStatusList';
 
-// --- MOCK DATA FOR MAILGUN FRONTEND CHART ---
-const mockMailgunEvents = [
-    { id: 'm1', timestamp: new Date('2025-07-28T10:05:00Z'), level: 'error', issueCategory: 'Delivery Issue' },
-    { id: 'm2', timestamp: new Date('2025-07-28T15:00:00Z'), level: 'warning', issueCategory: 'API Rate Limit' },
-    { id: 'm3', timestamp: new Date('2025-07-29T09:20:00Z'), level: 'error', issueCategory: 'Reputation Issue' },
-    { id: 'm4', timestamp: new Date('2025-07-29T10:30:00Z'), level: 'error', issueCategory: 'Connection Error' },
-    { id: 'm5', timestamp: new Date('2025-07-29T11:10:00Z'), level: 'warning', issueCategory: 'Delivery Issue' },
-];
-// --- END OF MOCK DATA ---
+// Mock data removed - now using real Mailgun API data from props
 
 
 // Corrected to use props from App.js instead of local state
@@ -60,7 +52,7 @@ export default function Overview({ allIntegrations, allEventsForChart, mailgunEv
                             </Box>
                             <UnifiedStackedBarChart
                                 events={allEventsForChart}
-                                mailgunEvents={mockMailgunEvents}
+                                mailgunEvents={mailgunEvents}
                                 timeRange={timeRange} // Pass prop down
                                 title=""
                                 showAPIComparison={true}

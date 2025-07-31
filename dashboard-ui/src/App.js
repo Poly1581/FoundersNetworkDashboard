@@ -56,6 +56,7 @@ export default function App() {
         allEventsData,
         sentryIntegrations,
         mailgunIntegrations,
+        mailgunEvents,
         loading,
         error,
     } = state;
@@ -188,7 +189,7 @@ export default function App() {
                                 <Overview
                                     allIntegrations={allIntegrations}
                                     allEventsForChart={allEventsForChart}
-                                    mailgunEvents={[]} // This should be populated from your context/state
+                                    mailgunEvents={mailgunEvents || []}
                                     issues={sentryIssues}
                                     timeRange={globalTimeRange}
                                     onTimeRangeChange={handleGlobalTimeRangeChange}

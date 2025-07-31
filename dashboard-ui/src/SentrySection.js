@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { CircularProgress, Typography, Box, Card, CardContent } from '@mui/material';
+import { CircularProgress, Typography, Box } from '@mui/material';
 import IntegrationDetailsSection from './IntegrationDetailsSection';
 import ActiveIssuesSection from './ActiveIssuesSection';
 import { updateIssueStatus } from './api';
@@ -37,6 +37,7 @@ const textContent = {
     }
 };
 
+
 export default function SentrySection({ issues, integrations, loading, error, allExpanded, liveDataFilter, allEvents, timeRange, onTimeRangeChange }) {
     // Use props from context instead of individual data fetching for better performance
     const refreshIssues = useCallback(() => {
@@ -56,6 +57,70 @@ export default function SentrySection({ issues, integrations, loading, error, al
     const [expandedAlertDetails, setExpandedAlertDetails] = useState([]);
     const [expandedIntegrations, setExpandedIntegrations] = useState([]);
     const [selectedIssue, setSelectedIssue] = useState(null);
+    const [highlightedIssueType, setHighlightedIssueType] = useState(null);
+    const [investigationContext, setInvestigationContext] = useState(null);
+
+    // Check for highlight instructions from investigation panel
+    useEffect(() => {
+        const highlightType = sessionStorage.getItem('highlightIssueType');
+        const fromInvestigation = sessionStorage.getItem('highlightFromInvestigation');
+        const contextData = sessionStorage.getItem('investigationContext');
+        const expandedEvents = sessionStorage.getItem('expandedRows');
+
+        if (highlightType && fromInvestigation === 'true') {
+            setHighlightedIssueType(highlightType);
+            setExpandedRows(expandedEvents ? JSON.parse(expandedEvents) : []);
+            
+            // Parse and store investigation context for detailed display
+            if (contextData) {
+                try {
+                    const context = JSON.parse(contextData);
+                    setInvestigationContext(context);
+                } catch (error) {
+                    console.error('Failed to parse investigation context:', error);
+                }
+            }
+            
+            // Clear the session storage
+            sessionStorage.removeItem('highlightIssueType');
+            sessionStorage.removeItem('highlightFromInvestigation');
+            sessionStorage.removeItem('investigationContext');
+
+            // Auto-expand issues of this type
+            const matchingIssues = issues?.filter(issue => 
+                (issue.metadata?.type || issue.type || issue.issueCategory) === highlightType
+            ) || [];
+            
+            if (matchingIssues.length > 0) {
+                const issueIds = matchingIssues.map(issue => issue.id);
+                setExpandedRows(issueIds);
+                // Select the first matching issue for detailed display
+                setSelectedIssue(matchingIssues[0]);
+                
+                // Just focus on the expanded issues - no investigation popup needed
+                
+                // Ensure proper focus and highlighting behavior
+                setTimeout(() => {
+                    if (matchingIssues[0]) {
+                        // Ensure the issue is properly selected and highlighted
+                        setSelectedIssue(matchingIssues[0]);
+                        
+                        // Try to scroll to the issue if possible
+                        const issueElement = document.querySelector(`[data-issue-id="${matchingIssues[0].id}"]`);
+                        if (issueElement) {
+                            issueElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                }, 200); // Small delay to ensure DOM is updated
+            }
+            
+            // Clear highlight after 10 seconds (extended for better user experience)
+            setTimeout(() => {
+                setHighlightedIssueType(null);
+                setInvestigationContext(null);
+            }, 10000);
+        }
+    }, [issues]);
 
     useEffect(() => {
         if (allExpanded) {
@@ -151,8 +216,10 @@ export default function SentrySection({ issues, integrations, loading, error, al
     const handleViewDetails = useCallback((issueId) => {
         const issue = issues.find(i => i.id === issueId);
         if (selectedIssue?.id === issueId) {
+            // If clicking the same issue, close everything
             setSelectedIssue(null);
         } else {
+            // Set the selected issue
             setSelectedIssue(issue);
         }
         
@@ -213,8 +280,11 @@ export default function SentrySection({ issues, integrations, loading, error, al
                 onResolveIssue={handleResolveIssue} 
                 allEventsData={{}} 
                 expandedRows={expandedRows} 
+                setExpandedRows={setExpandedRows}
                 textContent={textContent.sentry.activeIssues} 
                 selectedIssue={selectedIssue}
+                highlightedIssueType={highlightedIssueType}
+                investigationContext={investigationContext}
             />
 
 

@@ -26,6 +26,7 @@ export const appReducer = (state, action) => {
                 rawSentryIssues: action.payload.sentryIssues,
                 rawAllEventsData: action.payload.allEventsData,
                 rawAllEventsForChart: action.payload.allEventsForChart,
+                rawMailgunEvents: action.payload.mailgunEvents,
                 rawMailgunData: action.payload.mailgunData,
                 // Filtered data (initially same as raw)
                 sentryIssues: action.payload.sentryIssues,
@@ -80,6 +81,7 @@ export const appReducer = (state, action) => {
                 sentryIssues: action.payload.sentryIssues,
                 allEventsData: action.payload.allEventsData,
                 allEventsForChart: action.payload.allEventsForChart,
+                mailgunEvents: action.payload.mailgunEvents || state.mailgunEvents,
             };
         default:
             return state;
