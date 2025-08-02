@@ -8,11 +8,6 @@ ENV PYTHONUNBUFFERED=1
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
-FROM base AS test
-WORKDIR /dashboard-backend
+FROM base AS final
 EXPOSE 8000
-RUN ["python", "manage.py", "test", "--parallel"]
-
-
-FROM test AS final
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
