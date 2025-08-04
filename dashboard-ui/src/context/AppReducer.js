@@ -8,6 +8,8 @@ export const SET_GLOBAL_TIME_RANGE = 'SET_GLOBAL_TIME_RANGE';
 export const SET_ALL_EXPANDED = 'SET_ALL_EXPANDED';
 export const SET_LIVE_DATA_FILTER = 'SET_LIVE_DATA_FILTER';
 export const UPDATE_FILTERED_DATA = 'UPDATE_FILTERED_DATA';
+export const RESTORE_PAGE_STATE = 'RESTORE_PAGE_STATE';
+export const SAVE_PAGE_STATE = 'SAVE_PAGE_STATE';
 
 // Reducer Function
 export const appReducer = (state, action) => {
@@ -82,6 +84,25 @@ export const appReducer = (state, action) => {
                 allEventsData: action.payload.allEventsData,
                 allEventsForChart: action.payload.allEventsForChart,
                 mailgunEvents: action.payload.mailgunEvents || state.mailgunEvents,
+            };
+        case SAVE_PAGE_STATE:
+            return {
+                ...state,
+                pageStates: {
+                    ...state.pageStates,
+                    [action.payload.page]: action.payload.state
+                }
+            };
+        case RESTORE_PAGE_STATE:
+            const pageState = state.pageStates?.[action.payload.page];
+            if (!pageState) return state;
+            
+            return {
+                ...state,
+                timeRange: pageState.timeRange || state.timeRange,
+                globalTimeRange: pageState.globalTimeRange || state.globalTimeRange,
+                liveDataFilter: pageState.liveDataFilter || state.liveDataFilter,
+                allExpanded: pageState.allExpanded !== undefined ? pageState.allExpanded : state.allExpanded
             };
         default:
             return state;

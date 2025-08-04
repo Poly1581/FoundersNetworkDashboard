@@ -1,16 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { Box, Typography, Card, CardContent, Tooltip, IconButton } from '@mui/material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import UnifiedStackedBarChart from './UnifiedStackedBarChart';
 import IntegrationStatusList from './IntegrationStatusList';
+import AppContext from './context/AppContext';
 
 // Mock data removed - now using real Mailgun API data from props
 
 
 // Corrected to use props from App.js instead of local state
 export default function Overview({ allIntegrations, allEventsForChart, mailgunEvents = [], issues = [], timeRange, onTimeRangeChange }) {
+    const { savePageState, restorePageState } = useContext(AppContext);
     const hasData = allEventsForChart?.length > 0 || allIntegrations?.length > 0;
     const [investigationData, setInvestigationData] = useState(null);
+    const [chartState, setChartState] = useState({
+        selectedAPI: 'sentry',
+        selectedErrorTypes: []
+    });
+
+    // Save component state when it changes
+    const handleChartStateChange = useCallback((newState) => {
+        setChartState(newState);
+        // Save to page state
+        savePageState('overview', { 
+            chartState: newState,
+            investigationData 
+        });
+    }, [savePageState, investigationData]);
+
+    // Restore component state on mount
+    useEffect(() => {
+        const savedState = restorePageState('overview');
+        if (savedState?.chartState) {
+            setChartState(savedState.chartState);
+        }
+        if (savedState?.investigationData) {
+            setInvestigationData(savedState.investigationData);
+        }
+    }, [restorePageState]);
 
 
     return (
@@ -57,6 +84,8 @@ export default function Overview({ allIntegrations, allEventsForChart, mailgunEv
                                 title=""
                                 showAPIComparison={true}
                                 onInvestigationChange={setInvestigationData}
+                                initialState={chartState}
+                                onStateChange={handleChartStateChange}
                             />
                         </CardContent>
                     </Card>

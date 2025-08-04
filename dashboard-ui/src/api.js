@@ -348,3 +348,37 @@ export const fetchMailgunIntegrationStatus = async () => {
         }];
     }
 };
+
+// Sentry-specific integration functions
+export const testSentryConnection = async () => {
+    try {
+        const response = await backendApi.get('/api/sentry/health/');
+        return response.data;
+    } catch (error) {
+        console.error('Failed to test Sentry connection:', error);
+        throw error;
+    }
+};
+
+export const fetchSentryLogs = async (limit = 50) => {
+    try {
+        const response = await backendApi.get('/api/sentry/logs/', {
+            params: { limit }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Failed to fetch Sentry logs:', error);
+        throw error;
+    }
+};
+
+export const getSentryDashboardUrl = async () => {
+    try {
+        const response = await backendApi.get('/api/sentry/dashboard-url/');
+        return response.data.url;
+    } catch (error) {
+        console.error('Failed to get Sentry dashboard URL:', error);
+        // Fallback to generic Sentry URL
+        return 'https://sentry.io/';
+    }
+};

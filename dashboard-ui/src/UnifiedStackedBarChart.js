@@ -782,8 +782,15 @@ const InvestigationPanel = React.memo(({ data, colorMap, onClose }) => {
                         </MenuItem>
                         <MenuItem onClick={() => {
                             // Store the error type and related events for enhanced Live Data display
-                            sessionStorage.setItem('highlightIssueType', errorType);
-                            sessionStorage.setItem('highlightFromInvestigation', 'true');
+                            if (api === 'mailgun' || api === 'mixed') {
+                                // For Mailgun events, use different sessionStorage keys
+                                sessionStorage.setItem('highlightMailgunEventType', errorType);
+                                sessionStorage.setItem('highlightMailgunFromInvestigation', 'true');
+                            } else {
+                                // For Sentry events, use existing keys
+                                sessionStorage.setItem('highlightIssueType', errorType);
+                                sessionStorage.setItem('highlightFromInvestigation', 'true');
+                            }
                             
                             // Store detailed investigation data for better Live Data display
                             const investigationContext = {
@@ -797,7 +804,8 @@ const InvestigationPanel = React.memo(({ data, colorMap, onClose }) => {
                                     title: event.title || event.message,
                                     timestamp: event.dateCreated || event.timestamp || event.lastSeen,
                                     shortId: event.shortId,
-                                    culprit: event.culprit
+                                    culprit: event.culprit,
+                                    recipient: event.recipient // Mailgun-specific field
                                 }))
                             };
                             sessionStorage.setItem('investigationContext', JSON.stringify(investigationContext));
@@ -919,14 +927,24 @@ const InvestigationPanel = React.memo(({ data, colorMap, onClose }) => {
 // --- Main Chart Component ---
 
 export default function UnifiedStackedBarChart({
-                                                   events = [], mailgunEvents = [], timeRange = '30d', title = 'Error Trends Over Time', onInvestigationChange, showAPIComparison = false
+                                                   events = [], mailgunEvents = [], timeRange = '30d', title = 'Error Trends Over Time', onInvestigationChange, showAPIComparison = false, initialState, onStateChange
                                                }) {
     const [investigationData, setInvestigationData] = useState(null);
-    const [selectedAPI, setSelectedAPI] = useState('sentry');
-    const [selectedErrorTypes, setSelectedErrorTypes] = useState(new Set());
+    const [selectedAPI, setSelectedAPI] = useState(initialState?.selectedAPI || 'sentry');
+    const [selectedErrorTypes, setSelectedErrorTypes] = useState(new Set(initialState?.selectedErrorTypes || []));
+
+    // Sync state changes with parent component
+    useEffect(() => {
+        if (onStateChange) {
+            onStateChange({
+                selectedAPI,
+                selectedErrorTypes: Array.from(selectedErrorTypes)
+            });
+        }
+    }, [selectedAPI, selectedErrorTypes, onStateChange]);
 
     const chartData = useMemo(() => {
-        console.log('📊 Chart Data Debug:', {
+        console.log('Chart Data Debug:', {
             sentryEvents: events?.length || 0,
             mailgunEvents: mailgunEvents?.length || 0,
             selectedAPI,
