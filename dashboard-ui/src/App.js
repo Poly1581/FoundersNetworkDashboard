@@ -44,7 +44,7 @@ const TIME_RANGE_FILTERS = [
 
 // --- MAIN APP COMPONENT ---
 export default function App() {
-    const { state, dispatch, loadSentryData, updateFilteredData, setGlobalTimeRange } = useContext(AppContext);
+    const { state, dispatch, loadSentryData, updateFilteredData, setGlobalTimeRange, savePageState, restorePageState } = useContext(AppContext);
     const {
         activePage,
         allExpanded,
@@ -72,10 +72,23 @@ export default function App() {
     }, [loadSentryData]);
 
     const handlePageChange = useCallback((page) => {
+        // Save current page state before switching
+        const currentPageState = {
+            timeRange: state.timeRange,
+            globalTimeRange: state.globalTimeRange,
+            liveDataFilter: state.liveDataFilter,
+            allExpanded: state.allExpanded
+        };
+        savePageState(activePage, currentPageState);
+        
         startTransition(() => {
             dispatch({ type: SET_ACTIVE_PAGE, payload: page });
+            // Restore state for the new page after switching
+            setTimeout(() => {
+                restorePageState(page);
+            }, 50);
         });
-    }, [dispatch]);
+    }, [dispatch, activePage, state.timeRange, state.globalTimeRange, state.liveDataFilter, state.allExpanded, savePageState, restorePageState]);
 
     const handleGlobalTimeRangeChange = useCallback((newTimeRange) => {
         if (newTimeRange && newTimeRange !== globalTimeRange) {

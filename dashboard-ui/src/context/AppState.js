@@ -1,6 +1,6 @@
 import React, { useReducer, startTransition, useCallback, useMemo } from 'react';
 import AppContext from './AppContext';
-import { appReducer, FETCH_DATA_START, FETCH_DATA_SUCCESS, FETCH_DATA_FAILURE, UPDATE_FILTERED_DATA, SET_LIVE_DATA_FILTER, SET_GLOBAL_TIME_RANGE } from './AppReducer';
+import { appReducer, FETCH_DATA_START, FETCH_DATA_SUCCESS, FETCH_DATA_FAILURE, UPDATE_FILTERED_DATA, SET_LIVE_DATA_FILTER, SET_GLOBAL_TIME_RANGE, SAVE_PAGE_STATE, RESTORE_PAGE_STATE } from './AppReducer';
 import { fetchIssues, fetchEventsForIssue, fetchSentryIntegrationStatus, fetchMailgunLogs, fetchMailgunStats, fetchMailgunIntegrationStatus } from '../api';
 import { filterEventsByTimeRange, filterIssuesByTimeRange, createMemoizedFilter } from '../utils/dataFilters';
 
@@ -156,6 +156,7 @@ const AppState = ({ children }) => {
         allIntegrations: [],
         loading: false,
         error: null,
+        pageStates: {}, // Store page-specific state
     };
 
     const [state, dispatch] = useReducer(appReducer, initialState);
@@ -227,11 +228,11 @@ const AppState = ({ children }) => {
             
             // If no real data, create mock data for testing
             if (!mailgunEvents || mailgunEvents.length === 0) {
-                console.log('🔧 Using mock Mailgun data since API failed');
+                console.log('Using mock Mailgun data since API failed');
                 mailgunEvents = createMockMailgunData();
             }
             
-            console.log('🔍 Mailgun API Response:', {
+            console.log('Mailgun API Response:', {
                 rawLogs: mailgunLogs,
                 hasItems: !!(mailgunLogs && mailgunLogs.items),
                 itemsCount: mailgunLogs?.items?.length || 0,
@@ -346,6 +347,18 @@ const AppState = ({ children }) => {
         dispatch({ type: SET_GLOBAL_TIME_RANGE, payload: timeRange });
     }, [dispatch]);
 
+    // Page state management
+    const savePageState = useCallback((page, pageState) => {
+        dispatch({ 
+            type: SAVE_PAGE_STATE, 
+            payload: { page, state: pageState } 
+        });
+    }, [dispatch]);
+
+    const restorePageState = useCallback((page) => {
+        return state.pageStates?.[page] || null;
+    }, [state.pageStates]);
+
     // Apply initial filtering when raw data becomes available (removed to prevent infinite loop)
 
     return (
@@ -355,7 +368,9 @@ const AppState = ({ children }) => {
             loadSentryData, 
             updateFilteredData,
             setLiveDataFilter,
-            setGlobalTimeRange 
+            setGlobalTimeRange,
+            savePageState,
+            restorePageState 
         }}>
             {children}
         </AppContext.Provider>
