@@ -16,7 +16,6 @@ import {
     TableRow,
     Typography
 } from '@mui/material';
-import {Info as InfoIcon} from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
 import IntegrationDetailsSection from './IntegrationDetailsSection';
 import AppContext from './context/AppContext';
@@ -130,13 +129,6 @@ function EmailStatsSection({ stats, textContent }) {
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                                     {stat.type}
                                 </Typography>
-                                <Button 
-                                    size="small" 
-                                    startIcon={<InfoIcon />}
-                                    variant="outlined"
-                                >
-                                    Details
-                                </Button>
                             </CardContent>
                         </Card>
                         
@@ -380,13 +372,6 @@ function DomainsSection({ domains, textContent }) {
                                     />
                                 </TableCell>
                                 <TableCell align="right">
-                                    <Button 
-                                        size="small" 
-                                        startIcon={<InfoIcon />}
-                                        variant="outlined"
-                                    >
-                                        Details
-                                    </Button>
                                 </TableCell>
                             </TableRow>
                             {expandedDomains.includes(index) && (
@@ -697,8 +682,9 @@ function ActiveEventsSection({ events, textContent }) {
                 <TableHead>
                     <TableRow>
                         <TableCell>Event</TableCell>
-                        <TableCell>Recipient</TableCell>
+                        <TableCell align="center">Category</TableCell>
                         <TableCell>Status</TableCell>
+                        <TableCell>Recipient</TableCell>
                         <TableCell align="right"></TableCell>
                     </TableRow>
                 </TableHead>
@@ -720,60 +706,41 @@ function ActiveEventsSection({ events, textContent }) {
                                     onClick={() => handleViewDetails(eventId)}
                                 >
                                     <TableCell>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Typography 
-                                                variant="body2" 
-                                                sx={{ 
-                                                    fontWeight: selectedEvent?.id === eventId || selectedEvent === eventId ? 'bold' : 'normal',
-                                                    color: selectedEvent?.id === eventId || selectedEvent === eventId ? 'primary.main' : 'inherit'
-                                                }}
-                                            >
-                                                {event.event || 'Unknown Event'}
-                                            </Typography>
-                                            {(() => {
-                                                const eventTypeKey = event.event || event.type || event.category || 'Unknown Event';
-                                                const isHighlighted = highlightedEventType && eventTypeKey === highlightedEventType;
-                                                if (isHighlighted) {
-                                                    const typeColor = getConsistentColorForCategory(eventTypeKey);
-                                                    return (
-                                                        <Chip
-                                                            label={eventTypeKey}
-                                                            size="small"
-                                                            sx={{
-                                                                backgroundColor: typeColor,
-                                                                color: 'white',
-                                                                fontSize: '0.75rem',
-                                                                height: '20px',
-                                                                '& .MuiChip-label': {
-                                                                    px: 1
-                                                                }
-                                                            }}
-                                                        />
-                                                    );
-                                                }
-                                                return null;
-                                            })()}
-                                            {event.issueCategory && (
+                                        <Typography 
+                                            variant="body2" 
+                                            sx={{ 
+                                                fontWeight: selectedEvent?.id === eventId || selectedEvent === eventId ? 'bold' : 'normal',
+                                                color: selectedEvent?.id === eventId || selectedEvent === eventId ? 'primary.main' : 'inherit'
+                                            }}
+                                        >
+                                            {event.event || 'Unknown Event'}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        {(() => {
+                                            // Determine the category to display
+                                            const eventTypeKey = event.event || event.type || event.category || 'Unknown Event';
+                                            const displayCategory = event.issueCategory || eventTypeKey;
+                                            const typeColor = getConsistentColorForCategory(displayCategory);
+                                            const isHighlighted = highlightedEventType && eventTypeKey === highlightedEventType;
+                                            
+                                            return (
                                                 <Chip
-                                                    label={event.issueCategory}
+                                                    label={displayCategory}
                                                     size="small"
                                                     sx={{
-                                                        backgroundColor: getConsistentColorForCategory(event.issueCategory),
+                                                        backgroundColor: typeColor,
                                                         color: 'white',
                                                         fontSize: '0.75rem',
                                                         height: '20px',
+                                                        border: isHighlighted ? '2px solid #ffc107' : 'none',
                                                         '& .MuiChip-label': {
                                                             px: 1
                                                         }
                                                     }}
                                                 />
-                                            )}
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2">
-                                            {event.recipient || 'N/A'}
-                                        </Typography>
+                                            );
+                                        })()}
                                     </TableCell>
                                     <TableCell>
                                         <Chip 
@@ -786,19 +753,17 @@ function ActiveEventsSection({ events, textContent }) {
                                             sx={{ cursor: 'pointer' }}
                                         />
                                     </TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2">
+                                            {event.recipient || 'N/A'}
+                                        </Typography>
+                                    </TableCell>
                                     <TableCell align="right">
-                                        <Button 
-                                            size="small" 
-                                            startIcon={<InfoIcon />} 
-                                            variant="outlined"
-                                        >
-                                            Details
-                                        </Button>
                                     </TableCell>
                                 </TableRow>
                                 {expandedRows.includes(eventId) && (
                                     <TableRow>
-                                        <TableCell colSpan={4} sx={{ backgroundColor: '#f8f9fa', py: 3, px: 3 }}>
+                                        <TableCell colSpan={5} sx={{ backgroundColor: '#f8f9fa', py: 3, px: 3 }}>
                                             <Box sx={{ 
                                                 border: '1px solid #e0e0e0',
                                                 borderRadius: 2,
