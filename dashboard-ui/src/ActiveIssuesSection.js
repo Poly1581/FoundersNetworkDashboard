@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Avatar, CircularProgress } from '@mui/material';
-import { MoreVert as MoreVertIcon, Person as PersonIcon, PersonOff as PersonOffIcon } from '@mui/icons-material';
+import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Avatar, CircularProgress } from '@mui/material';
+import { Person as PersonIcon, PersonOff as PersonOffIcon } from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
 import { ignoreIssue, archiveIssue, bookmarkIssue, assignIssue, unassignIssue, fetchSentryMembers } from './api';
 import AppContext from './context/AppContext';
@@ -8,9 +8,8 @@ import { getConsistentColorForCategory } from './utils/colorScheme';
 
 export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, setExpandedRows, textContent, selectedIssue, highlightedIssueType, investigationContext }) {
     const { loadSentryData } = useContext(AppContext);
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [selectedIssueForMenu, setSelectedIssueForMenu] = useState(null);
     const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+    const [selectedIssueForAssignment, setSelectedIssueForAssignment] = useState(null);
     const [sentryMembers, setSentryMembers] = useState([]);
     const [membersLoading, setMembersLoading] = useState(false);
 
@@ -49,64 +48,17 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
         }
     };
 
-    const handleMenuClick = (event, issue) => {
-        event.stopPropagation();
-        setAnchorEl(event.currentTarget);
-        setSelectedIssueForMenu(issue);
-    };
-
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-        setSelectedIssueForMenu(null);
-    };
-
-    const handleResolve = () => {
-        if (selectedIssueForMenu) {
-            onResolveIssue(selectedIssueForMenu.id);
-        }
-        handleMenuClose();
-    };
-
-    const handleIgnore = async () => {
-        if (selectedIssueForMenu) {
-            try {
-                await ignoreIssue(selectedIssueForMenu.id);
-                console.log('Successfully ignored issue:', selectedIssueForMenu.id);
-            } catch (error) {
-                console.error('Failed to ignore issue:', error);
-                alert(`Failed to ignore issue: ${error.message}`);
-            }
-        }
-        handleMenuClose();
-    };
-
-    const handleArchive = async () => {
-        if (selectedIssueForMenu) {
-            try {
-                await archiveIssue(selectedIssueForMenu.id);
-                console.log('Successfully archived issue:', selectedIssueForMenu.id);
-            } catch (error) {
-                console.error('Failed to archive issue:', error);
-                alert(`Failed to archive issue: ${error.message}`);
-            }
-        }
-        handleMenuClose();
-    };
-
-    const handleAssignClick = () => {
-        setAssignDialogOpen(true);
-        handleMenuClose();
-    };
 
     const handleAssignDialogClose = () => {
         setAssignDialogOpen(false);
+        setSelectedIssueForAssignment(null);
     };
 
     const handleAssignToUser = async (userId) => {
-        if (selectedIssueForMenu) {
+        if (selectedIssueForAssignment) {
             try {
-                console.log('Assigning issue:', selectedIssueForMenu.id, 'to user:', userId);
-                const response = await assignIssue(selectedIssueForMenu.id, userId);
+                console.log('Assigning issue:', selectedIssueForAssignment.id, 'to user:', userId);
+                const response = await assignIssue(selectedIssueForAssignment.id, userId);
                 console.log('Assignment response:', response);
                 console.log('Successfully assigned issue to user:', userId);
                 
@@ -124,12 +76,12 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
     };
 
     const handleUnassign = async () => {
-        if (selectedIssueForMenu) {
+        if (selectedIssueForAssignment) {
             try {
-                console.log('Unassigning issue:', selectedIssueForMenu.id);
-                const response = await unassignIssue(selectedIssueForMenu.id);
+                console.log('Unassigning issue:', selectedIssueForAssignment.id);
+                const response = await unassignIssue(selectedIssueForAssignment.id);
                 console.log('Unassignment response:', response);
-                console.log('Successfully unassigned issue:', selectedIssueForMenu.id);
+                console.log('Successfully unassigned issue:', selectedIssueForAssignment.id);
                 
                 // Wait a moment then refresh the context data to get updated assignment info
                 setTimeout(() => {
@@ -164,6 +116,7 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                 <TableHead>
                     <TableRow>
                         <TableCell>Title</TableCell>
+                        <TableCell align="center">Category</TableCell>
                         <TableCell>Status</TableCell>
                         <TableCell>Assignee</TableCell>
                         <TableCell align="right"></TableCell>
@@ -193,36 +146,36 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                                 }}
                             >
                                 <TableCell>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Typography 
-                                            variant="body2" 
-                                            sx={{ 
-                                                fontWeight: selectedIssue?.id === issue.id ? 'bold' : 'normal',
-                                                color: selectedIssue?.id === issue.id ? 'primary.main' : 'inherit'
-                                            }}
-                                        >
-                                            {issue.title}
-                                        </Typography>
-                                        {(() => {
-                                            const issueType = issue.metadata?.type || issue.type || 'Unknown Error';
-                                            const typeColor = getConsistentColorForCategory(issueType);
-                                            return (
-                                                <Chip
-                                                    label={issueType}
-                                                    size="small"
-                                                    sx={{
-                                                        backgroundColor: typeColor,
-                                                        color: 'white',
-                                                        fontSize: '0.75rem',
-                                                        height: '20px',
-                                                        '& .MuiChip-label': {
-                                                            px: 1
-                                                        }
-                                                    }}
-                                                />
-                                            );
-                                        })()}
-                                    </Box>
+                                    <Typography 
+                                        variant="body2" 
+                                        sx={{ 
+                                            fontWeight: selectedIssue?.id === issue.id ? 'bold' : 'normal',
+                                            color: selectedIssue?.id === issue.id ? 'primary.main' : 'inherit'
+                                        }}
+                                    >
+                                        {issue.title}
+                                    </Typography>
+                                </TableCell>
+                                <TableCell align="center">
+                                    {(() => {
+                                        const issueType = issue.metadata?.type || issue.type || 'Unknown Error';
+                                        const typeColor = getConsistentColorForCategory(issueType);
+                                        return (
+                                            <Chip
+                                                label={issueType}
+                                                size="small"
+                                                sx={{
+                                                    backgroundColor: typeColor,
+                                                    color: 'white',
+                                                    fontSize: '0.75rem',
+                                                    height: '20px',
+                                                    '& .MuiChip-label': {
+                                                        px: 1
+                                                    }
+                                                }}
+                                            />
+                                        );
+                                    })()}
                                 </TableCell>
                                 <TableCell>
                                     <Chip 
@@ -251,19 +204,11 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                                     })()}
                                 </TableCell>
                                 <TableCell align="right">
-                                    <Button 
-                                        size="small" 
-                                        startIcon={<MoreVertIcon />} 
-                                        onClick={(e) => handleMenuClick(e, issue)}
-                                        variant="outlined"
-                                    >
-                                        Actions
-                                    </Button>
                                 </TableCell>
                             </TableRow>
                             {expandedRows.includes(issue.id) && (
                                 <TableRow>
-                                    <TableCell colSpan={4} sx={{ backgroundColor: '#f8f9fa', py: 3, px: 3 }}>
+                                    <TableCell colSpan={5} sx={{ backgroundColor: '#f8f9fa', py: 3, px: 3 }}>
                                         <Box sx={{ 
                                             border: '1px solid #e0e0e0',
                                             borderRadius: 2,
@@ -481,7 +426,7 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                                                     size="small" 
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setSelectedIssueForMenu(issue);
+                                                        setSelectedIssueForAssignment(issue);
                                                         setAssignDialogOpen(true);
                                                     }}
                                                     color="primary"
@@ -502,56 +447,6 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                 </TableBody>
             </Table>
             
-            <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-            >
-                {selectedIssueForMenu?.status === 'unresolved' && (
-                    <MenuItem onClick={handleResolve}>
-                        Resolve Issue
-                    </MenuItem>
-                )}
-                <MenuItem onClick={handleIgnore}>
-                    Ignore
-                </MenuItem>
-                <MenuItem onClick={handleArchive}>
-                    Archive
-                </MenuItem>
-                <MenuItem onClick={async () => {
-                    if (selectedIssueForMenu) {
-                        try {
-                            await bookmarkIssue(selectedIssueForMenu.id);
-                            console.log('Successfully bookmarked issue:', selectedIssueForMenu.id);
-                        } catch (error) {
-                            console.error('Failed to bookmark issue:', error);
-                            alert(`Failed to bookmark issue: ${error.message}`);
-                        }
-                    }
-                    handleMenuClose();
-                }}>
-                    Bookmark
-                </MenuItem>
-                <MenuItem onClick={handleAssignClick}>
-                    <Box>
-                        <Typography variant="body2">
-                            Assign Issue
-                        </Typography>
-                        {selectedIssueForMenu && (() => {
-                            const assigneeInfo = getAssigneeInfo(selectedIssueForMenu);
-                            return assigneeInfo ? (
-                                <Typography variant="caption" color="text.secondary">
-                                    Currently: {assigneeInfo}
-                                </Typography>
-                            ) : (
-                                <Typography variant="caption" color="text.secondary">
-                                    Currently: Unassigned
-                                </Typography>
-                            );
-                        })()}
-                    </Box>
-                </MenuItem>
-            </Menu>
 
             {/* Assignment Dialog */}
             <Dialog 
@@ -561,7 +456,7 @@ export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIs
                 fullWidth
             >
                 <DialogTitle>
-                    Assign Issue: {selectedIssueForMenu?.title}
+                    Assign Issue: {selectedIssueForAssignment?.title}
                 </DialogTitle>
                 <DialogContent>
                     {membersLoading ? (

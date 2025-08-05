@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Avatar } from '@mui/material';
-import { Info as InfoIcon, Link as LinkIcon } from '@mui/icons-material';
+import { Link as LinkIcon } from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
 import { getSentryDashboardUrl } from './api';
 
@@ -73,7 +73,7 @@ export default function IntegrationDetailsSection({ integrations, textContent, o
                     <TableHead>
                         <TableRow>
                             <TableCell>Service</TableCell>
-                            <TableCell>Category</TableCell>
+                            <TableCell align="center">Category</TableCell>
                             <TableCell>Status</TableCell>
                             <TableCell align="right"></TableCell>
                         </TableRow>
@@ -105,7 +105,7 @@ export default function IntegrationDetailsSection({ integrations, textContent, o
                                             </Typography>
                                         </Box>
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell align="center">
                                         <Chip
                                             label={integration.category}
                                             size="small"
@@ -121,13 +121,6 @@ export default function IntegrationDetailsSection({ integrations, textContent, o
                                         />
                                     </TableCell>
                                     <TableCell align="right">
-                                        <Button 
-                                            size="small" 
-                                            startIcon={<InfoIcon />}
-                                            variant="outlined"
-                                        >
-                                            Details
-                                        </Button>
                                     </TableCell>
                                 </TableRow>
                                 {expandedIntegrations.includes(index) && (
