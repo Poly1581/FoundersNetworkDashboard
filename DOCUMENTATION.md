@@ -5,9 +5,8 @@
 2. [Architecture](#architecture)
 3. [Installation & Setup](#installation--setup)
 4. [Configuration](#configuration)
-5. [Usage Guide](#usage-guide)
-6. [API Reference](#api-reference)
-7. [Testing Framework](#testing)
+5. [API Reference](#api-reference)
+6. [Testing Framework](#testing)
 
 ## Overview
 
@@ -147,68 +146,13 @@ In the case that the rebuild script does not work correctly, development can be 
 ### Docker Configuration
 The application uses Docker Compose for containerization, which is configured in [compose.yml](compose.yml). [Docker compose](compose.yml) uses [dashboard-ui/Dockerfile](dashboard-ui/Dockerfile) and [dashboardAPI/Dockerfile](dashboardAPI/Dockerfile) in order to build each image. Both `Dockerfiles` are multistage in order to both make the build contingent on passing test cases and take advantage of [Docker build caching](https://docs.docker.com/build/cache/) to speed up the build process.
 
-## Usage Guide
-
-### Dashboard Navigation
-
-#### Overview Page
-- **Integration Status**: Real-time health of all integrations
-- **API Errors Chart**: Visual representation of errors over time
-- **Time Range Filter**: Select 1 day, 7 days, 30 days, or 90 days
-- **Interactive Chart**: Click error types to filter, double-click to investigate
-
-#### Live Data Page
-- **Sentry Section**: Active issues, integration details, recent alerts
-- **Mailgun Section**: Email statistics, domain status, recent events
-- **Real-time Filtering**: Filter by time range and data type
-- **Issue Management**: Resolve issues directly from the dashboard
-
-### Key Features
-
-#### Real-time Monitoring
-- **Health Checks**: Automatic monitoring of API endpoints
-- **Response Time Tracking**: Monitor API performance
-- **Error Detection**: Automatic detection of integration issues
-- **Alert System**: Real-time alerts for critical issues
-
-#### Data Visualization
-- **Stacked Bar Charts**: Show error trends over time
-- **Integration Status Cards**: Quick health overview
-- **Detailed Tables**: Comprehensive data views
-- **Interactive Filters**: Dynamic data filtering
-
-#### Issue Management
-- **Issue Resolution**: Mark issues as resolved
-- **Status Updates**: Update issue status in real-time
-- **Detailed Views**: Expand issues for detailed information
-- **Bulk Operations**: Handle multiple issues efficiently
-
-### Common Operations
-
-#### Checking Integration Health
-1. Navigate to the Overview page
-2. Review the Integration Status section
-3. Look for any "Unhealthy" status indicators
-4. Click "View Details" for more information
-
-#### Investigating Errors
-1. Go to the Live Data page
-2. Select the Sentry section
-3. Review Active Issues
-4. Click on an issue to expand details
-5. Use the chart to see error patterns
-
-#### Monitoring Email Services
-1. Navigate to the Mailgun section
-2. Check email statistics and delivery rates
-3. Review domain status
-4. Monitor recent email events
-
 ## API Reference
 
 ### Backend API Endpoints
 
 #### Sentry Endpoints
+All sentry views are located in [dashboardAPI/integration_views.py](dashboardAPI/integration_views.py).
+
 ```http
 GET /api/sentry/issues/
 GET /api/sentry/issues/{issue_id}/events/
@@ -219,6 +163,8 @@ GET /api/sentry/members/
 ```
 
 #### Mailgun Endpoints
+All mailgun views are located in [dashboardAPI/mailgun_views.py](dashboardAPI/mailgun_views.py).
+
 ```http
 GET /api/mailgun/queue-status/
 PUT /api/mailgun/account-metrics/
@@ -230,8 +176,11 @@ GET /api/mailgun/mailing-list-members/{list_address}/
 ```
 
 #### Integration Health Endpoints
+All integration views are located in [dashboardAPI/integration_views.py](dashboardAPI/integration_views.py).
+
 ```http
 GET /api/sentry/integration-status/
+GET /api/hubspot/integration-status/
 ```
 
 ### Frontend API Integration
@@ -259,6 +208,9 @@ const { loadSentryData } = useContext(AppContext);
 // Update filters
 const { updateFilteredData } = useContext(AppContext);
 ```
+
+#### Mailgun Data
+Currently, the frontend uses mock data for the Mailgun API. This is primarily because we do not have access to the Founders Network Mailgun API and our Mailgun API does not have any errors or other data associated with it. The backend has API routes in place for accessing Mailgun data, though these will have to be integrated into the frontend.
 
 ### Project Structure
 ```
