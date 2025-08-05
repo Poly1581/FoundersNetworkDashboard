@@ -35,12 +35,12 @@ The Founders Network Health Dashboard is a centralized platform observability to
 │   Frontend      │    │   Backend       │    │   External      │
 │   (React)       │◄──►│   (Django)      │◄──►│   APIs          │
 │   Port: 3000    │    │   Port: 8000    │    │                 │
-└─────────────────┘    └─────────────────┘    │   ┌─────────────┐│
-                                              │   │   Sentry    ││
-                                              │   └─────────────┘│
-                                              │   ┌─────────────┐│
-                                              │   │   Mailgun   ││
-                                              │   └─────────────┘│
+└─────────────────┘    └─────────────────┘    │  ┌─────────────┐│
+                                              │  │   Sentry    ││
+                                              │  └─────────────┘│
+                                              │  ┌─────────────┐│
+                                              │  │   Mailgun   ││
+                                              │  └─────────────┘│
                                               └─────────────────┘
 ```
 
@@ -255,7 +255,6 @@ GET /api/mailgun/mailing-list-members/{list_address}/
 #### Integration Health Endpoints
 ```http
 GET /api/sentry/integration-status/
-GET /api/hubspot/integration-status/
 ```
 
 ### Frontend API Integration
@@ -284,67 +283,33 @@ const { loadSentryData } = useContext(AppContext);
 const { updateFilteredData } = useContext(AppContext);
 ```
 
-## Integration Guide
-
-### Adding New Integrations
-
-#### Backend Integration
-
-#### Frontend Integration
-
-### Webhook Integration
-
-### Custom Health Checks
-
-## Development Guide
-
 ### Project Structure
 ```
 FoundersNetworkDashboard/
-├── dashboardAPI/              # Django backend
+├── dashboardAPI/                # Django backend
 │   ├── dashboardAPI/
-│   │   ├── views.py          # Main API endpoints
-│   │   ├── sentry_views.py   # Sentry-specific endpoints
-│   │   ├── mailgun_views.py  # Mailgun-specific endpoints
+│   │   ├── views.py             # Main API endpoints
+│   │   ├── sentry_views.py      # Sentry-specific endpoints
+│   │   ├── mailgun_views.py     # Mailgun-specific endpoints
 │   │   ├── integration_views.py # Health checks
-│   │   ├── helpers.py        # Utility functions
-│   │   └── settings.py       # Django settings
-│   ├── requirements.txt      # Python dependencies
-│   └── Dockerfile           # Backend container
-├── dashboard-ui/             # React frontend
+│   │   ├── helpers.py           # Utility functions
+│   │   └── settings.py          # Django settings
+│   ├── requirements.txt         # Python dependencies
+│   ├── Dockerfile               # Backend container
+│   └── .env                     # Environment variables (duplicate)
+│
+├── dashboard-ui/                # React frontend
 │   ├── src/
-│   │   ├── components/       # React components
-│   │   ├── context/          # State management
-│   │   ├── api/              # API integration
-│   │   └── utils/            # Utility functions
-│   ├── package.json          # Node dependencies
-│   └── Dockerfile           # Frontend container
-├── compose.yml              # Docker Compose configuration
-├── rebuild.sh               # Build script
-└── .env                     # Environment variables
+│   │   ├── components/          # React components
+│   │   ├── context/             # State management
+│   │   ├── api/                 # API integration
+│   │   └── utils/               # Utility functions
+│   ├── package.json             # Node dependencies
+│   └── Dockerfile               # Frontend container
+├── compose.yml                  # Docker Compose configuration
+├── rebuild.sh                   # Build script
+└── .env                         # Environment variables (duplicate)
 ```
-
-### Development Workflow
-
-
-### Performance Optimization
-
-## Troubleshooting
-
-### Common Issues
-
-## Future Expansion
-
-### Planned Features
-
-#### Additional Integrations
-
-#### Enhanced Monitoring
-
-#### Advanced Analytics
-
-#### User Experience
-
 
 ### Security Considerations
 - **API Key Management**: Secure credential storage
@@ -357,5 +322,5 @@ FoundersNetworkDashboard/
 
 ---
 
-*Last Updated: [Current Date]*
-*Version: 1.0.0* 
+*Last Updated: 2025-08-04*
+*Version: 1.0.1* 
