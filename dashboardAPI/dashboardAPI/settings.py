@@ -20,7 +20,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Initialize environment variables
 env = environ.Env(
     # Set casting and default values
-    DEBUG=(bool, False)
+    DEBUG=(bool, False),
+    SENTRY_ORGANIZATION_SLUG=(str, ''),
+    SENTRY_PROJECT_ID=(str, ''),
+    SENTRY_BEARER_AUTH=(str, ''),
+    MAILGUN_API_NAME=(str, ''),
+    MAILGUN_API_KEY=(str, ''),
 )
 
 # Read .env file

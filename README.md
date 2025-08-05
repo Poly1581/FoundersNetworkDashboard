@@ -1,23 +1,138 @@
 # Founders Network Dashboard
 
-A centralized platform observability dashboard for admins to look at in the founders network site.
+A centralized platform observability dashboard for admins to monitor Founders Network's critical integrations in real-time.
 
-## 💻 Installation
+## 🚀 Quick Start
 
-Both frontend and backend are launched via docker compose. To start both, execute `docker compose up -d` in the project directory. Only one `.env` file is required - place it in the project root directory.
+### Prerequisites
+- Docker and Docker Compose
+- API credentials for Sentry and Mailgun
 
-Rebuild scripts are included for fish and bash and are used to rebuild one (or both) docker containers during development. To rebuild both containers, run `./rebuild.sh`, to rebuild the frontend run `./rebuild.sh frontend` or `./rebuild.sh f`, and to rebuild the backend run `./rebuild.sh backend` or `./rebuild.sh b` (replace `./rebuild.sh` with `./rebuild.fish` if using fish).
+### Installation
+1. **Clone and setup**
+   ```bash
+   git clone <repository-url>
+   cd FoundersNetworkDashboard
+   ```
 
+2. **Configure environment**
+   ```bash
+   # Create .env file with your credentials
+   cp env.template .env
+   # Edit .env with your actual API credentials
+   ```
 
-## Core Design Principles (from Slack chat with Kevin: https://foundersnetwork.slack.com/archives/C090W77DRA8/p1750195343184929)
-Internal tool that gives immediate visibility into FN’s integrations **before they impact** members
+3. **Start the application**
+   ```bash
+   ./rebuild.sh
+   ```
 
-**Real-time** Internal Monitoring
+4. **Access the dashboard**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
 
-**Automatic**ally detects problems through **health checks**
+## 📋 What It Monitors
 
-**Monitors** FN’s actual API **endpoints**
+### Current Integrations
+- **Sentry**: Error tracking and monitoring
+- **Mailgun**: Email service monitoring
+- **HubSpot**: CRM integration (planned)
 
-**Tracks** response **times** and error **patterns** specific to FN’s platform
+### Key Features
+- Real-time integration health monitoring
+- API error tracking and visualization
+- Response time monitoring
+- Issue management and resolution
+- Interactive data filtering and charts
 
-Designed around FN’s **specific integrations** (customized to Sentry’s specific information)
+## 🛠 Development
+
+### Rebuild Commands
+```bash
+./rebuild.sh          # Rebuild both frontend and backend
+./rebuild.sh frontend  # Rebuild frontend only
+./rebuild.sh backend   # Rebuild backend only
+./rebuild.sh test      # Run backend tests
+```
+
+### Local Development
+```bash
+# Backend development
+cd dashboardAPI
+pip install -r requirements.txt
+python manage.py runserver
+
+# Frontend development
+cd dashboard-ui
+npm install
+npm start
+```
+
+## 📚 Documentation
+
+For comprehensive documentation including:
+- Detailed setup instructions
+- API reference
+- Integration guides
+- Troubleshooting
+- Future expansion plans
+
+**See [DOCUMENTATION.md](./DOCUMENTATION.md)**
+
+## 🎯 Core Design Principles
+
+**Real-time Internal Monitoring**: Provides immediate visibility into integration health before issues impact members.
+
+**Automatic Problem Detection**: Health checks automatically detect problems through monitoring.
+
+**API Endpoint Monitoring**: Monitors FN's actual API endpoints and tracks response times.
+
+**Integration-Specific**: Customized to FN's specific integrations and error patterns.
+
+## 🔧 Configuration
+
+### Required Environment Variables
+```bash
+# Sentry Configuration
+SENTRY_ORGANIZATION_SLUG=your_sentry_organization_slug
+SENTRY_PROJECT_ID=your_sentry_project_id
+SENTRY_BEARER_AUTH=your_sentry_bearer_token
+
+# Mailgun Configuration
+MAILGUN_API_NAME=your_mailgun_api_name
+MAILGUN_API_KEY=your_mailgun_api_key
+```
+
+### Getting Credentials
+- **Sentry**: Organization slug, project ID, and API token from Sentry settings
+- **Mailgun**: Domain name and API key from Mailgun dashboard
+
+## 🚨 Troubleshooting
+
+### Common Issues
+- **Environment Variable Errors**: Ensure `.env` file exists and contains all required variables
+- **API Connection Issues**: Verify credentials and network connectivity
+- **Docker Issues**: Check container logs with `docker logs backend`
+
+For detailed troubleshooting, see the [Troubleshooting section](./DOCUMENTATION.md#troubleshooting) in the full documentation.
+
+## 🔮 Future Plans
+
+- Additional integrations (HubSpot, Stripe, AWS)
+- Advanced analytics and predictive alerts
+- Mobile application
+- Custom dashboards and alert rules
+
+See the [Future Expansion section](./DOCUMENTATION.md#future-expansion) for detailed roadmap.
+
+---
+
+## Support
+
+- **Documentation**: [DOCUMENTATION.md](./DOCUMENTATION.md)
+- **Issues**: Create GitHub issues for bugs or feature requests
+- **Development**: Contact the development team for technical questions
+
+---
+
+*Built for Founders Network - Internal Admin Dashboard*
