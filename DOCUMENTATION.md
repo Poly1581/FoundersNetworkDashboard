@@ -145,7 +145,7 @@ In the case that the rebuild script does not work correctly, development can be 
    - Found in Settings → API Keys
 
 ### Docker Configuration
-The application uses Docker Compose for containerization, which is configured in [compose.yml](compose.yml).
+The application uses Docker Compose for containerization, which is configured in [compose.yml](compose.yml). [Docker compose](compose.yml) uses [dashboard-ui/Dockerfile](dashboard-ui/Dockerfile) and [dashboardAPI/Dockerfile](dashboardAPI/Dockerfile) in order to build each image. Both `Dockerfiles` are multistage in order to both make the build contingent on passing test cases and take advantage of [Docker build caching](https://docs.docker.com/build/cache/) to speed up the build process.
 
 ## Usage Guide
 
