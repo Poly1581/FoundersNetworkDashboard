@@ -2,7 +2,7 @@
 
 A centralized platform observability dashboard for admins to monitor Founders Network's critical integrations in real-time.
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Docker and Docker Compose
@@ -19,8 +19,6 @@ A centralized platform observability dashboard for admins to monitor Founders Ne
    ```bash
    # Create .env file with your credentials
    cp env.template .env
-   # Edit .env with your actual API credentials
-   # Two .env files are required-- one in the project root directory, and the other in the backend `dashboardAPI` directory.
    ```
    
 3. **Start the application**
@@ -48,25 +46,13 @@ A centralized platform observability dashboard for admins to monitor Founders Ne
 
 ## 🛠 Development
 
-### Rebuild Commands
+Scripts are available to automate the process of rebuilding and redeploying via docker compose. The scripts are available for `bash` and `fish` and allow for rebuilding the entire project or selectively rebuilding the frontend or backend.
+
 ```bash
-./rebuild.sh          # Rebuild both frontend and backend
+./rebuild.sh           # Rebuild both frontend and backend
 ./rebuild.sh frontend  # Rebuild frontend only
 ./rebuild.sh backend   # Rebuild backend only
 ./rebuild.sh test      # Run backend tests
-```
-
-### Local Development
-```bash
-# Backend development
-cd dashboardAPI
-pip install -r requirements.txt
-python manage.py runserver
-
-# Frontend development
-cd dashboard-ui
-npm install
-npm start
 ```
 
 ## 📚 Documentation
@@ -113,7 +99,7 @@ MAILGUN_API_KEY=your_mailgun_api_key
 ### Common Issues
 - **Environment Variable Errors**: Ensure `.env` file exists and contains all required variables
 - **API Connection Issues**: Verify credentials and network connectivity
-- **Docker Issues**: Check container logs with `docker logs backend`
+- **Docker Issues**: Check container logs with `docker logs backend` or with docker desktop
 
 For detailed troubleshooting, see the [Troubleshooting section](./DOCUMENTATION.md#troubleshooting) in the full documentation.
 

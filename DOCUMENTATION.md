@@ -7,10 +7,7 @@
 4. [Configuration](#configuration)
 5. [Usage Guide](#usage-guide)
 6. [API Reference](#api-reference)
-7. [Integration Guide](#integration-guide)
-8. [Development Guide](#development-guide)
-9. [Troubleshooting](#troubleshooting)
-10. [Future Expansion](#future-expansion)
+7. [Testing Framework](#testing)
 
 ## Overview
 
@@ -58,8 +55,7 @@ The Founders Network Health Dashboard is a centralized platform observability to
 ### Backend Architecture
 - **Framework**: Django 5.2 with Django REST Framework
 - **Database**: SQLite (development) / PostgreSQL (production)
-- **Key Modules**:
-  - `views.py`: Main API endpoints
+- **Key Modules**: `views.py`: Main API endpoints
   - `sentry_views.py`: Sentry-specific endpoints
   - `mailgun_views.py`: Mailgun-specific endpoints
   - `integration_views.py`: Integration health checks
@@ -87,7 +83,21 @@ The Founders Network Health Dashboard is a centralized platform observability to
    ```
 
 2. **Create environment file**
-   // TODO: Where does this get put?
+    Create an `.env` file in the `dashboardAPI` subdirectory with the following variables:
+
+```bash
+# Sentry Configuration
+SENTRY_ORGANIZATION_SLUG=your_sentry_organization_slug
+SENTRY_PROJECT_ID=your_sentry_project_id
+SENTRY_BEARER_AUTH=your_sentry_bearer_token
+
+# Mailgun Configuration
+MAILGUN_API_NAME=your_mailgun_api_name
+MAILGUN_API_KEY=your_mailgun_api_key
+
+# Django Configuration
+DEBUG=True
+```
 
 3. **Start the application**
    ```bash
@@ -98,7 +108,9 @@ The Founders Network Health Dashboard is a centralized platform observability to
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:8000
 
-### Development Setup (./rebuild.sh does this automatically, but can also be done individually)
+### Development Setup
+In the case that the rebuild script does not work correctly, development can be done manually. Note that this method will install **a lot** of requirements locally, and should only really be done in case the docker development method does not work.
+
 1. **Backend Development**
    ```bash
    cd dashboardAPI
@@ -114,23 +126,6 @@ The Founders Network Health Dashboard is a centralized platform observability to
    ```
 
 ## Configuration
-
-### Environment Variables
-Create a `.env` file in the project root with the following variables:
-```bash
-# Sentry Configuration
-SENTRY_ORGANIZATION_SLUG=your_sentry_organization_slug
-SENTRY_PROJECT_ID=your_sentry_project_id
-SENTRY_BEARER_AUTH=your_sentry_bearer_token
-
-# Mailgun Configuration
-MAILGUN_API_NAME=your_mailgun_api_name
-MAILGUN_API_KEY=your_mailgun_api_key
-
-# Django Configuration
-DEBUG=True
-SECRET_KEY=your_django_secret_key
-```
 
 ### Getting Credentials
 
@@ -150,25 +145,7 @@ SECRET_KEY=your_django_secret_key
    - Found in Settings → API Keys
 
 ### Docker Configuration
-The application uses Docker Compose for containerization:
-
-```yaml
-# compose.yml
-services:
-  backend:
-    container_name: backend
-    build: ./dashboardAPI
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-
-  frontend:
-    container_name: frontend
-    build: ./dashboard-ui
-    ports:
-      - "3000:3000"
-```
+The application uses Docker Compose for containerization, which is configured in [compose.yml](compose.yml).
 
 ## Usage Guide
 
@@ -286,29 +263,33 @@ const { updateFilteredData } = useContext(AppContext);
 ### Project Structure
 ```
 FoundersNetworkDashboard/
-├── dashboardAPI/                # Django backend
+├── dashboardAPI/                       # Django backend
 │   ├── dashboardAPI/
-│   │   ├── views.py             # Main API endpoints
-│   │   ├── sentry_views.py      # Sentry-specific endpoints
-│   │   ├── mailgun_views.py     # Mailgun-specific endpoints
-│   │   ├── integration_views.py # Health checks
-│   │   ├── helpers.py           # Utility functions
-│   │   └── settings.py          # Django settings
-│   ├── requirements.txt         # Python dependencies
-│   ├── Dockerfile               # Backend container
-│   └── .env                     # Environment variables (duplicate)
+│   │   ├── tests/
+│   │   │   ├── __init__.py             # Necessary to find tests
+│   │   │   ├── test_integrations.py    # Tests for integrations
+│   │   │   ├── test_mailgun.py         # Tests for mailgun
+│   │   │   └── test_sentry.py          # Tests for sentry
+│   │   ├── views.py                    # Main API endpoints
+│   │   ├── sentry_views.py             # Sentry-specific endpoints
+│   │   ├── mailgun_views.py            # Mailgun-specific endpoints
+│   │   ├── integration_views.py        # Health checks
+│   │   ├── helpers.py                  # Utility functions
+│   │   └── settings.py                 # Django settings
+│   ├── requirements.txt                # Python dependencies
+│   ├── Dockerfile                      # Backend container
+│   └── .env                            # Environment variables (duplicate)
 │
-├── dashboard-ui/                # React frontend
+├── dashboard-ui/                       # React frontend
 │   ├── src/
-│   │   ├── components/          # React components
-│   │   ├── context/             # State management
-│   │   ├── api/                 # API integration
-│   │   └── utils/               # Utility functions
-│   ├── package.json             # Node dependencies
-│   └── Dockerfile               # Frontend container
-├── compose.yml                  # Docker Compose configuration
-├── rebuild.sh                   # Build script
-└── .env                         # Environment variables (duplicate)
+│   │   ├── components/                 # React components
+│   │   ├── context/                    # State management
+│   │   ├── api/                        # API integration
+│   │   └── utils/                      # Utility functions
+│   ├── package.json                    # Node dependencies
+│   └── Dockerfile                      # Frontend container
+├── compose.yml                         # Docker Compose configuration
+└── rebuild.sh                          # Build script
 ```
 
 ### Security Considerations
@@ -318,9 +299,21 @@ FoundersNetworkDashboard/
 - **Audit Logging**: Track all access and changes
 - **Regular Updates**: Keep dependencies updated
 
+## Testing
+
+Testing is fully integrated with the docker deployment system through multistage Dockerfiles. During the process of building the frontend and backend, tests are run automatically and the build will fail if these tests do not pass. Docker is also configured with build checks enabled in order to test the docker build system itself.
+
+### Backend Tests
+
+Since the backend is written in Django, the testing framework for the backend uses [Django testing framework](https://docs.djangoproject.com/en/5.2/topics/testing/). The current testing suite is composed of unit tests for sentry, mailgun, and integrations and makes use of the [Django test client](https://docs.djangoproject.com/en/5.2/topics/testing/tools/#the-test-client) in order to check that routes are functioning properly (i.e. returning status 200 with a good request). Tests are automatically discovered via python's [unittest test discovery](https://docs.python.org/3/library/unittest.html#test-discovery), and any additional tests for the backend should be placed in the `/dashboardAPI/dashboardAPI/tests/` directory and start with `test_` to be discovered properly. Testing could be improved further by validating response schema as described in the [Sentry API documentation](https://docs.sentry.io/api/) and the [Mailgun API documentation](https://documentation.mailgun.com/docs/mailgun/api-reference).
+
+### Frontend Tests
+
+The testing framework for the frontend uses [jest](https://jestjs.io/). Node modules are transformed using babel-jest and axios is excluded from from transformation using [transformIgnorePatterns](https://jestjs.io/docs/configuration#transformignorepatterns-arraystring). CSS modules are mocked using [jest-css-modules](https://www.npmjs.com/package/jest-css-modules) - though jest now supports mocking css modules using identity-obj-proxy as described [here](https://jestjs.io/docs/webpack#mocking-css-modules). ResizeObserver is mocked as tests would fail without mocking. In the future, mocking api endpoints would be highly advisable in order to test the frontend, though this was infeasable due to time constraints.
+
 
 
 ---
 
-*Last Updated: 2025-08-04*
-*Version: 1.0.1* 
+*Last Updated: 2025-08-05*
+*Version: 2.0.0* 
