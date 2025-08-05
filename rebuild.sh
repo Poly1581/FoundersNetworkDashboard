@@ -6,7 +6,6 @@ if [ "$#" -eq 0 ]; then
     docker compose build --progress=plain
 elif [ "$#" -eq 1 ]; then
     if [ $1 = "frontend" ] || [ $1 = "f" ]; then
-		!./rebuild.fish
 		SERVICE="frontend"
     elif [ $1 = "backend" ] || [ $1 = "b" ]; then
 		SERVICE="backend"
