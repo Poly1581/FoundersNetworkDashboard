@@ -20,8 +20,9 @@ A centralized platform observability dashboard for admins to monitor Founders Ne
    # Create .env file with your credentials
    cp env.template .env
    # Edit .env with your actual API credentials
+   # Two .env files are required-- one in the project root directory, and the other in the backend `dashboardAPI` directory.
    ```
-
+   
 3. **Start the application**
    ```bash
    ./rebuild.sh
