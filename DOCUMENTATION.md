@@ -27,17 +27,17 @@ The Founders Network Health Dashboard is a centralized platform observability to
 
 ### System Overview
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend       │    │   External      │
-│   (React)       │◄──►│   (Django)      │◄──►│   APIs          │
-│   Port: 3000    │    │   Port: 8000    │    │                 │
-└─────────────────┘    └─────────────────┘    │  ┌─────────────┐│
-                                              │  │   Sentry    ││
-                                              │  └─────────────┘│
-                                              │  ┌─────────────┐│
-                                              │  │   Mailgun   ││
-                                              │  └─────────────┘│
-                                              └─────────────────┘
+┌─────────────────┐    ┌─────────────────┐    ┌──────────────────┐
+│   Frontend      │    │   Backend       │    │   External       │
+│   (React)       │◄──►│   (Django)      │◄──►│   APIs           │
+│   Port: 3000    │    │   Port: 8000    │    │                  │
+└─────────────────┘    └─────────────────┘    │  ┌─────────────┐ │
+                                              │  │   Sentry    │ │
+                                              │  └─────────────┘ │
+                                              │  ┌─────────────┐ │
+                                              │  │   Mailgun   │ │
+                                              │  └─────────────┘ │
+                                              └──────────────────┘
 ```
 
 ### Frontend Architecture
@@ -53,11 +53,10 @@ The Founders Network Health Dashboard is a centralized platform observability to
 
 ### Backend Architecture
 - **Framework**: Django 5.2 with Django REST Framework
-- **Database**: SQLite (development) / PostgreSQL (production)
 - **Key Modules**: `views.py`: Main API endpoints
   - `sentry_views.py`: Sentry-specific endpoints
   - `mailgun_views.py`: Mailgun-specific endpoints
-  - `integration_views.py`: Integration health checks
+  - `integration_views.py`: Integration endpoints
   - `helpers.py`: Utility functions
 
 ### Data Flow
@@ -71,8 +70,6 @@ The Founders Network Health Dashboard is a centralized platform observability to
 
 ### Prerequisites
 - Docker and Docker Compose
-- Node.js 18+ (for local development)
-- Python 3.14+ (for local development)
 
 ### Quick Start
 1. **Clone the repository**
@@ -93,9 +90,6 @@ SENTRY_BEARER_AUTH=your_sentry_bearer_token
 # Mailgun Configuration
 MAILGUN_API_NAME=your_mailgun_api_name
 MAILGUN_API_KEY=your_mailgun_api_key
-
-# Django Configuration
-DEBUG=True
 ```
 
 3. **Start the application**
@@ -144,7 +138,7 @@ In the case that the rebuild script does not work correctly, development can be 
    - Found in Settings → API Keys
 
 ### Docker Configuration
-The application uses Docker Compose for containerization, which is configured in [compose.yml](compose.yml). [Docker compose](compose.yml) uses [dashboard-ui/Dockerfile](dashboard-ui/Dockerfile) and [dashboardAPI/Dockerfile](dashboardAPI/Dockerfile) in order to build each image. Both `Dockerfiles` are multistage in order to both make the build contingent on passing test cases and take advantage of [Docker build caching](https://docs.docker.com/build/cache/) to speed up the build process.
+The project uses Docker Compose for containerization, which is configured in [compose.yml](compose.yml). [Docker compose](compose.yml) uses [dashboard-ui/Dockerfile](dashboard-ui/Dockerfile) and [dashboardAPI/Dockerfile](dashboardAPI/Dockerfile) in order to build each image. Both `Dockerfiles` are multistage in order to both make the build contingent on passing test cases and take advantage of [Docker build caching](https://docs.docker.com/build/cache/) to speed up the build process.
 
 ## API Reference
 
@@ -229,8 +223,8 @@ FoundersNetworkDashboard/
 │   │   ├── helpers.py                  # Utility functions
 │   │   └── settings.py                 # Django settings
 │   ├── requirements.txt                # Python dependencies
-│   ├── Dockerfile                      # Backend container
-│   └── .env                            # Environment variables (duplicate)
+│   ├── Dockerfile                      # Backend Dockerfile
+│   └── .env                            # Environment variables
 │
 ├── dashboard-ui/                       # React frontend
 │   ├── src/
@@ -239,9 +233,10 @@ FoundersNetworkDashboard/
 │   │   ├── api/                        # API integration
 │   │   └── utils/                      # Utility functions
 │   ├── package.json                    # Node dependencies
-│   └── Dockerfile                      # Frontend container
+│   └── Dockerfile                      # Frontend Dockerfile
 ├── compose.yml                         # Docker Compose configuration
 └── rebuild.sh                          # Build script
+└── rebuild.fish                        # Build script
 ```
 
 ### Security Considerations
@@ -268,4 +263,4 @@ The testing framework for the frontend uses [jest](https://jestjs.io/). Node mod
 ---
 
 *Last Updated: 2025-08-05*
-*Version: 2.0.0* 
+*Version: 2.0.1* 
