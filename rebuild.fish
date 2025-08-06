@@ -21,5 +21,5 @@ else
     exit 0
 end
 
-# Rebuild
+# Relaunch
 docker compose up -d

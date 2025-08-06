@@ -52,7 +52,6 @@ Scripts are available to automate the process of rebuilding and redeploying via 
 ./rebuild.sh           # Rebuild both frontend and backend
 ./rebuild.sh frontend  # Rebuild frontend only
 ./rebuild.sh backend   # Rebuild backend only
-./rebuild.sh test      # Run backend tests
 ```
 
 ## 📚 Documentation
