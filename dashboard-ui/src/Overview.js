@@ -67,7 +67,7 @@ export default function Overview({ allIntegrations, allEventsForChart, mailgunEv
                                                 This chart shows API error counts over time. Each color represents a different error type. 
                                                 <br />
                                                 <br />
-                                                You can click an error type to toggle its visibility, double-click to investigate it, or Alt+Click to clear all filters.
+                                                You can click an error type to toggle its visibility, double-click to investigate it, or press the 'Clear All' button or Alt+Click to clear all filters.
                                             </Typography>
                                         </Box>
                                     }
