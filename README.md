@@ -32,6 +32,11 @@ A centralized platform observability dashboard for admins to monitor Founders Ne
 
 ## 📋 What It Monitors
 
+### Tooling / Infrastructure
+- React: Frontend framework
+- Docker: Containerization platform
+- Docker Compose: Multi-container orchestration
+
 ### Current Integrations
 - **Sentry**: Error tracking and monitoring
 - **Mailgun**: Email service monitoring
@@ -66,6 +71,10 @@ For comprehensive documentation including:
 **See [DOCUMENTATION.md](./DOCUMENTATION.md)**
 
 ## 🎯 Core Design Principles
+
+**UI/UX Design - Figma Wireframe**: 
+[View Wireframes](https://www.figma.com/design/7jkYnAM3WrezjjQYA8n5sQ/Frontend-Dashboard-Wireframe---CS-590---Founders-Network?node-id=305-3&p=f&t=orNDo3FOAWpLi5Ei-0)
+➡️ See the page or frame titled “Final Wireframe” for the finalized design.
 
 **Real-time Internal Monitoring**: Provides immediate visibility into integration health before issues impact members.
 
