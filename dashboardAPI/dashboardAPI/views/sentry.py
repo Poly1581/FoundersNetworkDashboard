@@ -1,3 +1,39 @@
+"""
+Sentry Error Monitoring Integration Views Module
+
+This module provides API endpoints for interacting with Sentry error monitoring service
+within the dashboardAPI project. It includes functionality for retrieving issues, events,
+managing issue status, accessing alerts, and managing organization members.
+
+Usage:
+    This module and provides REST API endpoints that act as proxies to Sentry's API.
+    All requests use authentication headers configured in Django settings.
+
+API Endpoints:
+    GET /api/sentry/issues/{issue_id}/events/  - Get events for a specific issue
+    PUT /api/sentry/issues/{issue_id}/         - Update issue status and properties
+    GET /api/sentry/issues/                    - List all project issues
+    GET /api/sentry/events/                    - List all project events
+    GET /api/sentry/alerts/                    - Get recent alerts (transformed from issues)
+    GET /api/sentry/members/                   - List organization members for assignment
+
+Authentication:
+    All endpoints use SENTRY_BEARER_AUTH token configured in settings (from environment variables).
+    Organization slug and project ID are also configured via environment variables.
+
+Functions:
+    get_issue_events()         - Retrieve events for a specific issue ID
+    update_issue_status()      - Update issue properties like status and assignment
+    get_issues()               - List all issues for the project
+    get_events()               - List all events for the project
+    get_sentry_alerts()        - Transform recent issues into alert format
+    get_organization_members() - List organization members for issue assignment
+
+Data Transformation:
+    get_sentry_alerts() converts Sentry issues into a standardized alert format
+    with severity levels and detailed information for dashboard display.
+"""
+
 from rest_framework.decorators import api_view
 from .helpers import make_request, filter_request_data
 import json

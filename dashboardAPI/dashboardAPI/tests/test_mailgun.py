@@ -1,3 +1,26 @@
+"""
+Mailgun Integration Tests Module
+
+This module contains Django test cases for validating Mailgun email service integration
+within the dashboardAPI project. It tests various Mailgun API endpoints including
+queue status, account metrics, usage statistics, logs, and mailing list functionality.
+
+Usage:
+    Run these tests using Django's test runner:
+        python manage.py test dashboardAPI.tests.test_mailgun
+    
+    Or run specific test methods:
+        python manage.py test dashboardAPI.tests.test_mailgun.MailgunTest.test_get_queue_status
+
+Test Coverage:
+    - Queue status monitoring
+    - Account metrics retrieval
+    - Usage metrics tracking
+    - Log data access
+    - Statistical totals and filtered stats
+    - Mailing list member management (commented out - requires list_address parameter)
+"""
+
 from django.test import Client, TestCase
 
 class MailgunTest(TestCase):

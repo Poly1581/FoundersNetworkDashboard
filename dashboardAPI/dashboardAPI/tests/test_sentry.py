@@ -1,3 +1,25 @@
+"""
+Sentry Integration Tests Module
+
+This module contains Django test cases for validating Sentry error monitoring integration
+within the dashboardAPI project. It tests various Sentry API endpoints including
+issues, events, alerts, and issue-specific event tracking.
+
+Usage:
+    Run these tests using Django's test runner:
+        python manage.py test dashboardAPI.tests.test_sentry
+    
+    Or run specific test methods:
+        python manage.py test dashboardAPI.tests.test_sentry.SentryTest.test_get_issues
+
+Test Coverage:
+    - Issue listing and retrieval
+    - Event data access
+    - Issue-specific event tracking
+    - Alert monitoring
+    - Dynamic issue ID validation for event fetching
+"""
+
 from django.test import Client, TestCase
 
 class SentryTest(TestCase):

@@ -1,3 +1,36 @@
+"""
+Third-Party Integration Status Views Module
+
+This module provides mock API endpoints for monitoring the health and status of third-party
+service integrations used by the dashboardAPI project. It includes status checking
+for Sentry error monitoring and HubSpot CRM services, including both API connectivity
+and webhook functionality.
+
+Usage:
+    This module provides REST API endpoints for checking integration health status.
+    All endpoints return JSON responses with detailed status information.
+
+API Endpoints:
+    GET /api/sentry/integration-status/  - Check Sentry API and webhook status
+    GET /api/hubspot/integration-status/ - Check HubSpot API and webhook status
+
+Functions:
+    get_sentry_api_status()       - Check Sentry API connectivity and response time
+    get_sentry_webhooks_status()  - Get Sentry webhook status (assumed healthy)
+    get_hubspot_api_status()      - Check HubSpot API connectivity (mock implementation)
+    get_hubspot_webhooks_status() - Get HubSpot webhook status (assumed healthy)
+
+Response Format:
+    Each status check returns an array of service objects containing:
+    - name: Service name
+    - category: Service category (Error Tracking, CRM, etc.)
+    - status: Current status (Healthy, Unhealthy, Degraded)
+    - responseTime: API response time in milliseconds
+    - lastSuccess: Timestamp of last successful check
+    - uptime: Service uptime percentage
+    - issue: Error description if service is down
+"""
+
 import json
 import requests
 from django.conf import settings

@@ -1,13 +1,26 @@
 """
 URL configuration for dashboardAPI project.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
+This module defines the URL routing configuration for the dashboardAPI Django project,
+mapping URL patterns to their corresponding view functions across different API endpoints
+for Sentry error monitoring, integration status checking, and Mailgun email services.
+
+Usage:
+    This file is automatically loaded by Django's URL routing system. All API endpoints
+    are prefixed with '/api/' and organized by service type (sentry, mailgun, hubspot).
+
+API Endpoint Structure:
+    /api/sentry/*           - Sentry error tracking and monitoring
+    /api/hubspot/*          - HubSpot CRM integration status  
+    /api/mailgun/*          - Mailgun email service management
+
+The `urlpatterns` list routes URLs to views. For more information, please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
 Examples:
 Function views
     1. Add an import:  from my_app import views
     2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based vi ews
+Class-based views
     1. Add an import:  from other_app.views import Home
     2. Add a URL to urlpatterns:  path('',  Home.as_view(), name='home')
 Including another URLconf

@@ -1,3 +1,31 @@
+"""
+Helper Utilities Module for DashboardAPI Views
+
+This module provides common utility functions used in views. It includes request parameter
+filtering, HTTP request handling, and standardized response formatting.
+
+Usage:
+    Import and use these helper functions in view modules to maintain consistency
+    and reduce code duplication across different API endpoints.
+
+    Example:
+        from .helpers import filter_request_data, make_request
+        
+        filtered_data = filter_request_data(request.data, 'get_logs')
+        response = make_request({
+            'method': 'get',
+            'uri': api_endpoint,
+            'params': filtered_data(<DATA>, <ENDPOINT_NAME>)
+ t      })
+
+Functions:
+    filter_request_data(data, view) - Filters request data based on allowed parameters
+    make_request(request) - Makes HTTP requests with standardized error handling
+
+Configuration:
+    request_params - Dictionary defining allowed parameters for each API view
+"""
+
 import requests
 from django.http import HttpResponseBadRequest, JsonResponse
 
