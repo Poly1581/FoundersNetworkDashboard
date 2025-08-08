@@ -16,9 +16,9 @@ Including another URLconf
 """
 from django.urls import path
 
-from views import sentry_views as sentry
-from views import integration_views as integration
-from views import mailgun_views as mailgun
+from .views import sentry
+from .views import integrations
+from .views import mailgun
 
 urlpatterns = [
     # Sentry API endpoints
@@ -30,8 +30,8 @@ urlpatterns = [
     path("api/sentry/members/", sentry.get_organization_members, name="get organization members"),
 
     # Integration API endpoints
-    path("api/sentry/integration-status/", integration.get_sentry_integration_status, name="get sentry integration status"),
-    path("api/hubspot/integration-status/", integration.get_hubspot_integration_status, name="get hubspot integration status"),
+    path("api/sentry/integration-status/", integrations.get_sentry_integration_status, name="get sentry integration status"),
+    path("api/hubspot/integration-status/", integrations.get_hubspot_integration_status, name="get hubspot integration status"),
 
     # Mailgun API endpoints
     path("api/mailgun/queue-status/", mailgun.get_queue_status, name="get mailgun whitelist"),
