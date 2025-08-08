@@ -16,9 +16,9 @@ Including another URLconf
 """
 from django.urls import path
 
-from . import sentry_views as sentry
-from . import integration_views as integration
-from . import mailgun_views as mailgun
+from views import sentry_views as sentry
+from views import integration_views as integration
+from views import mailgun_views as mailgun
 
 urlpatterns = [
     # Sentry API endpoints
