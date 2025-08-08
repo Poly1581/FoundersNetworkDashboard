@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Custom React hook for data fetching with caching capabilities.
+ * 
+ * Provides a reusable hook for API data fetching with built-in caching, loading states,
+ * and error handling. Uses a Map-based cache to store and retrieve previously fetched
+ * data, reducing unnecessary API calls and improving performance. Returns loading,
+ * error, and data states along with refresh functionality.
+ */
+
 import { useState, useEffect, useCallback } from 'react';
 
 const cache = new Map();

@@ -1,8 +1,17 @@
+/**
+ * @fileoverview Live data page component showing real-time monitoring data.
+ * 
+ * Displays detailed live data from Sentry and Mailgun integrations, including
+ * active issues, error statistics, and integration statuses. Provides filtering
+ * controls and detailed views of current system health and problems that need
+ * immediate attention.
+ */
+
 import React, { Suspense, useContext, useCallback, useEffect } from 'react';
 import { Box, Typography, Button, CircularProgress, Card, CardContent } from '@mui/material';
-import AppContext from './context/AppContext';
-import SentrySection from './SentrySection';
-import MailgunSection from './MailgunSection';
+import AppContext from '../context/AppContext';
+import SentrySection from '../components/SentrySection';
+import MailgunSection from '../components/MailgunSection';
 
 export default function LiveData({ sentryProps, mailgunProps, timeRange, onTimeRangeChange }) {
     const { state, setLiveDataFilter } = useContext(AppContext);

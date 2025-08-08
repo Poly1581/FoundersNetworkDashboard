@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Unified stacked bar chart component for displaying API errors over time.
+ * 
+ * A comprehensive chart component that displays error data from both Sentry and Mailgun
+ * APIs in a unified time-based visualization. Supports interactive filtering by error type,
+ * API comparison, investigation modes, and detailed issue management including assignment,
+ * resolution, and status updates. Integrates with the application context for state management.
+ */
+
 import React, { useMemo, useState, useCallback, useEffect, useContext } from 'react';
 import {
     Box, Typography, Chip, Card, CardContent, List, ListItem, Divider,
@@ -6,10 +15,10 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon, MoreVert as MoreVertIcon, Person as PersonIcon, PersonOff as PersonOffIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { resolveIssue, ignoreIssue, archiveIssue, bookmarkIssue, assignIssue, unassignIssue, fetchSentryMembers } from './api';
-import AppContext from './context/AppContext';
-import { SET_ACTIVE_PAGE } from './context/AppReducer';
-import { generateAppearanceMaps, DEFAULT_FALLBACK_COLOR } from './utils/colorScheme';
+import { resolveIssue, ignoreIssue, archiveIssue, bookmarkIssue, assignIssue, unassignIssue, fetchSentryMembers } from '../services/api';
+import AppContext from '../context/AppContext';
+import { SET_ACTIVE_PAGE } from '../context/AppReducer';
+import { generateAppearanceMaps, DEFAULT_FALLBACK_COLOR } from '../utils/colorScheme';
 
 // --- Helper Functions ---
 

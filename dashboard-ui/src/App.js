@@ -1,8 +1,17 @@
+/**
+ * @fileoverview Main application component for the Founders Network Dashboard.
+ * 
+ * This is the root component that manages the overall application state, routing between pages,
+ * and provides the main UI structure including the header toolbar with time range controls,
+ * sidebar navigation, and content area. Handles data loading, error states, and provides
+ * a unified interface for monitoring Sentry issues and Mailgun email services.
+ */
+
 import React, { useState, useEffect, useContext, Suspense, useCallback, useTransition, useRef } from 'react';
 import AppContext from './context/AppContext';
 import { SET_ACTIVE_PAGE, SET_TIME_RANGE, SET_ALL_EXPANDED } from './context/AppReducer';
-import Sidebar from './Sidebar';
-import './App.css';
+import Sidebar from './components/Sidebar';
+import './styles/App.css';
 import {
     Container,
     Typography,
@@ -31,8 +40,8 @@ import {
     ArrowDropDown as ArrowDropDownIcon
 } from '@mui/icons-material';
 
-const Overview = React.lazy(() => import('./Overview'));
-const LiveData = React.lazy(() => import('./LiveData'));
+const Overview = React.lazy(() => import('./pages/Overview'));
+const LiveData = React.lazy(() => import('./pages/LiveData'));
 
 // Filter options for the time range
 const TIME_RANGE_FILTERS = [

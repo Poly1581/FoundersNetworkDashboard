@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Integration status list component for displaying service health.
+ * 
+ * Displays a tabular list of all system integrations with their current health status,
+ * response times, uptime, and any active issues. Uses color-coded status indicators
+ * and provides a quick overview of system-wide integration health. Memoized for
+ * performance optimization.
+ */
+
 import React from 'react';
 import { Card, CardContent, Typography, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Chip } from '@mui/material';
 

@@ -1,10 +1,19 @@
+/**
+ * @fileoverview Active issues management section for Sentry error monitoring.
+ * 
+ * Displays and manages active Sentry issues with comprehensive functionality including
+ * issue resolution, assignment to team members, status updates, and detailed issue
+ * investigation. Provides interactive tables with expandable rows, action dialogs,
+ * and real-time status updates. Integrates with Sentry API for issue management.
+ */
+
 import React, { useState, useEffect, useContext } from 'react';
 import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemButton, ListItemText, ListItemIcon, Avatar, CircularProgress } from '@mui/material';
 import { Person as PersonIcon, PersonOff as PersonOffIcon } from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
-import { ignoreIssue, archiveIssue, bookmarkIssue, assignIssue, unassignIssue, fetchSentryMembers } from './api';
-import AppContext from './context/AppContext';
-import { getConsistentColorForCategory } from './utils/colorScheme';
+import { ignoreIssue, archiveIssue, bookmarkIssue, assignIssue, unassignIssue, fetchSentryMembers } from '../services/api';
+import AppContext from '../context/AppContext';
+import { getConsistentColorForCategory } from '../utils/colorScheme';
 
 export default function ActiveIssuesSection({ issues, onViewDetails, onResolveIssue, allEventsData, expandedRows, setExpandedRows, textContent, selectedIssue, highlightedIssueType, investigationContext }) {
     const { loadSentryData } = useContext(AppContext);

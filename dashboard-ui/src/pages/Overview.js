@@ -1,9 +1,18 @@
+/**
+ * @fileoverview Overview page component for the dashboard.
+ * 
+ * Displays a high-level overview of system integration status and API error trends.
+ * Shows integration health status list and a unified stacked bar chart comparing
+ * Sentry and Mailgun events over time. Provides interactive filtering and investigation
+ * capabilities for different error types and time ranges.
+ */
+
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { Box, Typography, Card, CardContent, Tooltip, IconButton } from '@mui/material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import UnifiedStackedBarChart from './UnifiedStackedBarChart';
-import IntegrationStatusList from './IntegrationStatusList';
-import AppContext from './context/AppContext';
+import UnifiedStackedBarChart from '../components/UnifiedStackedBarChart';
+import IntegrationStatusList from '../components/IntegrationStatusList';
+import AppContext from '../context/AppContext';
 
 // Mock data removed - now using real Mailgun API data from props
 
