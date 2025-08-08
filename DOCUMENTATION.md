@@ -63,10 +63,10 @@ The Founders Network Health Dashboard is a centralized platform observability to
 ### Backend Architecture
 - **Framework**: Django 5.2 with Django REST Framework
 - **Key Modules**: `views.py`: Main API endpoints
-  - `sentry_views.py`: Sentry-specific endpoints
-  - `mailgun_views.py`: Mailgun-specific endpoints
-  - `integration_views.py`: Integration endpoints
-  - `helpers.py`: Utility functions
+  - `/views/sentry.py`: Sentry-specific endpoints
+  - `/views/mailgun.py`: Mailgun-specific endpoints
+  - `/views/integrations.py`: Integration endpoints
+  - `/views/helpers.py`: Utility functions
 
 ### Data Flow
 1. **Data Collection**: Backend polls external APIs (Sentry, Mailgun)
@@ -225,10 +225,11 @@ FoundersNetworkDashboard/
 │   │   │   ├── test_integrations.py    # Tests for integrations
 │   │   │   ├── test_mailgun.py         # Tests for mailgun
 │   │   │   └── test_sentry.py          # Tests for sentry
+│   │   ├── views/
+│   │   │   ├── sentry.py               # Sentry-specific endpoints
+│   │   │   ├── mailgun.py              # Mailgun-specific endpoints
+│   │   │   └── integrations.py         # Health checks
 │   │   ├── views.py                    # Main API endpoints
-│   │   ├── sentry_views.py             # Sentry-specific endpoints
-│   │   ├── mailgun_views.py            # Mailgun-specific endpoints
-│   │   ├── integration_views.py        # Health checks
 │   │   ├── helpers.py                  # Utility functions
 │   │   └── settings.py                 # Django settings
 │   ├── requirements.txt                # Python dependencies
@@ -271,5 +272,5 @@ The testing framework for the frontend uses [jest](https://jestjs.io/). Node mod
 
 ---
 
-*Last Updated: 2025-08-05*
-*Version: 2.0.1* 
+*Last Updated: 2025-08-07*
+*Version: 2.0.2* 
