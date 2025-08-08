@@ -19,6 +19,15 @@ The Founders Network Health Dashboard is a centralized platform observability to
 - **Performance Tracking**: Tracks response times and error patterns
 - **Integration-Specific**: Customized for FN's specific integrations (Sentry, Mailgun, etc.)
 
+### UI/UX Design - Figma Wireframe
+- [View Wireframes](https://www.figma.com/design/7jkYnAM3WrezjjQYA8n5sQ/Frontend-Dashboard-Wireframe---CS-590---Founders-Network?node-id=305-3&p=f&t=orNDo3FOAWpLi5Ei-0)  
+➡️ See the page or frame titled “Final Wireframe” for the finalized design.  
+
+### Tooling / Infrastructure
+- **React**: Frontend framework
+- **Docker**: Containerization platform
+- **Docker Compose**: Multi-container orchestration
+
 ### Current Integrations
 - **Sentry**: Error tracking and monitoring
 - **Mailgun**: Email service monitoring
