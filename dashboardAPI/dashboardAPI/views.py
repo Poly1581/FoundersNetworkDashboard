@@ -1,3 +1,27 @@
+"""
+Sentry API Views Module
+
+This module contains Sentry API integration views that work alongside the modular 
+view structure in the views/ subdirectory to provide comprehensive error monitoring
+functionality for the dashboardAPI project.
+
+Usage:
+    This module is automatically imported by Django's URL routing system and provides
+    REST API endpoints for Sentry error monitoring integration. All views use caching
+    to improve performance and handle authentication via Bearer tokens.
+
+API Endpoints:
+    - GET /issues/{issue_id}/events/ - Retrieve events for a specific issue
+    - PUT /issues/{issue_id}/ - Update issue status
+    - GET /issues/ - List all issues with optional time filtering
+    - GET /events/ - List all events with optional time filtering  
+    - GET /integration-status/ - Check Sentry API health status
+    - GET /endpoint-stats/ - Retrieve endpoint usage statistics
+
+Authentication:
+    All endpoints require SENTRY_BEARER_AUTH token configured in environment variables.
+"""
+
 import json
 import requests
 from django.http import HttpResponse, HttpResponseBadRequest

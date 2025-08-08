@@ -1,3 +1,38 @@
+"""
+Mailgun Email Service Integration Views Module
+
+This module provides API endpoints for interacting with Mailgun email service
+within the dashboardAPI project. It includes functionality for monitoring email
+queues, retrieving analytics metrics, accessing logs, and managing mailing lists.
+
+Usage:
+    This module is automatically imported by Django's URL routing system and provides
+    REST API endpoints that act as proxies to Mailgun's API. All requests are filtered
+    and authenticated using the helper utilities.
+
+API Endpoints:
+    GET /api/mailgun/queue-status/           - Check email sending queue status
+    PUT /api/mailgun/account-metrics/        - Retrieve account analytics metrics
+    PUT /api/mailgun/account-usage-metrics/  - Get account usage statistics
+    PUT /api/mailgun/logs/                   - Access email delivery logs
+    PUT /api/mailgun/stats/totals/           - Get statistical totals
+    PUT /api/mailgun/stats/filter/           - Get filtered/grouped statistics
+    PUT /api/mailgun/mailing-list-members/{list_address}/ - Manage mailing list members
+
+Authentication:
+    All endpoints use MAILGUN_API_KEY and MAILGUN_API_NAME configured in settings.
+    Authentication is handled automatically via the helper utilities.
+
+Functions:
+    get_queue_status()               - Monitor email sending queues
+    get_account_metrics()            - Retrieve detailed analytics
+    get_account_usage_metrics()      - Get usage statistics
+    get_logs()                       - Access delivery and bounce logs
+    get_stat_totals()                - Get statistical summaries
+    get_filtered_grouped_stats()     - Get filtered statistics
+    get_mailing_list_members()       - Manage mailing list memberships
+"""
+
 from rest_framework.decorators import api_view
 from .helpers import make_request, filter_request_data
 from django.conf import settings
