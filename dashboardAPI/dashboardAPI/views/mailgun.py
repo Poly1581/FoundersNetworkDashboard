@@ -6,9 +6,8 @@ within the dashboardAPI project. It includes functionality for monitoring email
 queues, retrieving analytics metrics, accessing logs, and managing mailing lists.
 
 Usage:
-    This module is automatically imported by Django's URL routing system and provides
-    REST API endpoints that act as proxies to Mailgun's API. All requests are filtered
-    and authenticated using the helper utilities.
+    This module and provides REST API endpoints that act as proxies to Mailgun's API.
+    All requests are filtered and authenticated using helper utilities.
 
 API Endpoints:
     GET /api/mailgun/queue-status/           - Check email sending queue status

@@ -6,9 +6,8 @@ within the dashboardAPI project. It includes functionality for retrieving issues
 managing issue status, accessing alerts, and managing organization members.
 
 Usage:
-    This module is automatically imported by Django's URL routing system and provides
-    REST API endpoints that act as proxies to Sentry's API. All requests use authentication
-    headers configured in Django settings and include error handling.
+    This module and provides REST API endpoints that act as proxies to Sentry's API.
+    All requests use authentication headers configured in Django settings.
 
 API Endpoints:
     GET /api/sentry/issues/{issue_id}/events/  - Get events for a specific issue
@@ -19,7 +18,7 @@ API Endpoints:
     GET /api/sentry/members/                   - List organization members for assignment
 
 Authentication:
-    All endpoints use SENTRY_BEARER_AUTH token configured in settings.
+    All endpoints use SENTRY_BEARER_AUTH token configured in settings (from environment variables).
     Organization slug and project ID are also configured via environment variables.
 
 Functions:

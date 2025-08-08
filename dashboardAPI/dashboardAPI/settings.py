@@ -2,8 +2,9 @@
 Django Settings Configuration for DashboardAPI Project
 
 This module contains all Django settings and configuration for the dashboardAPI project.
-It includes database configuration, middleware setup, API settings, third-party integrations,
-and environment-specific configurations for Sentry monitoring and Mailgun email services.
+It includes database configuration (though this is not used in the project), middleware
+setup, API settings, third-party integrations, and environment-specific configurations for
+Sentry monitoring and Mailgun email services.
 
 Usage:
     This file is automatically loaded by Django when the application starts. 
