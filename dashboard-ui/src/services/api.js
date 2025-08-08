@@ -1,8 +1,11 @@
 /**
- * CENTRAL API MODULE
+ * @fileoverview Central API module for all backend communication.
  * 
  * This is the SINGLE point of communication with the backend server.
  * ALL HTTP requests to the backend MUST go through the functions in this file.
+ * Provides comprehensive API functions for Sentry issue management, Mailgun
+ * email service integration, health checks, and data fetching. Includes
+ * centralized error handling, request/response interceptors, and timeout configuration.
  * 
  * DO NOT create additional axios instances or make direct HTTP calls elsewhere.
  * If you need to add new API functionality, add it to this file.

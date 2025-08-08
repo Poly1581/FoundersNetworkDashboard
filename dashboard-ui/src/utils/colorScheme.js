@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Color scheme utilities for consistent UI theming and data visualization.
+ * 
+ * Provides accessible color palettes and category-specific color mappings used throughout
+ * the dashboard for consistent visual representation of error types, statuses, and data
+ * categories. Includes functions for generating color appearances and maintaining
+ * visual consistency across components and charts.
+ */
+
 // Shared color scheme for consistent categorization across all components
 export const ACCESSIBLE_COLORS = [
     '#DC2626', '#EA580C', '#CA8A04', '#16A34A', '#0284C7', '#7C3AED',

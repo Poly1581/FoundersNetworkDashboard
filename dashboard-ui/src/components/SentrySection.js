@@ -1,10 +1,19 @@
+/**
+ * @fileoverview Sentry integration section component for monitoring application errors.
+ * 
+ * Displays real-time Sentry data including active issues, integration status, and
+ * detailed error information. Provides functionality for issue management such as
+ * resolving, assigning, and updating issue statuses. Includes collapsible sections
+ * for better organization and time-based filtering capabilities.
+ */
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CircularProgress, Typography, Box } from '@mui/material';
 import IntegrationDetailsSection from './IntegrationDetailsSection';
 import ActiveIssuesSection from './ActiveIssuesSection';
-import { updateIssueStatus } from './api';
+import { updateIssueStatus } from '../services/api';
 import CollapsibleSection from './CollapsibleSection';
-import { filterLiveDataByTimeRange, filterByGlobalTimeRange } from './utils/dataFilters';
+import { filterLiveDataByTimeRange, filterByGlobalTimeRange } from '../utils/dataFilters';
 
 const textContent = {
     sentry: {

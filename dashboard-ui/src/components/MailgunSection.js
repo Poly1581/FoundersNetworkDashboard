@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Mailgun integration section component for email service monitoring.
+ * 
+ * Displays Mailgun email service data including delivery statistics, failed emails,
+ * bounce rates, and integration health status. Provides detailed views of email
+ * events and statistics with time-based filtering. Includes collapsible sections
+ * and interactive data visualizations for monitoring email service performance.
+ */
+
 import React, {useContext, useState, useMemo, useEffect} from 'react';
 import {
     Box,
@@ -18,9 +27,9 @@ import {
 } from '@mui/material';
 import CollapsibleSection from './CollapsibleSection';
 import IntegrationDetailsSection from './IntegrationDetailsSection';
-import AppContext from './context/AppContext';
-import { filterByGlobalTimeRange } from './utils/dataFilters';
-import { getConsistentColorForCategory } from './utils/colorScheme';
+import AppContext from '../context/AppContext';
+import { filterByGlobalTimeRange } from '../utils/dataFilters';
+import { getConsistentColorForCategory } from '../utils/colorScheme';
 
 const textContent = {
     mailgun: {

@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Data filtering utilities for client-side performance optimization.
+ * 
+ * Provides efficient filtering functions for dashboard data including time-based filtering,
+ * issue filtering, event filtering, and memoized filter creation. Optimizes performance
+ * by implementing client-side data filtering to reduce server requests and improve
+ * user experience with real-time filtering capabilities.
+ */
+
 // Client-side data filtering utilities for performance optimization
 
 export const TIME_RANGES = {

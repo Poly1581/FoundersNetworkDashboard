@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Application state reducer with action types and state management logic.
+ * 
+ * Defines all Redux-style action types and the main application reducer function
+ * for managing global dashboard state. Handles actions for data fetching, page navigation,
+ * filtering, time range updates, and state persistence. Provides a centralized state
+ * management system using React's useReducer pattern.
+ */
+
 // Action Types
 export const FETCH_DATA_START = 'FETCH_DATA_START';
 export const FETCH_DATA_SUCCESS = 'FETCH_DATA_SUCCESS';

@@ -1,7 +1,16 @@
+/**
+ * @fileoverview Global application state provider using React Context and useReducer.
+ * 
+ * Manages the centralized application state including Sentry and Mailgun data,
+ * loading states, error handling, filtering, and page-specific state persistence.
+ * Provides context methods for data fetching, state updates, and cross-component
+ * state management throughout the dashboard application.
+ */
+
 import React, { useReducer, startTransition, useCallback, useMemo } from 'react';
 import AppContext from './AppContext';
 import { appReducer, FETCH_DATA_START, FETCH_DATA_SUCCESS, FETCH_DATA_FAILURE, UPDATE_FILTERED_DATA, SET_LIVE_DATA_FILTER, SET_GLOBAL_TIME_RANGE, SAVE_PAGE_STATE, RESTORE_PAGE_STATE } from './AppReducer';
-import { fetchIssues, fetchEventsForIssue, fetchSentryIntegrationStatus, fetchMailgunLogs, fetchMailgunStats, fetchMailgunIntegrationStatus } from '../api';
+import { fetchIssues, fetchEventsForIssue, fetchSentryIntegrationStatus, fetchMailgunLogs, fetchMailgunStats, fetchMailgunIntegrationStatus } from '../services/api';
 import { filterEventsByTimeRange, filterIssuesByTimeRange, createMemoizedFilter } from '../utils/dataFilters';
 
 // Utility function from App.js

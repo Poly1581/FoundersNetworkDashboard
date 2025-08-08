@@ -9,6 +9,8 @@ node_modules/
 build/
 dist/
 
+.idea/
+
 # OS generated files
 .DS_Store
 .DS_Store?

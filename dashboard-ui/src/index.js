@@ -1,16 +1,21 @@
-/*
-  src/index.js
-*/
+/**
+ * @fileoverview Application entry point and root rendering configuration.
+ * 
+ * The main entry point for the React application that sets up the root DOM rendering,
+ * global providers (React Query, Material-UI CssBaseline, Application State),
+ * and development tools. Configures the complete application context and
+ * initializes web vitals reporting for performance monitoring.
+ */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import './index.css';
+import './styles/index.css';
 import reportWebVitals from './reportWebVitals';
 import AppState from './context/AppState';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import CssBaseline from '@mui/material/CssBaseline';
-import { queryClient } from './queryClient';
+import { queryClient } from './services/queryClient';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

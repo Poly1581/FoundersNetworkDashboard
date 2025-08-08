@@ -1,7 +1,11 @@
 /**
- * React Query client configuration
+ * @fileoverview React Query client configuration for data fetching and caching.
+ * 
+ * Configures the global QueryClient instance used throughout the application
+ * for managing server state, caching, and data synchronization. Sets up default
+ * query options including cache times, retry logic, and refetch behavior to
+ * optimize performance and user experience.
  */
-// TODO: Externalize into a .env code and reference it with variables instead of "magic numbers"
 import { QueryClient } from '@tanstack/react-query';
 
 export const queryClient = new QueryClient({

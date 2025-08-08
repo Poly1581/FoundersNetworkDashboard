@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Navigation sidebar component for the dashboard.
+ * 
+ * Provides the main navigation interface with menu items for switching between
+ * different dashboard pages (Overview and Live Data). Uses Material-UI drawer
+ * component with persistent visibility and highlights the currently active page.
+ */
+
 import React from 'react';
 import { Drawer, List, ListItemButton, ListItemIcon, ListItemText, Typography, Divider } from '@mui/material';
 import { BarChart as BarChartIcon, Dashboard as DashboardIcon } from '@mui/icons-material';

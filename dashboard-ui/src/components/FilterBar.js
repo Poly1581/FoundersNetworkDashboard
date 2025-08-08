@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Filter controls component for dashboard data filtering.
+ * 
+ * Provides a set of dropdown filter controls for filtering dashboard data by status,
+ * level, and date range. Uses Material-UI Select components with predefined options
+ * and handles filter state updates through callback functions.
+ */
+
 import React from 'react';
 import { Box, TextField, MenuItem } from '@mui/material';
 

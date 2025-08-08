@@ -1,8 +1,17 @@
+/**
+ * @fileoverview Detailed integration information section component.
+ * 
+ * Displays comprehensive details about system integrations including status information,
+ * configuration details, and external dashboard links. Provides expandable sections
+ * for each integration and handles navigation to external monitoring dashboards
+ * like Sentry. Includes interactive elements for integration management.
+ */
+
 import React, { useState } from 'react';
 import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, Button, Avatar } from '@mui/material';
 import { Link as LinkIcon } from '@mui/icons-material';
 import CollapsibleSection from './CollapsibleSection';
-import { getSentryDashboardUrl } from './api';
+import { getSentryDashboardUrl } from '../services/api';
 
 export default function IntegrationDetailsSection({ integrations, textContent, onAndViewDetails, expandedIntegrations }) {
     const [selectedIntegration, setSelectedIntegration] = useState(null);
