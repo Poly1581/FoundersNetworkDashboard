@@ -72,17 +72,17 @@ For comprehensive documentation including:
 
 ## 🎯 Core Design Principles
 
-**UI/UX Design - Figma Wireframe**: 
-[View Wireframes](https://www.figma.com/design/7jkYnAM3WrezjjQYA8n5sQ/Frontend-Dashboard-Wireframe---CS-590---Founders-Network?node-id=305-3&p=f&t=orNDo3FOAWpLi5Ei-0)
-➡️ See the page or frame titled “Final Wireframe” for the finalized design.
+- **UI/UX Design - Figma Wireframe**: 
+[View Wireframes](https://www.figma.com/design/7jkYnAM3WrezjjQYA8n5sQ/Frontend-Dashboard-Wireframe---CS-590---Founders-Network?node-id=305-3&p=f&t=orNDo3FOAWpLi5Ei-0)  
+➡️ See the page or frame titled “Final Wireframe” for the finalized design.  
 
-**Real-time Internal Monitoring**: Provides immediate visibility into integration health before issues impact members.
+- **Real-time Internal Monitoring**: Provides immediate visibility into integration health before issues impact members.
 
-**Automatic Problem Detection**: Health checks automatically detect problems through monitoring.
+- **Automatic Problem Detection**: Health checks automatically detect problems through monitoring.
 
-**API Endpoint Monitoring**: Monitors FN's actual API endpoints and tracks response times.
+- **API Endpoint Monitoring**: Monitors FN's actual API endpoints and tracks response times.
 
-**Integration-Specific**: Customized to FN's specific integrations and error patterns.
+- **Integration-Specific**: Customized to FN's specific integrations and error patterns.
 
 ## 🔧 Configuration
 
